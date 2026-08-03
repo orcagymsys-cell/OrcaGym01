@@ -1,8 +1,14 @@
 import AdminMembersClient from '@/components/AdminMembersClient';
-import { getAllChildren } from '@/app/actions/admin';
+import { getAdminMembersData } from '@/app/actions/admin';
 
 export default async function AdminMembersPage() {
-  const children = await getAllChildren();
+  const data = await getAdminMembersData();
   
-  return <AdminMembersClient initialChildren={children} />;
+  return (
+    <AdminMembersClient 
+      initialChildren={data.children} 
+      initialParents={data.parents}
+      classes={data.classes}
+    />
+  );
 }

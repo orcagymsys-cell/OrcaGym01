@@ -10,6 +10,7 @@ const defaultDb: DbSchema = {
       id: 'admin_1',
       role: 'admin',
       username: 'admin',
+      password: 'orca1234',
       full_name: 'Super Admin',
       phone_number: '0812345678',
       first_login: false
@@ -17,10 +18,20 @@ const defaultDb: DbSchema = {
     {
       id: 'parent_1',
       role: 'parent',
-      username: 'parent',
-      full_name: 'John Doe',
+      username: 'parent01',
+      password: 'orca1234',
+      full_name: 'นายดุสิต ดีใจ',
       phone_number: '0811111111',
-      first_login: true
+      first_login: false
+    },
+    {
+      id: 'parent_2',
+      role: 'parent',
+      username: 'parent',
+      password: 'orca1234',
+      full_name: 'ผู้ปกครอง ตัวอย่าง',
+      phone_number: '0822222222',
+      first_login: false
     }
   ],
   children: [],
@@ -63,20 +74,23 @@ const defaultDb: DbSchema = {
         { id: 'm4', times: '24', fees: '15,600 THB (650)', duration: '6 Months', tag: 'free 2' },
       ],
       scheduleGrid: [
-        { id: 'ms1', label: 'Tuesday - Friday', slots: ['10:30-12:30', '17:30-19:30', '', ''] },
+        { id: 'ms1', label: 'Monday - Friday', slots: ['10:30-12:30', '17:30-19:30', '', ''] },
         { id: 'ms2', label: 'Saturday - Sunday', slots: ['10:30-12:30', '16:00-18:00', '', ''] },
       ]
     }
   ],
-  schedules: [
-    { id: 'sch_1', class_id: 'class_1', day_of_week: 'MON', start_time: '10:30', end_time: '12:00' },
-    { id: 'sch_2', class_id: 'class_1', day_of_week: 'MON', start_time: '13:00', end_time: '14:30' },
-    { id: 'sch_3', class_id: 'class_2', day_of_week: 'TUE', start_time: '10:30', end_time: '12:00' }
-  ],
+  schedules: [],
   bookings: [],
   auditLogs: [],
   settings: {
-    max_children_allowed: 1
+    max_children_allowed: 10
+  },
+  aboutUs: {
+    company_name_th: 'บริษัท ออก้ายิม จำกัด',
+    company_name_en: 'ORCA GYM CO., LTD.',
+    registration_number: '0105569135935',
+    business_description: 'สถาบันสอนและฝึกทักษะกีฬายิมนาสติก กายกรรม โยคะ การเต้นรำ ทุกรูปแบบ และเชียร์ลีดเดอร์ ให้แก่ เด็ก เยาวชน และบุคคลทั่วไป เมื่อได้รับอนุญาตจากหน่วยงานที่เกี่ยวข้องแล้ว',
+    address: '289/240 ซอย ร่มเกล้า 6/1 แขวงมีนบุรี เขตมีนบุรี กรุงเทพมหานคร 10510'
   }
 };
 
@@ -85,8 +99,19 @@ export function getDb(): DbSchema {
     saveDb(defaultDb);
     return defaultDb;
   }
-  const data = fs.readFileSync(DB_PATH, 'utf-8');
-  return JSON.parse(data);
+  let data = fs.readFileSync(DB_PATH, 'utf-8');
+  if (data.charCodeAt(0) === 0xFEFF) {
+    data = data.slice(1);
+  }
+  try {
+    const parsed = JSON.parse(data);
+    if (!parsed.auditLogs) parsed.auditLogs = [];
+    return parsed;
+  } catch (err) {
+    console.error("Failed to parse db.json, resetting to defaultDb:", err);
+    saveDb(defaultDb);
+    return defaultDb;
+  }
 }
 
 export function saveDb(data: DbSchema) {

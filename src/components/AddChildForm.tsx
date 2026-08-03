@@ -31,9 +31,13 @@ export default function AddChildForm() {
     setLoading(true);
     setError('');
 
-    // In a real app we would upload the photo and get a URL, here we pass the base64 string (or just ignore it for mock)
-    // We can cast the argument to any to bypass strict type checking if we didn't add photo_url to types yet.
-    const res = await (addChild as any)({ full_name: fullName, nickname, dob, gender, photo_url: photoUrl });
+    const res = await (addChild as any)({ 
+      full_name: fullName, 
+      nickname, 
+      dob, 
+      gender, 
+      photo_url: photoUrl
+    });
     
     if (res.error) {
       setError(res.error);
@@ -44,8 +48,8 @@ export default function AddChildForm() {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-lg mx-auto bg-white p-6 sm:p-10" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
-      <h2 className="text-xl sm:text-2xl font-bold text-[#1a2d5c] mb-6">Student Information</h2>
+    <div className="flex flex-col items-center w-full max-w-md mx-auto bg-white p-5 sm:p-7 rounded-3xl shadow-sm border border-slate-200" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
+      <h2 className="text-xl font-bold text-[#1a2d5c] mb-4">Student Information</h2>
       
       {error && (
         <div className="w-full p-3 mb-4 text-sm text-red-500 bg-red-50 rounded-lg">
@@ -54,7 +58,7 @@ export default function AddChildForm() {
       )}
 
       <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
-        <div className="relative mb-8">
+        <div className="relative mb-5">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-transparent bg-pink-100 flex items-center justify-center">
             {photoUrl ? (
               <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />

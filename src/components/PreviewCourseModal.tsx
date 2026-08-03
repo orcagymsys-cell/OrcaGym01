@@ -19,17 +19,17 @@ export default function PreviewCourseModal({ course }: { course: GymClass }) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto relative">
-            <div className="sticky top-0 right-0 p-4 flex justify-end z-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-transparent rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto relative p-2">
+            <div className="sticky top-2 right-2 flex justify-end z-20 mb-2">
               <button 
                 onClick={() => setIsOpen(false)}
-                className="bg-white text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded-full p-2 shadow-sm border"
+                className="bg-white/90 text-slate-700 hover:text-rose-500 hover:bg-white rounded-full p-2.5 shadow-lg border border-slate-200 backdrop-blur-sm transition-all hover:scale-110"
               >
-                <X size={24} />
+                <X size={22} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="p-4 md:p-8 pt-0">
+            <div>
               <CourseCard course={course} />
             </div>
           </div>

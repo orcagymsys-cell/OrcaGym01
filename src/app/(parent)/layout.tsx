@@ -22,7 +22,7 @@ export default async function ParentLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-8">
       {/* Navigation Header */}
-      <header className="w-full max-w-4xl bg-[#183363] text-white rounded-t-xl overflow-hidden shadow-lg mb-8">
+      <header className="w-full max-w-5xl bg-[#183363] text-white rounded-t-xl overflow-hidden shadow-lg mb-8">
         <nav className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-2">
             <Link href="/dashboard" className="flex items-center space-x-2">
@@ -41,7 +41,7 @@ export default async function ParentLayout({
       </header>
 
       {/* Main Content Area */}
-      <main className="w-full max-w-4xl bg-white rounded-xl shadow-md p-8 min-h-[500px]">
+      <main className="w-full max-w-5xl bg-white rounded-xl shadow-md p-8 min-h-[500px]">
         {children}
       </main>
     </div>

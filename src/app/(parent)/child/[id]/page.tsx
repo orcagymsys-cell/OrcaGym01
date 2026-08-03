@@ -24,11 +24,19 @@ export default async function ChildProfilePage(
   const history = db.bookings
     .filter(b => b.child_id === child.id)
     .map(b => {
-      const schedule = schedules.find(s => s.id === b.schedule_id)!;
-      const gymClass = classes.find(c => c.id === schedule.class_id)!;
+      const gymClass = classes.find(c => c.id === (b as any).class_id || c.id === b.schedule_id) || classes[0];
+      const schedule = schedules.find(s => s.id === b.schedule_id) || {
+        id: b.schedule_id,
+        class_id: gymClass?.id || '',
+        day_of_week: 'MON' as const,
+        start_time: (b as any).time_slot?.split('-')[0] || (b as any).timeSlot?.split('-')[0] || '',
+        end_time: (b as any).time_slot?.split('-')[1] || (b as any).timeSlot?.split('-')[1] || ''
+      };
       return { ...b, schedule, gymClass };
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const allBookings = db.bookings;
 
   return (
     <ChildBooking 
@@ -36,6 +44,8 @@ export default async function ChildProfilePage(
       schedules={schedules} 
       classes={classes} 
       history={history} 
+      allBookings={allBookings}
+      parentUser={user}
     />
   );
 }

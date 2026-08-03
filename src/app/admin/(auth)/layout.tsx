@@ -42,6 +42,9 @@ export default async function AdminAuthLayout({
           <Link href="/admin/schedule" className="flex items-center space-x-3 px-4 py-3 text-sm font-bold text-[#183363] hover:bg-blue-50 rounded-lg">
             <span>SCHEDULE</span>
           </Link>
+          <Link href="/admin/audit" className="flex items-center space-x-3 px-4 py-3 text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200">
+            <span>🛡️ AUDIT & ANTI-FRAUD</span>
+          </Link>
           <Link href="/admin/about" className="flex items-center space-x-3 px-4 py-3 text-sm font-bold text-[#183363] hover:bg-blue-50 rounded-lg">
             <span>ABOUT US</span>
           </Link>

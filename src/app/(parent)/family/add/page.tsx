@@ -9,20 +9,20 @@ export const metadata: Metadata = {
 
 export default function AddFamilyMemberPage() {
   return (
-    <div className="relative">
-      <Link 
-        href="/dashboard" 
-        className="absolute left-0 top-0 flex items-center text-gray-500 hover:text-[#183363] transition-colors"
-      >
-        <ChevronLeft size={24} />
-        <span className="font-semibold ml-1">Back</span>
-      </Link>
-      
-      <div className="flex justify-center mb-6 pt-2">
-        <h1 className="text-[26px] font-bold text-[#1a2d5c] flex items-center space-x-3">
-          <span className="text-4xl grayscale opacity-70" role="img" aria-label="family">👥</span>
-          <span>Add Family Member</span>
+    <div className="relative -mt-4 sm:-mt-6">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
+        <Link 
+          href="/dashboard" 
+          className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#1a2d5c] rounded-xl font-bold text-xs transition-colors border border-slate-300"
+        >
+          <ChevronLeft size={18} />
+          <span>Back</span>
+        </Link>
+        <h1 className="text-xl sm:text-2xl font-black text-[#1a2d5c] flex items-center space-x-2">
+          <span className="text-2xl" role="img" aria-label="family">👥</span>
+          <span className="underline decoration-2 underline-offset-4">Add Family Member</span>
         </h1>
+        <div className="w-20 hidden sm:block" />
       </div>
       
       <AddChildForm />

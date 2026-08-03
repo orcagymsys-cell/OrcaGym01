@@ -37,9 +37,13 @@ export default function AdminLoginForm() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
       <div className="w-full max-w-md p-10 flex flex-col items-center bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
         <div className="mb-6 flex justify-center">
-          <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center">
-            <Shield size={40} className="text-white" />
-          </div>
+          <Image 
+            src="/images/logo_light.png" 
+            alt="ORCA GYMNASTICS" 
+            width={160} 
+            height={160} 
+            className="object-contain drop-shadow-md" 
+          />
         </div>
         
         <h1 className="text-2xl font-bold text-white mb-2">ADMIN PORTAL</h1>
@@ -87,7 +91,7 @@ export default function AdminLoginForm() {
               disabled={loading}
               className="w-full py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none font-semibold text-lg transition-colors disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : 'Secure Login'}
+              {loading ? 'Authenticating...' : 'Log in'}
             </button>
           </div>
         </form>

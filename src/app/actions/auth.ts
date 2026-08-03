@@ -5,7 +5,8 @@ import { getDb } from '@/lib/db';
 
 export async function login(username: string, role: 'parent' | 'admin') {
   const db = getDb();
-  const user = db.users.find(u => u.username === username && u.role === role);
+  const cleanUsername = (username || '').trim().toLowerCase();
+  const user = db.users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername && u.role === role);
   
   if (!user) {
     return { error: 'Invalid username or role mismatch' };
@@ -27,7 +28,7 @@ export async function logout() {
   cookieStore.delete('session');
 }
 
-export async function registerUser(data: { fullName: string; phone: string; }) {
+export async function registerUser(data: { fullName: string; phone: string; password?: string; }) {
   const db = getDb();
   
   // Check for duplicate phone number

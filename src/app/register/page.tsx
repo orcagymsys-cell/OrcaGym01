@@ -44,7 +44,7 @@ export default function RegisterPage() {
         
         <div className="mb-2">
           <Image 
-            src="/images/LOGOORCA01.png" 
+            src="/images/logo.png" 
             alt="ORCA GYMNASTICS" 
             width={180} 
             height={180}

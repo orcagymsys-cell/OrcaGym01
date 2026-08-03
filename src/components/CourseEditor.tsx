@@ -158,6 +158,23 @@ export default function CourseEditor({ initialData }: { initialData?: any }) {
             <option value="yellow">Sunny Yellow</option>
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-bold text-[#183363] mb-1">
+            Max Capacity / Slot (จำนวนเด็กสูงสุดต่อรอบเวลา)
+          </label>
+          <input 
+            type="number" 
+            min="1"
+            max="100"
+            value={formData.capacity || 5} 
+            onChange={e => updateField('capacity', parseInt(e.target.value) || 5)} 
+            className="w-full p-2.5 border-2 border-sky-300 rounded-xl font-bold text-[#183363] bg-sky-50/50 focus:outline-none focus:border-[#183363]" 
+            required
+          />
+          <span className="text-xs text-slate-500 mt-1 block">
+            * เช่น กำหนด 5 คน/รอบ เมื่อจองครบ 5 คน ระบบจะปิดจองรอบนั้นอัตโนมัติ
+          </span>
+        </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Description (Supports line breaks)</label>
           <textarea rows={4} value={formData.description || ''} onChange={e => updateField('description', e.target.value)} className="w-full p-2 border rounded"></textarea>
@@ -217,8 +234,8 @@ export default function CourseEditor({ initialData }: { initialData?: any }) {
                     <input type="text" placeholder="e.g. Tue-Wed" value={row.tag || ''} onChange={e => updateScheduleRow(rIndex, 'tag', e.target.value)} className="p-1 text-sm border rounded w-32" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <label className="text-xs text-gray-600">On Slot Index (0-based):</label>
-                    <input type="number" min="0" value={row.tagIndex ?? ''} onChange={e => updateScheduleRow(rIndex, 'tagIndex', parseInt(e.target.value))} className="p-1 text-sm border rounded w-16" />
+                    <label className="text-xs text-gray-600">On Slot No. (ลำดับช่องที่ 1, 2, 3, 4):</label>
+                    <input type="number" min="1" value={row.tagIndex ?? ''} onChange={e => updateScheduleRow(rIndex, 'tagIndex', parseInt(e.target.value))} className="p-1 text-sm border rounded w-16" />
                   </div>
                 </div>
               </div>
