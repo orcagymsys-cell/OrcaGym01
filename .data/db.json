@@ -9,6 +9,15 @@
       "first_login": false
     },
     {
+      "id": "parent_1",
+      "role": "parent",
+      "username": "parent01",
+      "password": "orca1234",
+      "full_name": "นายดุสิต ดีใจ",
+      "phone_number": "0811111111",
+      "first_login": false
+    },
+    {
       "id": "user_7my0rskw2",
       "role": "parent",
       "username": "parent02",
