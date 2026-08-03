@@ -1,3 +1,4 @@
+import React from 'react';
 import { getDb } from '@/lib/db';
 import CourseCard from '@/components/CourseCard';
 

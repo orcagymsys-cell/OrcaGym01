@@ -28,8 +28,7 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    const res = await registerUser({ fullName, phone, password });
-    
+    const res = await registerUser({ fullName, phone, password } as any);
     if (res.error) {
       setError(res.error);
       setLoading(false);
