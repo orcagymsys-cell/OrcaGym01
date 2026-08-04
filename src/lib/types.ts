@@ -128,6 +128,17 @@ export interface AboutUsInfo {
   address: string;
 }
 
+export interface LeadContact {
+  id: string;
+  parent_name: string;
+  phone_number: string;
+  child_info?: string;
+  selected_promotion?: string;
+  note?: string;
+  created_at: string;
+  status: 'pending' | 'contacted';
+}
+
 export interface DbSchema {
   users: User[];
   children: Child[];
@@ -139,6 +150,7 @@ export interface DbSchema {
     max_children_allowed: number;
   };
   aboutUs?: AboutUsInfo;
+  leads?: LeadContact[];
 }
 
 export function toISODateString(dStr: string): string {
