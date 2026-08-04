@@ -121,14 +121,8 @@ export default function LoginForm() {
           </div>
 
           <div className="text-center space-y-4 pt-6 sm:pt-8 border-t border-gray-100 mt-4">
-            <a href="#" className="text-sm sm:text-base font-bold text-black hover:text-[#183363] hover:underline underline-offset-4 decoration-2 transition-colors inline-block">
-              Forgot password?
-            </a>
-            <div className="text-sm sm:text-base text-gray-500">
-              Don't have an account?{' '}
-              <Link href="/register" className="font-bold text-[#183363] hover:text-blue-700 hover:underline underline-offset-4 decoration-2 transition-colors">
-                Register
-              </Link>
+            <div className="text-xs sm:text-sm font-semibold text-slate-600 bg-sky-50/80 p-3.5 rounded-2xl border border-sky-200 text-left leading-relaxed">
+              💡 ผู้ปกครองจะได้รับ <strong>Username</strong> และ <strong>Password</strong> สำหรับเข้าสู่ระบบจากแอดมินโดยตรงหลังจากสั่งซื้อคลาสเรียนยิมนาสติกเรียบร้อยแล้ว
             </div>
           </div>
         </form>
