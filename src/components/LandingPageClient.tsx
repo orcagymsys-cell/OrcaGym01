@@ -60,7 +60,7 @@ export default function LandingPageClient() {
       {/* TOP CONTACT BAR */}
       <div className="w-full bg-[#183363] text-white text-xs font-bold py-2.5 px-4 border-b border-blue-900/40">
         <div className="max-w-6xl mx-auto flex items-center justify-center sm:justify-between">
-          <div className="flex items-center space-x-6 sm:space-x-8 text-xs sm:text-sm font-semibold">
+          <div className="flex items-center space-x-4 sm:space-x-8 text-xs sm:text-sm font-semibold">
             <span className="flex items-center space-x-2 text-sky-200">
               <Phone size={14} className="text-amber-400" />
               <span>TEL: <strong className="text-white font-bold">081-234-5678</strong></span>
@@ -68,6 +68,10 @@ export default function LandingPageClient() {
             <span className="flex items-center space-x-2 text-sky-200">
               <span className="text-amber-400">✉️</span>
               <span>Email: <strong className="text-white font-bold">orcagymsys@gmail.com</strong></span>
+            </span>
+            <span className="hidden sm:flex items-center space-x-2 text-emerald-300">
+              <span className="text-emerald-400">💬</span>
+              <span>LINE: <strong className="text-white font-bold">@orcagym</strong></span>
             </span>
           </div>
         </div>
@@ -229,7 +233,7 @@ export default function LandingPageClient() {
             </div>
 
             <button
-              onClick={() => handleSelectPromoClick('Orca Cubs Class (24 ครั้ง แถมฟรี 2 ครั้ง - 14,400฿)')}
+              onClick={() => handleSelectPromoClick('Orca Cubs - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (14,400 THB)')}
               className="w-full py-3.5 bg-[#183363] text-white rounded-2xl font-black text-sm hover:bg-blue-900 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
             >
               <span>สนใจลงทะเบียนจอง Orca Cubs</span>
@@ -299,7 +303,7 @@ export default function LandingPageClient() {
             </div>
 
             <button
-              onClick={() => handleSelectPromoClick('Mega Orca Class (24 ครั้ง แถมฟรี 2 ครั้ง - 15,600฿)')}
+              onClick={() => handleSelectPromoClick('Mega Orca - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (15,600 THB)')}
               className="w-full py-3.5 bg-purple-700 text-white rounded-2xl font-black text-sm hover:bg-purple-800 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
             >
               <span>สนใจลงทะเบียนจอง Mega Orca</span>
@@ -349,11 +353,25 @@ export default function LandingPageClient() {
                 <select
                   value={selectedPromo}
                   onChange={(e) => setSelectedPromo(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl font-bold text-[#183363] focus:ring-2 focus:ring-[#183363] outline-none"
+                  className="w-full p-3.5 bg-white border-2 border-slate-300 rounded-xl font-bold text-[#183363] focus:ring-2 focus:ring-[#183363] outline-none"
                 >
-                  <option value="Orca Cubs Promo (10 + 2 แถมฟรี)">Orca Cubs Promo (10 + 2 แถมฟรี)</option>
-                  <option value="Mega Orca Class (24 + 4 แถมฟรี)">Mega Orca Class (24 + 4 แถมฟรี)</option>
-                  <option value="สอบถามข้อมูลทดลองเรียนฟรีทั่วไป">สอบถามข้อมูลทดลองเรียนฟรีทั่วไป</option>
+                  <optgroup label="🏆 Orca Cubs Class (อายุ 4 - 10 ปี | 1.5 ชม./ครั้ง)">
+                    <option value="Orca Cubs - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (14,400 THB)">Orca Cubs - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (14,400 THB)</option>
+                    <option value="Orca Cubs - 12 ครั้ง / 4 เดือน (7,800 THB)">Orca Cubs - 12 ครั้ง / 4 เดือน (7,800 THB)</option>
+                    <option value="Orca Cubs - 6 ครั้ง / 2 เดือน (4,100 THB)">Orca Cubs - 6 ครั้ง / 2 เดือน (4,100 THB)</option>
+                    <option value="Orca Cubs - ทดลองเรียน 1 ครั้ง (700 THB)">Orca Cubs - ทดลองเรียน 1 ครั้ง (700 THB)</option>
+                  </optgroup>
+
+                  <optgroup label="⚡ Mega Orca Class (อายุ 5 - 15 ปี | 2 ชม./ครั้ง)">
+                    <option value="Mega Orca - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (15,600 THB)">Mega Orca - 24 ครั้ง (แถมฟรี 2 ครั้ง 🔥) / 6 เดือน (15,600 THB)</option>
+                    <option value="Mega Orca - 12 ครั้ง / 4 เดือน (8,400 THB)">Mega Orca - 12 ครั้ง / 4 เดือน (8,400 THB)</option>
+                    <option value="Mega Orca - 6 ครั้ง / 2 เดือน (4,300 THB)">Mega Orca - 6 ครั้ง / 2 เดือน (4,300 THB)</option>
+                    <option value="Mega Orca - ทดลองเรียน 1 ครั้ง (800 THB)">Mega Orca - ทดลองเรียน 1 ครั้ง (800 THB)</option>
+                  </optgroup>
+
+                  <optgroup label="💬 สอบถามทั่วไป">
+                    <option value="สอบถามข้อมูลทดลองเรียนฟรีทั่วไป">สอบถามข้อมูลทดลองเรียนฟรีทั่วไป</option>
+                  </optgroup>
                 </select>
               </div>
 
@@ -532,36 +550,55 @@ export default function LandingPageClient() {
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
-            <div className="h-36 bg-gradient-to-br from-sky-200 via-sky-100 to-amber-100 rounded-xl flex items-center justify-center text-4xl">
-              🤸‍♂️
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-md text-center space-y-2 group hover:scale-105 transition-transform overflow-hidden">
+            <div className="h-48 relative rounded-xl overflow-hidden shadow-xs">
+              <Image
+                src="/images/gallery_balance.jpg"
+                alt="การฝึกทรงตัวบนคานบาลานซ์"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
+              />
             </div>
-            <div className="text-xs font-bold text-[#183363]">การฝึกทรงตัวบนคานบาลานซ์</div>
+            <div className="text-xs font-black text-[#183363] pt-1">การฝึกทรงตัวบนคานบาลานซ์</div>
           </div>
 
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
-            <div className="h-36 bg-gradient-to-br from-amber-200 via-amber-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
-              🏆
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-md text-center space-y-2 group hover:scale-105 transition-transform overflow-hidden">
+            <div className="h-48 relative rounded-xl overflow-hidden shadow-xs">
+              <Image
+                src="/images/gallery_cartwheel.jpg"
+                alt="การตีลังกาและกายกรรมเบื้องต้น"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
+              />
             </div>
-            <div className="text-xs font-bold text-[#183363]">การตีลังกาและกายกรรมเบื้องต้น</div>
+            <div className="text-xs font-black text-[#183363] pt-1">การตีลังกาและกายกรรมเบื้องต้น</div>
           </div>
 
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
-            <div className="h-36 bg-gradient-to-br from-purple-200 via-purple-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
-              🧘‍♀️
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-md text-center space-y-2 group hover:scale-105 transition-transform overflow-hidden">
+            <div className="h-48 relative rounded-xl overflow-hidden shadow-xs">
+              <Image
+                src="/images/gallery_rhythmic.jpg"
+                alt="โปรแกรมการยิมนาสติกลีลา"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
+              />
             </div>
-            <div className="text-xs font-bold text-[#183363]">การยืดเหยียดและความคล่องตัว</div>
-          </div>
-
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
-            <div className="h-36 bg-gradient-to-br from-emerald-200 via-emerald-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
-              🥇
-            </div>
-            <div className="text-xs font-bold text-[#183363]">บรรยากาศทดสอบทักษะประจำปี</div>
+            <div className="text-xs font-black text-[#183363] pt-1">โปรแกรมการยิมนาสติกลีลา</div>
           </div>
         </div>
       </section>
+
+      {/* FLOATING LINE BUTTON */}
+      <div className="fixed bottom-6 right-6 z-50 animate-bounce">
+        <button
+          onClick={() => scrollToSection('contact-form-section')}
+          className="flex items-center space-x-2 bg-[#06C755] text-white px-5 py-3.5 rounded-full font-black text-xs sm:text-sm shadow-2xl hover:bg-[#05b34c] transition-all border-2 border-white cursor-pointer"
+        >
+          <span className="text-lg">💬</span>
+          <span>แอดไลน์พูดคุยกับแอดมิน</span>
+        </button>
+      </div>
 
       {/* FOOTER */}
       <footer className="w-full bg-[#183363] text-white py-8 px-4 text-center text-xs font-semibold space-y-3">
@@ -574,6 +611,8 @@ export default function LandingPageClient() {
             <span>📞 TEL: 081-234-5678</span>
             <span>•</span>
             <span>✉️ Email: orcagymsys@gmail.com</span>
+            <span>•</span>
+            <span className="text-emerald-300 font-bold">💬 LINE: @orcagym</span>
           </div>
         </div>
 
