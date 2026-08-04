@@ -48,69 +48,103 @@ export default function LandingPageClient() {
     }
   };
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col justify-between">
-      {/* TOP HEADER BAR */}
-      <header className="w-full bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col justify-between" id="home">
+      {/* TOP CONTACT BAR */}
+      <div className="w-full bg-[#183363] text-white text-xs font-bold py-2.5 px-4 border-b border-blue-900/40">
+        <div className="max-w-6xl mx-auto flex items-center justify-center sm:justify-between">
+          <div className="flex items-center space-x-6 sm:space-x-8 text-xs sm:text-sm font-semibold">
+            <span className="flex items-center space-x-2 text-sky-200">
+              <Phone size={14} className="text-amber-400" />
+              <span>TEL: <strong className="text-white font-bold">081-234-5678</strong></span>
+            </span>
+            <span className="flex items-center space-x-2 text-sky-200">
+              <span className="text-amber-400">✉️</span>
+              <span>Email: <strong className="text-white font-bold">orcagymsys@gmail.com</strong></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* TOP HEADER BAR & NAVBAR */}
+      <header className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
           {/* Top-Left: Logo & Orca Gymnastics Text Under Logo */}
-          <Link href="/" className="flex flex-col items-center group">
+          <Link href="/" className="flex flex-col items-center group shrink-0">
             <Image 
               src="/images/logo.png" 
               alt="ORCA GYMNASTICS" 
-              width={65} 
-              height={65} 
+              width={60} 
+              height={60} 
               className="object-contain transition-transform group-hover:scale-105"
               priority
             />
-            <span className="text-xs font-black text-[#183363] tracking-wider uppercase -mt-1 group-hover:text-sky-600 transition-colors">
-              Orca gymnastics
+            <span 
+              className="text-[12px] sm:text-[13px] font-bold text-[#183363] tracking-[0.18em] uppercase mt-0.5 group-hover:text-sky-600 transition-colors"
+              style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
+            >
+              ORCA GYMNASTICS
             </span>
           </Link>
 
-          {/* Top-Right: Sign In Button & Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLoginMenu(!showLoginMenu)}
-              className="flex items-center space-x-2 bg-[#183363] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm hover:bg-blue-900 transition-all shadow-md active:scale-95 cursor-pointer"
+          {/* Center Navigation Links (Desktop) */}
+          <nav className="hidden lg:flex items-center space-x-8 text-xs sm:text-sm font-extrabold text-[#183363]">
+            <button 
+              onClick={() => scrollToSection('home')} 
+              className="hover:text-sky-600 transition-colors cursor-pointer"
             >
-              <User size={16} />
-              <span>เข้าสู่ระบบ (Sign in)</span>
-              <ChevronDown size={14} className={`transition-transform duration-200 ${showLoginMenu ? 'rotate-180' : ''}`} />
+              หน้าแรก
             </button>
+            <button 
+              onClick={() => scrollToSection('about-section')} 
+              className="hover:text-sky-600 transition-colors cursor-pointer"
+            >
+              เกี่ยวกับเรา
+            </button>
+            <button 
+              onClick={() => scrollToSection('classes-section')} 
+              className="hover:text-sky-600 transition-colors cursor-pointer"
+            >
+              คลาสเรียน
+            </button>
+            <button 
+              onClick={() => scrollToSection('enrollment-section')} 
+              className="hover:text-sky-600 transition-colors cursor-pointer"
+            >
+              การสมัครเรียน
+            </button>
+            <button 
+              onClick={() => scrollToSection('gallery-section')} 
+              className="hover:text-sky-600 transition-colors cursor-pointer"
+            >
+              แกลลอรี่
+            </button>
+          </nav>
 
-            {/* Dropdown Menu */}
-            {showLoginMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-fade-in">
-                <div className="px-4 py-2 border-b border-slate-100 text-xs font-black text-slate-400 uppercase">
-                  เลือกพอร์ตัลเข้าสู่ระบบ
-                </div>
-                <Link
-                  href="/login"
-                  onClick={() => setShowLoginMenu(false)}
-                  className="flex items-center space-x-3 px-4 py-3 text-xs sm:text-sm font-bold text-[#183363] hover:bg-sky-50 transition-colors"
-                >
-                  <span className="text-lg">👨‍👩‍👧‍👦</span>
-                  <div>
-                    <div>เข้าสู่ระบบผู้ปกครอง</div>
-                    <div className="text-[10px] text-slate-500 font-normal">สำหรับจองคลาสเรียนบุตรหลาน</div>
-                  </div>
-                </Link>
+          {/* Top-Right: Direct Sign In Button (Parent Login) */}
+          <Link
+            href="/login"
+            className="flex items-center space-x-2 bg-[#183363] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-blue-900 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
+          >
+            <User size={16} />
+            <span>เข้าสู่ระบบ (Sign in)</span>
+          </Link>
+        </div>
 
-                <Link
-                  href="/admin/login"
-                  onClick={() => setShowLoginMenu(false)}
-                  className="flex items-center space-x-3 px-4 py-3 text-xs sm:text-sm font-bold text-emerald-800 hover:bg-emerald-50 transition-colors border-t border-slate-100"
-                >
-                  <span className="text-lg">🛡️</span>
-                  <div>
-                    <div>เข้าสู่ระบบแอดมิน (Admin)</div>
-                    <div className="text-[10px] text-slate-500 font-normal">สำหรับเจ้าหน้าที่บริหารจัดการ</div>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </div>
+        {/* Mobile Navigation Links Bar */}
+        <div className="lg:hidden bg-slate-100/90 border-t border-slate-200 py-2 px-3 overflow-x-auto flex space-x-4 text-xs font-black text-[#183363] no-scrollbar">
+          <button onClick={() => scrollToSection('home')} className="shrink-0 px-2 py-1 hover:bg-white rounded-lg">หน้าแรก</button>
+          <button onClick={() => scrollToSection('about-section')} className="shrink-0 px-2 py-1 hover:bg-white rounded-lg">เกี่ยวกับเรา</button>
+          <button onClick={() => scrollToSection('classes-section')} className="shrink-0 px-2 py-1 hover:bg-white rounded-lg">คลาสเรียน</button>
+          <button onClick={() => scrollToSection('enrollment-section')} className="shrink-0 px-2 py-1 hover:bg-white rounded-lg">การสมัครเรียน</button>
+          <button onClick={() => scrollToSection('gallery-section')} className="shrink-0 px-2 py-1 hover:bg-white rounded-lg">แกลลอรี่</button>
         </div>
       </header>
 
@@ -133,106 +167,142 @@ export default function LandingPageClient() {
 
         {/* 2 PROMOTION CARDS */}
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-10">
-          {/* PROMOTION CARD 1 */}
+          {/* PROMOTION CARD 1: ORCA CUBS */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-sky-400 shadow-xl relative overflow-hidden flex flex-col justify-between hover:border-sky-500 transition-all group">
             <div className="absolute top-0 right-0 bg-sky-500 text-white font-black text-xs px-4 py-1.5 rounded-bl-2xl shadow-xs">
-              ยอดนิยมสำหรับเด็กเล็ก 🏆
+              คลาสเด็กเล็กยอดนิยม 🏆
             </div>
 
             <div>
-              <div className="text-xs font-black text-sky-600 uppercase tracking-widest mb-1">
-                PROMOTION 1 (อายุ 1.5 - 3.5 ปี)
+              <div className="flex items-center space-x-2 text-xs font-black text-sky-600 uppercase tracking-widest mb-1">
+                <span>Age 4-10</span>
+                <span>•</span>
+                <span>⏱️ 1.5 hrs/time</span>
               </div>
-              <h3 className="text-2xl font-black text-[#183363] mb-3">
-                Orca Cubs Class (10 + 2 แถมฟรี)
-              </h3>
               
-              <div className="p-4 bg-sky-50 rounded-2xl border border-sky-200 mb-6">
+              <h3 className="text-3xl font-black text-[#183363] mb-1">
+                Orca Cubs <span className="text-rose-500 text-lg font-bold">Class</span>
+              </h3>
+
+              <p className="text-xs text-slate-600 font-semibold mb-5 leading-relaxed bg-sky-50/70 p-3 rounded-2xl border border-sky-100">
+                เปิดประตูสู่การเรียนรู้กับคลาส ORCA Cubs (สำหรับน้องๆ อายุ 4-10 ปี) คลาสเรียนพื้นฐานเบื้องต้นสำหรับเด็กๆ เพื่อเสริมสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นมั่นใจ
+              </p>
+
+              {/* HIGHLIGHT PROMO BOX */}
+              <div className="p-4 bg-gradient-to-r from-sky-50 to-amber-50 rounded-2xl border-2 border-amber-300 mb-5 relative">
+                <div className="absolute -top-3 right-3 bg-rose-500 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-xs animate-pulse">
+                  🔥 HOT PROMOTION: Free 2 Times
+                </div>
+                
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-3xl font-black text-sky-700">฿5,000</span>
-                  <span className="text-xs font-bold text-slate-400 line-through">฿6,000</span>
-                  <span className="text-xs font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-auto">
-                    🎁 แถมฟรี 2 ครั้ง
+                  <span className="text-3xl font-black text-[#183363]">฿14,400</span>
+                  <span className="text-xs font-bold text-slate-400">/ 24 ครั้ง</span>
+                  <span className="text-xs font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-300 ml-auto">
+                    🎁 แถมฟรี 2 ครั้ง (รวม 26 ครั้ง)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 font-bold mt-2">
-                  ซื้อ 10 ครั้ง รับเพิ่มฟรีทันที 2 ครั้ง (รวมเป็น 12 ครั้ง)
+                <p className="text-[11px] text-amber-900 font-bold mt-1.5 flex items-center justify-between">
+                  <span>เฉลี่ยเพียง 600.- / ครั้ง</span>
+                  <span>อายุแพ็กเกจ 6 Months</span>
                 </p>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-bold text-slate-700 mb-8">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>ปูพื้นฐานการทรงตัว ความยืดหยุ่น และสมาธิ</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>เรียนสนุกสนาน ปลอดภัย อุปกรณ์มาตรฐาน</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>สามารถแบ่งชั่วโมงเรียนในระบบตะกร้าครอบครัวได้</span>
-                </li>
-              </ul>
+              {/* ALL PRICING TABLE MINI */}
+              <div className="space-y-1.5 mb-6 text-xs font-bold text-slate-700">
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">อัตราค่าเรียนทั้งหมด (Course Fees):</div>
+                
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>ทดลองเรียน 1 ครั้ง (Single Class)</span>
+                  <span className="font-extrabold text-[#183363]">700 THB</span>
+                </div>
+                
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>คลาส 6 ครั้ง (อายุ 2 เดือน)</span>
+                  <span className="font-extrabold text-[#183363]">4,100 THB <span className="text-[10px] text-slate-500 font-normal">(683.-/ครั้ง)</span></span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>คลาส 12 ครั้ง (อายุ 4 เดือน)</span>
+                  <span className="font-extrabold text-[#183363]">7,800 THB <span className="text-[10px] text-slate-500 font-normal">(650.-/ครั้ง)</span></span>
+                </div>
+              </div>
             </div>
 
             <button
-              onClick={() => handleSelectPromoClick('Orca Cubs Promo (10 + 2 แถมฟรี)')}
-              className="w-full py-3.5 bg-sky-600 text-white rounded-2xl font-black text-sm hover:bg-sky-700 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
+              onClick={() => handleSelectPromoClick('Orca Cubs Class (24 ครั้ง แถมฟรี 2 ครั้ง - 14,400฿)')}
+              className="w-full py-3.5 bg-[#183363] text-white rounded-2xl font-black text-sm hover:bg-blue-900 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
             >
-              <span>ลงทะเบียนรับสิทธิ์โปรนี้</span>
+              <span>สนใจลงทะเบียนจอง Orca Cubs</span>
               <ArrowRight size={16} />
             </button>
           </div>
 
-          {/* PROMOTION CARD 2 */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-amber-400 shadow-xl relative overflow-hidden flex flex-col justify-between hover:border-amber-500 transition-all group">
-            <div className="absolute top-0 right-0 bg-amber-500 text-white font-black text-xs px-4 py-1.5 rounded-bl-2xl shadow-xs">
-              โปรสุดคุ้มสำหรับเด็กโต 🤸‍♂️
+          {/* PROMOTION CARD 2: MEGA ORCA */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-purple-300 shadow-xl relative overflow-hidden flex flex-col justify-between hover:border-purple-400 transition-all group">
+            <div className="absolute top-0 right-0 bg-purple-600 text-white font-black text-xs px-4 py-1.5 rounded-bl-2xl shadow-xs">
+              สำหรับเด็กโต & นักกีฬา ⚡
             </div>
 
             <div>
-              <div className="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">
-                PROMOTION 2 (อายุ 3.5 - 10 ปี)
+              <div className="flex items-center space-x-2 text-xs font-black text-purple-700 uppercase tracking-widest mb-1">
+                <span>Age 5-15</span>
+                <span>•</span>
+                <span>⏱️ 2 hrs/time</span>
               </div>
-              <h3 className="text-2xl font-black text-[#183363] mb-3">
-                Mega Orca Class (24 + 4 แถมฟรี)
+              
+              <h3 className="text-3xl font-black text-[#183363] mb-1">
+                Mega Orca <span className="text-rose-500 text-lg font-bold">Class</span>
               </h3>
 
-              <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 mb-6">
+              <p className="text-xs text-slate-600 font-semibold mb-5 leading-relaxed bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
+                ก้าวสู่ความท้าทายขั้นกว่ากับคลาส Mega Orca! (สำหรับนักกีฬา เลเวล 1 ขึ้นไป) คลาสยกระดับทักษะสำหรับนักกีฬารุ่นเยาว์ เน้นการฝึกซ้อมที่เข้มข้น พัฒนาเทคนิคขั้นสูง เสริมความแข็งแรงเพื่อการแข่งขัน
+              </p>
+
+              {/* HIGHLIGHT PROMO BOX */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-amber-50 rounded-2xl border-2 border-amber-300 mb-5 relative">
+                <div className="absolute -top-3 right-3 bg-rose-500 text-white text-[10px] font-black px-3 py-0.5 rounded-full shadow-xs animate-pulse">
+                  🔥 HOT PROMOTION: Free 2 Times
+                </div>
+                
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-3xl font-black text-amber-800">฿14,400</span>
-                  <span className="text-xs font-bold text-slate-400 line-through">฿17,600</span>
-                  <span className="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 ml-auto">
-                    🎁 แถมฟรี 4 ครั้ง (มูลค่า 3,200฿)
+                  <span className="text-3xl font-black text-[#183363]">฿15,600</span>
+                  <span className="text-xs font-bold text-slate-400">/ 24 ครั้ง</span>
+                  <span className="text-xs font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-300 ml-auto">
+                    🎁 แถมฟรี 2 ครั้ง (รวม 26 ครั้ง)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 font-bold mt-2">
-                  ซื้อ 24 ครั้ง รับเพิ่มฟรีทันที 4 ครั้ง (รวมเป็น 28 ครั้ง)
+                <p className="text-[11px] text-amber-900 font-bold mt-1.5 flex items-center justify-between">
+                  <span>เฉลี่ยเพียง 650.- / ครั้ง</span>
+                  <span>อายุแพ็กเกจ 6 Months</span>
                 </p>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-bold text-slate-700 mb-8">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>ฝึกทักษะยิมนาสติกขั้นสูง ตีลังกา กายกรรม</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>เสริมสร้างกล้ามเนื้อและสมรรถภาพระดับนักกีฬา</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>แถมชั่วโมงเรียนฟรีคุ้มที่สุดประจำปี</span>
-                </li>
-              </ul>
+              {/* ALL PRICING TABLE MINI */}
+              <div className="space-y-1.5 mb-6 text-xs font-bold text-slate-700">
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">อัตราค่าเรียนทั้งหมด (Course Fees):</div>
+                
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>ทดลองเรียน 1 ครั้ง (Single Class)</span>
+                  <span className="font-extrabold text-[#183363]">800 THB</span>
+                </div>
+                
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>คลาส 6 ครั้ง (อายุ 2 เดือน)</span>
+                  <span className="font-extrabold text-[#183363]">4,300 THB <span className="text-[10px] text-slate-500 font-normal">(716.-/ครั้ง)</span></span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 px-3 bg-slate-50 rounded-lg">
+                  <span>คลาส 12 ครั้ง (อายุ 4 เดือน)</span>
+                  <span className="font-extrabold text-[#183363]">8,400 THB <span className="text-[10px] text-slate-500 font-normal">(700.-/ครั้ง)</span></span>
+                </div>
+              </div>
             </div>
 
             <button
-              onClick={() => handleSelectPromoClick('Mega Orca Class (24 + 4 แถมฟรี)')}
-              className="w-full py-3.5 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-700 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
+              onClick={() => handleSelectPromoClick('Mega Orca Class (24 ครั้ง แถมฟรี 2 ครั้ง - 15,600฿)')}
+              className="w-full py-3.5 bg-purple-700 text-white rounded-2xl font-black text-sm hover:bg-purple-800 shadow-md transition-all flex items-center justify-center space-x-2 group-hover:scale-[1.02]"
             >
-              <span>ลงทะเบียนรับสิทธิ์โปรนี้</span>
+              <span>สนใจลงทะเบียนจอง Mega Orca</span>
               <ArrowRight size={16} />
             </button>
           </div>
@@ -347,10 +417,168 @@ export default function LandingPageClient() {
         </div>
       </section>
 
+      {/* ABOUT US SECTION */}
+      <section id="about-section" className="w-full bg-slate-100/80 py-16 px-4 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+          <div className="space-y-4">
+            <div className="inline-block bg-sky-100 text-sky-800 font-black text-xs px-3.5 py-1.5 rounded-full border border-sky-200">
+              ℹ️ เกี่ยวกับเรา (ABOUT ORCA GYM)
+            </div>
+            <h2 className="text-3xl font-black text-[#183363]">
+              บริษัท ออก้ายิม จำกัด (ORCA GYM CO., LTD.)
+            </h2>
+            <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed">
+              สถาบันสอนและฝึกทักษะกีฬายิมนาสติก กายกรรม โยคะ การเต้นรำ ทุกรูปแบบ และเชียร์ลีดเดอร์ ให้แก่ เด็ก เยาวชน และบุคคลทั่วไป 
+              เพื่อพัฒนาศักยภาพทางร่างกาย การทรงตัว ความคล่องตัว และเสริมสร้างสมาธิความมั่นใจในตนเอง ปูพื้นฐานแน่นด้วยทีมโค้ชระดับมืออาชีพ
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-3 bg-white rounded-2xl border border-slate-200">
+                <div className="text-xl font-black text-sky-600 mb-0.5">100% Safe</div>
+                <div className="text-[11px] font-bold text-slate-600">อุปกรณ์ยิมมาตรฐานความปลอดภัยสูง</div>
+              </div>
+              <div className="p-3 bg-white rounded-2xl border border-slate-200">
+                <div className="text-xl font-black text-amber-600 mb-0.5">Pro Coaches</div>
+                <div className="text-[11px] font-bold text-slate-600">ดูแลใกล้ชิด ใส่ใจเด็กทุกคน</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border-2 border-slate-200 shadow-md space-y-4 text-xs font-bold text-slate-700">
+            <h3 className="text-base font-black text-[#183363] border-b pb-2">📍 ข้อมูลการติดต่อ (Contact Info)</h3>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <span className="text-base">🏢</span>
+                <div>
+                  <div className="font-extrabold text-slate-900">บริษัท ออก้ายิม จำกัด</div>
+                  <div className="text-[11px] font-normal text-slate-500">เลขทะเบียนนิติบุคคล: 0105569135935</div>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-base">📞</span>
+                <div>
+                  <div className="text-slate-500">เบอร์โทรศัพท์ติดต่อ (TEL):</div>
+                  <div className="font-extrabold text-sky-700 text-sm">081-234-5678</div>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-base">✉️</span>
+                <div>
+                  <div className="text-slate-500">อีเมล (Email):</div>
+                  <div className="font-extrabold text-sky-700">orcagymsys@gmail.com</div>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-base">🏠</span>
+                <div>
+                  <div className="text-slate-500">ที่ตั้งสถาบัน:</div>
+                  <div className="font-medium text-slate-700">289/240 ซอย ร่มเกล้า 6/1 แขวงมีนบุรี เขตมีนบุรี กรุงเทพมหานคร 10510</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ENROLLMENT STEPS SECTION */}
+      <section id="enrollment-section" className="w-full bg-white py-16 px-4 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto text-center space-y-3 mb-10">
+          <div className="inline-block bg-amber-100 text-amber-800 font-black text-xs px-3.5 py-1.5 rounded-full border border-amber-300">
+            📝 ขั้นตอนการสมัครเรียน (HOW TO ENROLL)
+          </div>
+          <h2 className="text-3xl font-black text-[#183363]">
+            สมัครเรียนง่ายๆ ใน 3 ขั้นตอน
+          </h2>
+        </div>
+
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center space-y-3 relative">
+            <div className="w-12 h-12 bg-sky-600 text-white font-black text-xl rounded-2xl flex items-center justify-center mx-auto shadow-md">1</div>
+            <h3 className="font-black text-[#183363] text-base">เลือกคลาสเรียน & โปรโมชั่น</h3>
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+              เลือกคลาส Orca Cubs (อายุ 4-10 ปี) หรือ Mega Orca (อายุ 5-15 ปี) ตามช่วงอายุและแพ็กเกจที่ต้องการ
+            </p>
+          </div>
+
+          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center space-y-3 relative">
+            <div className="w-12 h-12 bg-amber-500 text-white font-black text-xl rounded-2xl flex items-center justify-center mx-auto shadow-md">2</div>
+            <h3 className="font-black text-[#183363] text-base">กรอกข้อมูลติดต่อกลับ</h3>
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+              กรอกชื่อผู้ปกครอง เบอร์โทรศัพท์ และข้อมูลน้องในฟอร์มเพื่อให้เจ้าหน้าที่ประสานงานนัดหมาย
+            </p>
+          </div>
+
+          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center space-y-3 relative">
+            <div className="w-12 h-12 bg-emerald-600 text-white font-black text-xl rounded-2xl flex items-center justify-center mx-auto shadow-md">3</div>
+            <h3 className="font-black text-[#183363] text-base">รับ Username & จองคลาสเรียน</h3>
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+              ชำระเงินและรับ Username/Password จากแอดมิน เพื่อเข้าสู่ระบบจองรอบเวลาเรียนด้วยตนเอง
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* GALLERY SECTION */}
+      <section id="gallery-section" className="w-full bg-slate-50 py-16 px-4 border-t border-slate-200">
+        <div className="max-w-5xl mx-auto text-center space-y-3 mb-10">
+          <div className="inline-block bg-purple-100 text-purple-800 font-black text-xs px-3.5 py-1.5 rounded-full border border-purple-200">
+            🖼️ แกลลอรี่ภาพบรรยากาศ (ORCA GALLERY)
+          </div>
+          <h2 className="text-3xl font-black text-[#183363]">
+            ภาพบรรยากาศการเรียนและกิจกรรม ออก้ายิม
+          </h2>
+          <p className="text-xs sm:text-sm font-semibold text-slate-500">
+            รวมภาพความสนุกสนานและพัฒนาการการฝึกซ้อมกีฬายิมนาสติกของน้องๆ
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
+            <div className="h-36 bg-gradient-to-br from-sky-200 via-sky-100 to-amber-100 rounded-xl flex items-center justify-center text-4xl">
+              🤸‍♂️
+            </div>
+            <div className="text-xs font-bold text-[#183363]">การฝึกทรงตัวบนคานบาลานซ์</div>
+          </div>
+
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
+            <div className="h-36 bg-gradient-to-br from-amber-200 via-amber-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
+              🏆
+            </div>
+            <div className="text-xs font-bold text-[#183363]">การตีลังกาและกายกรรมเบื้องต้น</div>
+          </div>
+
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
+            <div className="h-36 bg-gradient-to-br from-purple-200 via-purple-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
+              🧘‍♀️
+            </div>
+            <div className="text-xs font-bold text-[#183363]">การยืดเหยียดและความคล่องตัว</div>
+          </div>
+
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs text-center space-y-2 group hover:scale-105 transition-transform">
+            <div className="h-36 bg-gradient-to-br from-emerald-200 via-emerald-100 to-sky-100 rounded-xl flex items-center justify-center text-4xl">
+              🥇
+            </div>
+            <div className="text-xs font-bold text-[#183363]">บรรยากาศทดสอบทักษะประจำปี</div>
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
-      <footer className="w-full bg-[#183363] text-white py-6 px-4 text-center text-xs font-semibold space-y-2">
-        <p>© 2026 ORCA GYMNASTICS CO., LTD. All Rights Reserved.</p>
-        <p className="text-slate-300">บริษัท ออก้ายิม จำกัด | สถาบันสอนยิมนาสติกเด็ก กายกรรม และพัฒนาการเคลื่อนไหว</p>
+      <footer className="w-full bg-[#183363] text-white py-8 px-4 text-center text-xs font-semibold space-y-3">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-blue-900 pb-6 text-slate-300">
+          <div className="flex items-center space-x-2">
+            <Image src="/images/logo.png" alt="Logo" width={36} height={36} className="object-contain" />
+            <span className="font-extrabold text-white text-sm">ORCA GYMNASTICS</span>
+          </div>
+          <div className="flex space-x-4 text-[11px]">
+            <span>📞 TEL: 081-234-5678</span>
+            <span>•</span>
+            <span>✉️ Email: orcagymsys@gmail.com</span>
+          </div>
+        </div>
+
+        <p className="text-slate-400 pt-2">© 2026 ORCA GYMNASTICS CO., LTD. All Rights Reserved.</p>
+        <p className="text-slate-300 font-normal">บริษัท ออก้ายิม จำกัด | สถาบันสอนยิมนาสติกเด็ก กายกรรม และพัฒนาการเคลื่อนไหว</p>
       </footer>
     </div>
   );
