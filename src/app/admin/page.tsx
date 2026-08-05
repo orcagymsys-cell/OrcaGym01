@@ -2,6 +2,6 @@
 
 import AdminPortal from '@/components/AdminPortal';
 
-export default function AdminLoginPage() {
+export default function AdminMainPage() {
   return <AdminPortal />;
 }
