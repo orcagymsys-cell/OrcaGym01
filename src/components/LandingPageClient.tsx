@@ -82,14 +82,12 @@ export default function LandingPageClient() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
           {/* Top-Left: Logo & Orca Gymnastics Text Under Logo */}
           <Link href="/" className="flex flex-col items-center group shrink-0">
-            <Image 
+            <img 
               src="/images/logo.png" 
               alt="ORCA GYMNASTICS" 
-              width={60} 
-              height={60} 
-              className="object-contain transition-transform group-hover:scale-105"
-              priority
+              className="w-[60px] h-[60px] object-contain transition-transform group-hover:scale-105"
             />
+
             <span 
               className="text-[12px] sm:text-[13px] font-bold text-[#183363] tracking-[0.18em] uppercase mt-0.5 group-hover:text-sky-600 transition-colors"
               style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
@@ -604,7 +602,8 @@ export default function LandingPageClient() {
       <footer className="w-full bg-[#183363] text-white py-8 px-4 text-center text-xs font-semibold space-y-3">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-blue-900 pb-6 text-slate-300">
           <div className="flex items-center space-x-2">
-            <Image src="/images/logo.png" alt="Logo" width={36} height={36} className="object-contain" />
+            <img src="/images/logo.png" alt="Logo" className="w-9 h-9 object-contain" />
+
             <span className="font-extrabold text-white text-sm">ORCA GYMNASTICS</span>
           </div>
           <div className="flex space-x-4 text-[11px]">

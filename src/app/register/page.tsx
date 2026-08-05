@@ -7,14 +7,12 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 font-sans">
       <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border border-slate-200 text-center space-y-6">
-        <div className="mx-auto w-32 h-32 relative">
-          <Image 
-            src="/images/logo.png" 
-            alt="ORCA GYMNASTICS" 
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img 
+          src="/images/logo.png" 
+          alt="ORCA GYMNASTICS" 
+          className="mx-auto w-32 h-32 object-contain"
+        />
+
 
         <div>
           <h1 className="text-xl font-black text-[#183363]">ORCA GYMNASTICS</h1>

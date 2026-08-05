@@ -36,15 +36,12 @@ export default function AdminLoginForm() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
       <div className="w-full max-w-md p-10 flex flex-col items-center bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
-        <div className="mb-6 flex justify-center">
-          <Image 
-            src="/images/logo_light.png" 
-            alt="ORCA GYMNASTICS" 
-            width={160} 
-            height={160} 
-            className="object-contain drop-shadow-md" 
-          />
-        </div>
+        <img 
+          src="/images/logo_light.png" 
+          alt="ORCA GYMNASTICS" 
+          className="w-40 h-40 object-contain mb-6 drop-shadow-md" 
+        />
+
         
         <h1 className="text-2xl font-bold text-white mb-2">ADMIN PORTAL</h1>
         <p className="text-slate-400 text-sm mb-8">Authorized Personnel Only</p>

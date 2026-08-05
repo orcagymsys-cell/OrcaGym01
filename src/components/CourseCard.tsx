@@ -104,15 +104,11 @@ export default function CourseCard({ course }: { course: GymClass }) {
 
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between min-w-0">
               <span className="text-xs text-slate-500 font-bold tracking-wider">ORCA GYMNASTICS</span>
-              <div className="w-10 h-10 relative flex items-center justify-center shrink-0">
-                <Image 
+                <img 
                   src="/images/logo.png" 
                   alt="ORCA" 
-                  width={40}
-                  height={40}
-                  className="object-contain" 
+                  className="w-10 h-10 object-contain" 
                 />
-              </div>
             </div>
           </div>
         </div>
@@ -165,14 +161,11 @@ export default function CourseCard({ course }: { course: GymClass }) {
             </h3>
           </div>
           
-          <div className="w-16 h-16 md:w-20 md:h-20 relative mt-0 lg:mt-2">
-            <Image 
-              src="/images/logo.png" 
-              alt="ORCA Logo" 
-              fill 
-              className="object-contain" 
-            />
-          </div>
+          <img 
+            src="/images/logo.png" 
+            alt="ORCA Logo" 
+            className="w-16 h-16 md:w-20 md:h-20 object-contain mt-0 lg:mt-2" 
+          />
         </div>
 
         {/* Right: Schedule Grid */}

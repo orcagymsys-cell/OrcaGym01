@@ -45,15 +45,12 @@ export default function LoginForm() {
         style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
       >
         
-        <div className="mb-4 relative w-32 h-32 sm:w-40 sm:h-40 transition-transform hover:scale-105 duration-300">
-          <Image 
-            src="/images/logo.png" 
-            alt="ORCA GYMNASTICS" 
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
+        <img 
+          src="/images/logo.png" 
+          alt="ORCA GYMNASTICS" 
+          className="w-32 h-32 sm:w-40 sm:h-40 object-contain mb-4 transition-transform hover:scale-105 duration-300"
+        />
+
         
         <h1 className="text-xl sm:text-2xl font-bold text-black mb-8 sm:mb-10 tracking-widest uppercase text-center">
           ORCA GYMNASTICS
