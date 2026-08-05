@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { UserPlus, Users, Calendar, Settings } from 'lucide-react';
 

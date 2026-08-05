@@ -80,18 +80,19 @@ function startTimesMatch(slotTime: string, matrixTime: string): boolean {
 }
 
 export default function AdminScheduleMatrix({ 
-  classes, 
-  schedules, 
+  classes = [], 
+  schedules = [], 
   bookings = [], 
   childrenData = [],
   parents = []
 }: { 
-  classes: GymClass[], 
-  schedules: Schedule[], 
-  bookings: Booking[],
-  childrenData: Child[],
+  classes?: GymClass[], 
+  schedules?: Schedule[], 
+  bookings?: Booking[],
+  childrenData?: Child[],
   parents?: User[]
 }) {
+
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCell, setSelectedCell] = useState<{ day: string, time: string, classes: { gymClass: GymClass, tag?: string }[] } | null>(null);
   const [bookingSearch, setBookingSearch] = useState('');
