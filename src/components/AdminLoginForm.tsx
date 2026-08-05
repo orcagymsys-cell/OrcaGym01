@@ -20,7 +20,8 @@ export default function AdminLoginForm() {
     setLoading(true);
 
     try {
-      const res = await login(username, 'admin');
+      const res = await login(username, 'admin', password);
+
       if (res?.error) {
         setError(res.error);
         setLoading(false);
