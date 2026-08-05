@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/admin/dashboard',
+        destination: '/admin/login',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
