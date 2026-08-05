@@ -2,10 +2,11 @@ name = "orcagym"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-main = ".vercel/output/static/_worker.js"
+main = ".open-next/worker.js"
 
 [assets]
-directory = ".vercel/output/static"
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 [build]
-command = "npx @cloudflare/next-on-pages"
+command = "npx opennextjs-cloudflare"
