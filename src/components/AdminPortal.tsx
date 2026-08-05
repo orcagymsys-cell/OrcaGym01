@@ -307,11 +307,28 @@ export default function AdminPortal() {
         )}
 
         {activeTab === 'audit' && (
-          <AdminAuditClient />
+          <AdminAuditClient 
+            initialAuditLogs={auditData || []} 
+            users={membersData.parents || []} 
+            childrenData={membersData.children || []} 
+            classes={classesList.length > 0 ? classesList : (membersData.classes || [])} 
+          />
         )}
 
         {activeTab === 'about' && (
-          <AdminAboutEditor initialData={aboutData} />
+          <AdminAboutEditor initialData={aboutData || {
+            gym_name: 'ORCA GYMNASTICS',
+            description: 'ยินดีต้อนรับสู่ ORCA GYM',
+            address: '',
+            contact_number: '',
+            email: '',
+            facebook_url: '',
+            line_id: '',
+            instagram_url: '',
+            bank_account_name: '',
+            bank_account_number: '',
+            bank_name: ''
+          }} />
         )}
       </main>
     </div>
