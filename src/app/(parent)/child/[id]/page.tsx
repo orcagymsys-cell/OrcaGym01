@@ -1,7 +1,9 @@
 import { getDb } from '@/lib/db';
-import { getUser } from '@/app/actions/user';
+import { getUser } from '@/lib/auth';
 import ChildBooking from '@/components/ChildBooking';
 import { redirect } from 'next/navigation';
+
+export const runtime = 'edge';
 
 
 export default async function ChildProfilePage(

@@ -3,6 +3,7 @@ import { getUser } from '@/app/actions/user';
 import ParentScheduleView from '@/components/ParentScheduleView';
 import { redirect } from 'next/navigation';
 
+export const runtime = 'edge';
 
 export default async function ParentSchedulePage() {
   const user = await getUser();

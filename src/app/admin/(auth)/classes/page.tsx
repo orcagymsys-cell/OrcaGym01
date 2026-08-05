@@ -4,6 +4,7 @@ import { Pencil, Trash2, Plus } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import PreviewCourseModal from '@/components/PreviewCourseModal';
 
+export const runtime = 'edge';
 
 export default async function AdminClassesPage() {
   const res = await getClasses();

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { UserPlus, Users, Calendar, Settings } from 'lucide-react';
 
+export const runtime = 'edge';
+
 
 export default function AdminDashboardPage() {
   return (

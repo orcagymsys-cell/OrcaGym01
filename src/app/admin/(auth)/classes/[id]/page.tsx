@@ -2,6 +2,7 @@ import { getClass } from '@/app/actions/admin-classes';
 import CourseEditor from '@/components/CourseEditor';
 import { redirect } from 'next/navigation';
 
+export const runtime = 'edge';
 
 export default async function AdminClassEditPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;

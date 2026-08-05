@@ -1,10 +1,12 @@
 import { getChildren } from '@/app/actions/children';
-import { getUser } from '@/app/actions/user';
+import { getUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
-import Image from 'next/image';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import DashboardClient from '@/components/DashboardClient';
+import Image from 'next/image';
 
+export const runtime = 'edge';
 
 export default async function DashboardPage() {
   const user = await getUser();
