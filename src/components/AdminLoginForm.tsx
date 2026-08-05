@@ -20,22 +20,26 @@ export default function AdminLoginForm() {
     setLoading(true);
 
     try {
-      const res = await login(username, 'admin', password);
-
-      if (res?.error) {
-        setError(res.error);
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role: 'admin' }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || data.error) {
+        setError(data.error || 'Authentication failed');
         setLoading(false);
-      } else if (res?.success) {
-        window.location.href = '/admin/dashboard';
       } else {
-        setError('Login failed. Please try again.');
-        setLoading(false);
+        window.location.href = '/admin/dashboard';
       }
     } catch (err: any) {
       setError(err?.message || 'An error occurred during admin login.');
       setLoading(false);
     }
   };
+
 
 
   return (

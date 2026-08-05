@@ -21,25 +21,30 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await login(username, 'parent');
-      if (res?.error) {
-        setError(res.error);
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, role: 'parent' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setError(data.error || 'Authentication failed');
         setLoading(false);
-      } else if (res?.success) {
-        if (res.first_login) {
+      } else {
+        if (data.first_login) {
           window.location.href = '/family/add';
         } else {
           window.location.href = '/dashboard';
         }
-      } else {
-        setError('Login failed. Please try again.');
-        setLoading(false);
       }
     } catch (err: any) {
       setError(err?.message || 'An error occurred during login.');
       setLoading(false);
     }
   };
+
 
 
   return (
