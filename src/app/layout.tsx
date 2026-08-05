@@ -1,44 +1,35 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 
-// 🟢 เพิ่มบรรทัดนี้เพื่อรองรับ Edge Runtime บน Cloudflare Pages
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "ORCA GYMNASTICS - ระบบจองคลาสเรียนยิมนาสติกเด็ก",
-  description: "สถาบันสอนและฝึกทักษะกีฬายิมนาสติกเด็ก ออก้ายิม (ORCA GYMNASTICS)",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-};
-
-export default function RootLayout({
+export default function ParentLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="th"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}
-    >
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-slate-50 text-slate-800 font-sans selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-8">
+      {/* Navigation Header */}
+      <header className="w-full max-w-5xl bg-[#183363] text-white rounded-t-xl overflow-hidden shadow-lg mb-8">
+        <nav className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-2">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+               <span className="font-bold text-lg">MENU</span>
+            </Link>
+          </div>
+          <div className="flex items-center space-x-6 text-sm font-semibold">
+            <Link href="/dashboard" className="hover:text-blue-200">HOME</Link>
+            <Link href="/classes" className="hover:text-blue-200">ORCA CLASSES & PRICING</Link>
+            <Link href="/schedule" className="hover:text-blue-200">SCHEDULE</Link>
+            <Link href="/about" className="hover:text-blue-200">ABOUT US</Link>
+            <LogoutButton className="hover:text-blue-200 uppercase font-semibold" />
+          </div>
+        </nav>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="w-full max-w-5xl bg-white rounded-xl shadow-md p-8 min-h-[500px]">
         {children}
-      </body>
-    </html>
+      </main>
+    </div>
   );
 }
