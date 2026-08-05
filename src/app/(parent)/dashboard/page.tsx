@@ -1,5 +1,5 @@
 import { getChildren } from '@/app/actions/children';
-import { getUser } from '@/lib/auth';
+import { getUser } from '@/app/actions/user';
 import { getDb } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';

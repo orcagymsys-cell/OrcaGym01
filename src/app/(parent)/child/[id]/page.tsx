@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db';
-import { getUser } from '@/lib/auth';
+import { getUser } from '@/app/actions/user';
 import ChildBooking from '@/components/ChildBooking';
 import { redirect } from 'next/navigation';
 
