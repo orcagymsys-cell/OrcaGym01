@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "npx opennextjs-cloudflare",
+    "build:worker": "npx opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint"
   },

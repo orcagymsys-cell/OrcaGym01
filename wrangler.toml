@@ -9,4 +9,4 @@ directory = ".open-next/assets"
 binding = "ASSETS"
 
 [build]
-command = "npx opennextjs-cloudflare"
+command = "npx opennextjs-cloudflare build"
