@@ -1,7 +1,6 @@
 import AdminScheduleMatrix from '@/components/AdminScheduleMatrix';
 import { getScheduleMatrix, getAdminMembersData } from '@/app/actions/admin';
 
-export const runtime = 'edge';
 
 
 export default async function AdminSchedulePage() {

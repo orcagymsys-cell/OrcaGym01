@@ -3,7 +3,6 @@ import { getUser } from '@/app/actions/user';
 import AdminAuditClient from '@/components/AdminAuditClient';
 import { redirect } from 'next/navigation';
 
-export const runtime = 'edge';
 
 export default async function AdminAuditPage() {
   const user = await getUser();
