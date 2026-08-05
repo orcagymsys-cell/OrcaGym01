@@ -4,7 +4,14 @@ import { getDb, saveDb } from '@/lib/db';
 import { getUser } from './user';
 import { revalidatePath } from 'next/cache';
 
+function safeRevalidate(path: string) {
+  try {
+    revalidatePath(path);
+  } catch (e) {}
+}
+
 // Mock simple ID generator
+
 const genId = () => Math.random().toString(36).substr(2, 9);
 
 export async function getAllChildren() {
@@ -87,10 +94,10 @@ export async function approveChild(
     db.auditLogs.unshift(auditLog);
 
     saveDb(db);
-    revalidatePath('/admin/members');
-    revalidatePath('/admin/audit');
-    revalidatePath('/dashboard');
-    revalidatePath('/schedule');
+    safeRevalidate('/admin/members');
+    safeRevalidate('/admin/audit');
+    safeRevalidate('/dashboard');
+    safeRevalidate('/schedule');
     return { success: true };
   }
   return { error: 'Child not found' };
@@ -141,9 +148,9 @@ export async function updateChildCourse(childId: string, data: { courseId?: stri
   }
 
   saveDb(db);
-  revalidatePath('/admin/members');
-  revalidatePath('/dashboard');
-  revalidatePath('/schedule');
+  safeRevalidate('/admin/members');
+  safeRevalidate('/dashboard');
+  safeRevalidate('/schedule');
   return { success: true };
 }
 
@@ -175,10 +182,10 @@ export async function adminCancelBooking(bookingId: string) {
     }
 
     saveDb(db);
-    revalidatePath('/admin/members');
-    revalidatePath('/admin/schedule');
-    revalidatePath('/dashboard');
-    revalidatePath('/schedule');
+    safeRevalidate('/admin/members');
+    safeRevalidate('/admin/schedule');
+    safeRevalidate('/dashboard');
+    safeRevalidate('/schedule');
   }
   
   return { success: true };
@@ -206,7 +213,7 @@ export async function addCoursesToChild(childId: string, amount: number) {
     });
     
     saveDb(db);
-    revalidatePath('/admin/members');
+    safeRevalidate('/admin/members');
     return { success: true };
   }
   return { error: 'Child not found' };
@@ -240,8 +247,8 @@ export async function updateAboutUs(data: any) {
   db.aboutUs = data;
   saveDb(db);
 
-  revalidatePath('/about');
-  revalidatePath('/admin/about');
+  safeRevalidate('/about');
+  safeRevalidate('/admin/about');
   return { success: true };
 }
 
@@ -350,8 +357,8 @@ export async function createParentAccount(data: {
   db.users.push(newUser);
   saveDb(db);
 
-  revalidatePath('/admin/members');
-  revalidatePath('/admin/audit');
+  safeRevalidate('/admin/members');
+  safeRevalidate('/admin/audit');
 
   return {
     success: true,
@@ -399,8 +406,8 @@ export async function updateParentAccount(userId: string, data: {
   }
 
   saveDb(db);
-  revalidatePath('/admin/members');
-  revalidatePath('/dashboard');
+  safeRevalidate('/admin/members');
+  safeRevalidate('/dashboard');
   return { success: true };
 }
 
