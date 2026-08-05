@@ -103,9 +103,8 @@ export default function AdminPortal() {
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col items-center py-4 md:py-6 md:h-screen md:sticky md:top-0 shrink-0">
         <div className="w-full px-4 flex items-center justify-between md:flex-col md:justify-center">
-          <div className="w-auto md:w-48 bg-[#183363] text-white px-4 py-2.5 rounded-xl flex items-center space-x-2 shadow-md">
-            <Home size={18} />
-            <span className="font-extrabold text-sm md:text-base tracking-wide">ORCA ADMIN</span>
+          <div className="w-auto md:w-48 flex items-center justify-center py-2">
+            <img src="/orca-logo.png" alt="ORCA GYMNASTICS" className="h-20 md:h-28 object-contain" />
           </div>
 
           <button 
