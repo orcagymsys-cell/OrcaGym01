@@ -22,21 +22,25 @@ export default function LoginForm() {
 
     try {
       const res = await login(username, 'parent');
-      if (res.error) {
+      if (res?.error) {
         setError(res.error);
-      } else {
+        setLoading(false);
+      } else if (res?.success) {
         if (res.first_login) {
-          router.push('/family/add');
+          window.location.href = '/family/add';
         } else {
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }
+      } else {
+        setError('Login failed. Please try again.');
+        setLoading(false);
       }
-    } catch (err) {
-      setError('An error occurred during login.');
-    } finally {
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred during login.');
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 sm:px-6 lg:px-8">

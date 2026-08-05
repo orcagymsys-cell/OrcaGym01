@@ -21,17 +21,21 @@ export default function AdminLoginForm() {
 
     try {
       const res = await login(username, 'admin');
-      if (res.error) {
+      if (res?.error) {
         setError(res.error);
+        setLoading(false);
+      } else if (res?.success) {
+        window.location.href = '/admin/dashboard';
       } else {
-        router.push('/admin/dashboard');
+        setError('Login failed. Please try again.');
+        setLoading(false);
       }
-    } catch (err) {
-      setError('An error occurred during admin login.');
-    } finally {
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred during admin login.');
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
