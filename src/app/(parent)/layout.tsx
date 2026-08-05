@@ -1,24 +1,11 @@
 import Link from 'next/link';
-import { getUser } from '@/app/actions/user';
-import { redirect } from 'next/navigation';
 import LogoutButton from '@/components/LogoutButton';
-import Image from 'next/image';
 
-export default async function ParentLayout({
+export default function ParentLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  if (user.role !== 'parent') {
-    redirect('/admin/dashboard');
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-8">
       {/* Navigation Header */}
@@ -26,7 +13,6 @@ export default async function ParentLayout({
         <nav className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-2">
             <Link href="/dashboard" className="flex items-center space-x-2">
-               {/* Small logo next to menu or HOME */}
                <span className="font-bold text-lg">MENU</span>
             </Link>
           </div>

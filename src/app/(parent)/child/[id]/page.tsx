@@ -1,17 +1,12 @@
 import { getDb } from '@/lib/db';
 import { getUser } from '@/app/actions/user';
 import ChildBooking from '@/components/ChildBooking';
-import { redirect } from 'next/navigation';
-
-export const runtime = 'edge';
-
-
 export default async function ChildProfilePage(
   props: { params: Promise<{ id: string }> }
 ) {
   const params = await props.params;
   const user = await getUser();
-  if (!user) redirect('/login');
+
 
   const db = getDb();
   const child = db.children.find(c => c.id === params.id && c.parent_id === user.id);

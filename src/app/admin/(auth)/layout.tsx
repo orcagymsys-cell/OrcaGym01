@@ -1,25 +1,12 @@
 import Link from 'next/link';
-import { getUser } from '@/app/actions/user';
-import { redirect } from 'next/navigation';
 import LogoutButton from '@/components/LogoutButton';
-import Image from 'next/image';
-import { Home, Users, Calendar, HelpCircle, LogOut, Package, ShieldCheck, Info } from 'lucide-react';
+import { Home, Users, Calendar, Package, ShieldCheck, Info } from 'lucide-react';
 
-export default async function AdminAuthLayout({
+export default function AdminAuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getUser();
-
-  if (!user) {
-    redirect('/admin/login');
-  }
-
-  if (user.role !== 'admin') {
-    redirect('/login'); // Parents shouldn't access admin
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row w-full">
       {/* Sidebar Navigation (Desktop) & Top Header Bar (Mobile) */}
