@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
+export const runtime = 'edge';
+
 export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4 font-sans">

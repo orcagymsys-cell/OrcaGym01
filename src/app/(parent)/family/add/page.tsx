@@ -3,6 +3,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
+export const runtime = 'edge';
+
 export const metadata: Metadata = {
   title: 'Add Family Member - ORCA GYMNASTICS',
 };

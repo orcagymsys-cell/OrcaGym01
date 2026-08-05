@@ -1,8 +1,4 @@
-import fs from 'fs';
-import path from 'path';
 import { DbSchema } from './types';
-
-const DB_PATH = path.join(process.cwd(), '.data', 'db.json');
 
 const defaultDb: DbSchema = {
   users: [
@@ -91,29 +87,19 @@ const defaultDb: DbSchema = {
     registration_number: '0105569135935',
     business_description: 'สถาบันสอนและฝึกทักษะกีฬายิมนาสติก กายกรรม โยคะ การเต้นรำ ทุกรูปแบบ และเชียร์ลีดเดอร์ ให้แก่ เด็ก เยาวชน และบุคคลทั่วไป เมื่อได้รับอนุญาตจากหน่วยงานที่เกี่ยวข้องแล้ว',
     address: '289/240 ซอย ร่มเกล้า 6/1 แขวงมีนบุรี เขตมีนบุรี กรุงเทพมหานคร 10510'
-  }
+  },
+  leads: []
 };
 
+// Global memory cache for Edge Runtime compatibility
+let memoryDb: DbSchema = defaultDb;
+
 export function getDb(): DbSchema {
-  if (!fs.existsSync(DB_PATH)) {
-    saveDb(defaultDb);
-    return defaultDb;
-  }
-  let data = fs.readFileSync(DB_PATH, 'utf-8');
-  if (data.charCodeAt(0) === 0xFEFF) {
-    data = data.slice(1);
-  }
-  try {
-    const parsed = JSON.parse(data);
-    if (!parsed.auditLogs) parsed.auditLogs = [];
-    return parsed;
-  } catch (err) {
-    console.error("Failed to parse db.json, resetting to defaultDb:", err);
-    saveDb(defaultDb);
-    return defaultDb;
-  }
+  if (!memoryDb.auditLogs) memoryDb.auditLogs = [];
+  if (!memoryDb.leads) memoryDb.leads = [];
+  return memoryDb;
 }
 
 export function saveDb(data: DbSchema) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+  memoryDb = data;
 }

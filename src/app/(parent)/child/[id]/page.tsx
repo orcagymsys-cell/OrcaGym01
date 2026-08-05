@@ -3,6 +3,8 @@ import { getUser } from '@/app/actions/user';
 import ChildBooking from '@/components/ChildBooking';
 import { redirect } from 'next/navigation';
 
+export const runtime = 'edge';
+
 export default async function ChildProfilePage(
   props: { params: Promise<{ id: string }> }
 ) {
