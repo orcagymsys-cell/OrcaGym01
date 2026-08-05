@@ -8,4 +8,4 @@ main = ".vercel/output/static/_worker.js/index.js"
 directory = ".vercel/output/static"
 
 [build]
-command = "npx @cloudflare/next-on-pages"
+command = "npx @cloudflare/next-on-pages && node -e \"require('fs').copyFileSync('.assetsignore', '.vercel/output/static/.assetsignore')\""
