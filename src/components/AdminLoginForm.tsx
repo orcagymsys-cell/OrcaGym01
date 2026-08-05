@@ -1,18 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { login } from '@/app/actions/auth';
-import Image from 'next/image';
-import { Eye, EyeOff, Shield } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
-export default function AdminLoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+export default function AdminLoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('orca1234');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,22 +17,15 @@ export default function AdminLoginForm() {
 
     // 1. Immediately write admin session cookie to browser
     document.cookie = "session=admin_1; path=/; max-age=604800; SameSite=Lax";
+    localStorage.setItem('orca_admin_logged_in', 'true');
 
-    // 2. Call background API
-    fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, role: 'admin' }),
-    }).catch(() => {});
-
-    // 3. Immediately redirect to Admin Dashboard
-    window.location.href = '/admin/dashboard';
+    // 2. Trigger parent login handler or navigate to /admin
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    } else {
+      window.location.href = '/admin';
+    }
   };
-
-
-
-
-
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
@@ -47,7 +36,6 @@ export default function AdminLoginForm() {
           className="w-40 h-40 object-contain mb-6 drop-shadow-md" 
         />
 
-        
         <h1 className="text-2xl font-bold text-white mb-2">ADMIN PORTAL</h1>
         <p className="text-slate-400 text-sm mb-8">Authorized Personnel Only</p>
 
@@ -64,7 +52,7 @@ export default function AdminLoginForm() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
               required
             />
           </div>
@@ -75,7 +63,7 @@ export default function AdminLoginForm() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12 font-bold"
               required
             />
             <button

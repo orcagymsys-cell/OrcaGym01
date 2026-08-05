@@ -94,49 +94,9 @@ export default function AdminPortal() {
   }
 
   if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 text-white text-center">
-          <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-            <Home className="text-blue-400" size={40} />
-          </div>
-          <h1 className="text-2xl font-black text-white mb-1">ADMIN PORTAL</h1>
-          <p className="text-xs text-slate-400 mb-6">ระบบจัดการสำหรับผู้ดูแลระบบ ORCA GYM</p>
-
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            handleLoginSuccess();
-          }} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Username</label>
-              <input 
-                type="text" 
-                defaultValue="admin"
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm font-bold"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Password</label>
-              <input 
-                type="password" 
-                defaultValue="orca1234"
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 text-sm font-bold"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-extrabold text-sm transition-all shadow-lg active:scale-95 mt-2"
-            >
-              เข้าสู่ระบบ (Log in)
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+    return <AdminLoginForm onLoginSuccess={handleLoginSuccess} />;
   }
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row w-full">
