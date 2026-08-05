@@ -5,6 +5,8 @@ import Link from 'next/link';
 import DashboardClient from '@/components/DashboardClient';
 import Image from 'next/image';
 
+export const runtime = 'edge';
+
 export default async function DashboardPage() {
 
   const user = await getUser();
