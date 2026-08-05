@@ -1,6 +1,5 @@
 import { getDb } from '@/lib/db';
 
-export const runtime = 'edge';
 
 export default async function AboutUsPage() {
   const db = getDb();

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
-export const runtime = 'edge';
 
 export default function RegisterPage() {
   return (

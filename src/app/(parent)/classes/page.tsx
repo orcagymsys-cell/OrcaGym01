@@ -2,7 +2,6 @@ import React from 'react';
 import { getDb } from '@/lib/db';
 import CourseCard from '@/components/CourseCard';
 
-export const runtime = 'edge';
 
 export default async function ClassesPage() {
   const db = getDb();

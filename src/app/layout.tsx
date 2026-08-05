@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 // 🟢 เพิ่มบรรทัดนี้เพื่อรองรับ Edge Runtime บน Cloudflare Pages
-export const runtime = 'edge';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

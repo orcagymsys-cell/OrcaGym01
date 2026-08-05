@@ -1,7 +1,6 @@
 import { getAboutUs } from '@/app/actions/admin';
 import AdminAboutEditor from '@/components/AdminAboutEditor';
 
-export const runtime = 'edge';
 
 export default async function AdminAboutPage() {
   const aboutUsData = await getAboutUs();
