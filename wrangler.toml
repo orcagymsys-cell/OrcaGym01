@@ -2,10 +2,4 @@ name = "orcagym"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-main = ".vercel/output/static/_worker.js/index.js"
-
-[assets]
-directory = ".vercel/output/static"
-
-[build]
-command = "npx @cloudflare/next-on-pages && node -e \"require('fs').copyFileSync('.assetsignore', '.vercel/output/static/.assetsignore')\""
+pages_build_output_dir = ".vercel/output/static"
