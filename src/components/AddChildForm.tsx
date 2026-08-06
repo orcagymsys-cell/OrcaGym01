@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { addChild } from '@/app/actions/children';
+import { supabase } from '@/lib/supabase';
 
 export default function AddChildForm() {
   const [fullName, setFullName] = useState('');
@@ -31,19 +31,53 @@ export default function AddChildForm() {
     setLoading(true);
     setError('');
 
-    const res = await (addChild as any)({ 
-      full_name: fullName, 
-      nickname, 
-      dob, 
-      gender, 
-      photo_url: photoUrl
-    });
-    
-    if (res.error) {
-      setError(res.error);
+    try {
+      const cookies = document.cookie.split('; ');
+      const sessionCookie = cookies.find(c => c.startsWith('session='));
+      if (!sessionCookie) throw new Error('Not authorized. Please login again.');
+      const userId = sessionCookie.split('=')[1];
+
+      const { data: dbUser } = await supabase.from('users').select('*').eq('id', userId).single();
+      if (!dbUser) throw new Error('User not found');
+
+      const maxAllowed = dbUser.max_children_allowed || 10;
+      const { data: currentChildren } = await supabase.from('children').select('id').eq('parent_id', userId);
+      
+      if (currentChildren && currentChildren.length >= maxAllowed) {
+        throw new Error(`คุณลงทะเบียนบุตรหลานครบตามจำนวนที่กำหนดแล้ว (${maxAllowed} คน)`);
+      }
+
+      const initialClasses = dbUser.purchased_classes || 0;
+
+      const newChild = {
+        id: `child_${Date.now()}`,
+        parent_id: userId,
+        full_name: fullName,
+        nickname,
+        dob,
+        gender,
+        photo_url: photoUrl || '',
+        assigned_course_id: '',
+        assigned_course_title: 'รอ Admin เลือกคลาส & อนุมัติ',
+        course_approval_status: 'pending',
+        total_classes: initialClasses,
+        used_classes: 0,
+        remaining_classes: initialClasses,
+        expiry_date: '',
+        status: 'pending'
+      };
+
+      const { error: insertError } = await supabase.from('children').insert([newChild]);
+      if (insertError) throw insertError;
+
+      if (dbUser.first_login) {
+        await supabase.from('users').update({ first_login: false }).eq('id', userId);
+      }
+      
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      setError(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
       setLoading(false);
-    } else {
-      router.push('/dashboard');
     }
   };
 
