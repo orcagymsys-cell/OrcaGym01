@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Child, User, GymClass } from '@/lib/types';
@@ -41,6 +41,11 @@ export default function AdminMembersClient({
   const [parents, setParents] = useState<User[]>(initialParents);
   const [activeTab, setActiveTab] = useState<'parents' | 'children'>('parents');
   const [courseFilter, setCourseFilter] = useState<string>('all');
+
+  useEffect(() => {
+    setChildren(initialChildren);
+    setParents(initialParents);
+  }, [initialChildren, initialParents]);
   
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [addAmount, setAddAmount] = useState(10);

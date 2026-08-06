@@ -40,13 +40,15 @@ export default function AdminPortal() {
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if session cookie exists or localStorage login state
-    const hasSession = document.cookie.includes('session=') || localStorage.getItem('orca_admin_logged_in') === 'true';
-    if (hasSession) {
-      setIsLoggedIn(true);
-      loadAllData();
-    }
-    setLoading(false);
+    const checkAuthAndLoad = async () => {
+      const hasSession = document.cookie.includes('session=') || localStorage.getItem('orca_admin_logged_in') === 'true';
+      if (hasSession) {
+        setIsLoggedIn(true);
+        await loadAllData();
+      }
+      setLoading(false);
+    };
+    checkAuthAndLoad();
   }, []);
 
   const loadAllData = async () => {
