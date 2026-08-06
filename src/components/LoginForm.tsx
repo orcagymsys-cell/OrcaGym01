@@ -21,24 +21,26 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      document.cookie = "session=parent_1; path=/; max-age=604800; SameSite=Lax";
-      
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, role: 'parent' }),
+        body: JSON.stringify({ username, password, role: 'parent' }),
       });
 
-      const data = await res.json().catch(() => ({ success: true }));
+      const data = await res.json().catch(() => ({ error: 'Invalid response from server' }));
 
-      if (data?.user?.id) {
-        document.cookie = `session=${data.user.id}; path=/; max-age=604800; SameSite=Lax`;
+      if (res.ok && data?.success) {
+        if (data.user?.id) {
+          document.cookie = `session=${data.user.id}; path=/; max-age=604800; SameSite=Lax`;
+        }
+        window.location.href = data.user?.first_login ? '/family/add' : '/dashboard';
+      } else {
+        setError(data?.error || 'เข้าสู่ระบบไม่สำเร็จ');
+        setLoading(false);
       }
-
-      window.location.href = data?.user?.first_login ? '/family/add' : '/dashboard';
     } catch (err: any) {
-      document.cookie = "session=parent_1; path=/; max-age=604800; SameSite=Lax";
-      window.location.href = '/dashboard';
+      setError(err.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      setLoading(false);
     }
   };
 

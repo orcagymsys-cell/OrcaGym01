@@ -138,35 +138,95 @@ export default function AdminMembersClient({
     setLoading(true);
     const { childId, courseId, purchasedClasses, bonusClasses, amountPaid, paymentRefNo, paymentSlipUrl, remark } = approvingChildModal;
 
-    const res = await approveChildCourse(
-      childId, 
-      courseId, 
-      purchasedClasses, 
-      bonusClasses,
-      { amountPaid, paymentRefNo, paymentSlipUrl, remark }
-    );
-
-    if (res.success) {
+    try {
       const targetClass = classes.find(c => c.id === courseId);
       const courseTitle = targetClass?.title || targetClass?.name || 'Orca Cubs Class';
+      const total = purchasedClasses + bonusClasses;
+
+      // 1. Get current child to find parent_id
+      const { data: child } = await supabase.from('children').select('parent_id, full_name, nickname').eq('id', childId).single();
+      if (!child) throw new Error('Child not found');
+
+      // 2. Update user's courses_purchased
+      const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+      if (parentUser) {
+        if (!parentUser.courses_purchased) parentUser.courses_purchased = [];
+        let familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === courseId);
+        if (!familyCourse) {
+          familyCourse = {
+            class_id: courseId,
+            class_title: courseTitle,
+            purchased_classes: purchasedClasses,
+            bonus_classes: bonusClasses,
+            total_classes: total,
+            used_classes: 0,
+            remaining_classes: total
+          };
+          parentUser.courses_purchased.push(familyCourse);
+        } else {
+          familyCourse.purchased_classes = purchasedClasses;
+          familyCourse.bonus_classes = bonusClasses;
+          familyCourse.total_classes = total;
+          familyCourse.remaining_classes = total;
+        }
+        await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+      }
+
+      // 3. Update child
+      const { error } = await supabase.from('children').update({
+        assigned_course_id: courseId,
+        assigned_course_title: courseTitle,
+        total_classes: total,
+        remaining_classes: total,
+        status: 'approved',
+        course_approval_status: 'approved'
+      }).eq('id', childId);
+      
+      if (error) throw error;
+
+      // 4. Audit Log
+      const auditLog = {
+        id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        admin_id: 'admin_1', // Assuming admin is doing this, could get from session but hardcoded is okay for now or pass via props
+        admin_name: 'Admin',
+        action_type: 'APPROVE_COURSE',
+        target_user_id: parentUser?.id,
+        target_user_name: parentUser?.full_name || 'ผู้ปกครอง',
+        target_child_id: childId,
+        target_child_name: `${child.full_name} (น้อง ${child.nickname})`,
+        course_id: courseId,
+        course_name: courseTitle,
+        purchased_classes: purchasedClasses,
+        bonus_classes: bonusClasses,
+        total_classes: total,
+        remaining_classes: total,
+        amount_paid: amountPaid || 0,
+        payment_slip_url: paymentSlipUrl || '',
+        payment_ref_no: paymentRefNo || '',
+        remark: remark || 'อนุมัติสิทธิ์คลาสเรียน'
+      };
+      await supabase.from('audit_logs').insert([auditLog]);
+
       setChildren(children.map(c => 
         c.id === childId 
           ? { 
               ...c, 
               assigned_course_id: courseId,
               assigned_course_title: courseTitle,
-              total_classes: purchasedClasses + bonusClasses,
-              remaining_classes: purchasedClasses + bonusClasses,
+              total_classes: total,
+              remaining_classes: total,
               status: 'approved', 
               course_approval_status: 'approved' 
             } 
           : c
       ));
       setApprovingChildModal(null);
-      router.refresh();
-    } else {
-      alert(res.error || 'เกิดข้อผิดพลาดในการอนุมัติสิทธิ์คลาส');
+      alert('✅ อนุมัติและล็อคคอร์สเรียบร้อยแล้ว (Approved successfully)');
+    } catch (e: any) {
+      alert('❌ ' + (e.message || 'เกิดข้อผิดพลาดในการอนุมัติคอร์ส'));
     }
+    
     setLoading(false);
   };
 

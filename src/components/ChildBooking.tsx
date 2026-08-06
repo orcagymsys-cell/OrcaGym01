@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Child, GymClass, Schedule, Booking, User, toISODateString, isSameTimeSlot } from '@/lib/types';
-import { bookClass, cancelBooking, getLiveSlotCapacities } from '@/app/actions/booking';
+import { getLiveSlotCapacities } from '@/app/actions/booking';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
@@ -271,24 +272,98 @@ export default function ChildBooking({
     setLoading(true);
     setError('');
 
-    const res = await bookClass(child.id, selectedCourse.id, selectedTime, selectedDate);
-    if (res.error) {
-      setError(res.error);
-    } else {
-      router.refresh();
+    try {
+      const targetISODate = toISODateString(selectedDate);
+      const { data: gymClass } = await supabase.from('classes').select('*').eq('id', selectedCourse.id).single();
+      if (!gymClass) { throw new Error('Invalid class'); }
+
+      const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+      if (!parentUser) { throw new Error('Parent not found'); }
+
+      let familyCourse = parentUser.courses_purchased?.find((cp: any) => cp.class_id === selectedCourse.id);
+      if (!familyCourse || familyCourse.remaining_classes <= 0) {
+        throw new Error(`ชั่วโมงเรียนคลาส ${gymClass.title || gymClass.name} ในตะกร้าครอบครัวหมดแล้ว`);
+      }
+
+      const { data: existingChildBookings } = await supabase.from('bookings').select('*').eq('child_id', child.id).neq('status', 'cancelled');
+      const childCollision = existingChildBookings?.some(b => toISODateString(b.date) === targetISODate && isSameTimeSlot(b.time_slot || b.timeSlot || '', selectedTime));
+      if (childCollision) {
+        throw new Error(`น้อง ${child.nickname} มีการจองคลาสเรียนในวันที่ ${selectedDate} รอบเวลา ${selectedTime} ไว้แล้ว ไม่สามารถจองซ้ำได้`);
+      }
+
+      const { data: classBookings } = await supabase.from('bookings').select('*').neq('status', 'cancelled');
+      const existingBookings = classBookings?.filter(b => (b.class_id === selectedCourse.id || b.schedule_id === selectedCourse.id) && toISODateString(b.date) === targetISODate && isSameTimeSlot(b.time_slot || b.timeSlot || '', selectedTime)) || [];
+      
+      if (existingBookings.length >= gymClass.capacity) {
+        throw new Error(`คลาสเรียน ${gymClass.title || gymClass.name} ในรอบเวลา ${selectedTime} ของวันที่ ${selectedDate} เต็มแล้ว`);
+      }
+
+      const newBooking = {
+        id: `bk_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        child_id: child.id,
+        class_id: selectedCourse.id,
+        schedule_id: selectedCourse.id,
+        time_slot: selectedTime,
+        date: selectedDate,
+        status: 'approved'
+      };
+
+      familyCourse.remaining_classes -= 1;
+      familyCourse.used_classes += 1;
+
+      const { error: userUpdateError } = await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+      if (userUpdateError) throw userUpdateError;
+
+      const { error: childUpdateError } = await supabase.from('children').update({ remaining_classes: familyCourse.remaining_classes }).eq('id', child.id);
+      if (childUpdateError) throw childUpdateError;
+
+      const { error: bookingError } = await supabase.from('bookings').insert([newBooking]);
+      if (bookingError) throw bookingError;
+
+      alert('✅ จองคลาสสำเร็จ (Booking successful)');
+      
+      // Update local state temporarily so UI updates instantly
+      if (liveBookings) {
+        setLiveBookings([...liveBookings, newBooking as any]);
+      } else if (allBookings) {
+        setLiveBookings([...allBookings, newBooking as any]);
+      }
+      
       setSelectedDate('');
       setSelectedTime('');
+      router.refresh();
+    } catch (e: any) {
+      setError(e.message || 'เกิดข้อผิดพลาดในการจองคลาส');
     }
+
     setLoading(false);
   };
 
   const handleCancel = async (bookingId: string) => {
     if (confirm('คุณต้องการยกเลิกการจองคลาสเรียนนี้ใช่หรือไม่? (ต้องทำล่วงหน้า 1 วัน)')) {
-      const res = await cancelBooking(bookingId);
-      if (res.error) {
-        alert(res.error);
-      } else {
+      try {
+        const { data: booking } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
+        if (!booking) throw new Error('Booking not found');
+
+        const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+        if (parentUser && parentUser.courses_purchased) {
+          const targetClassId = booking.class_id || booking.schedule_id;
+          const familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === targetClassId);
+          if (familyCourse) {
+            familyCourse.remaining_classes += 1;
+            familyCourse.used_classes = Math.max(0, familyCourse.used_classes - 1);
+            
+            await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+            await supabase.from('children').update({ remaining_classes: familyCourse.remaining_classes }).eq('id', child.id);
+          }
+        }
+
+        await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+        
+        alert('✅ ยกเลิกการจองสำเร็จ (Booking cancelled)');
         router.refresh();
+      } catch (e: any) {
+        alert('❌ ' + (e.message || 'เกิดข้อผิดพลาดในการยกเลิก'));
       }
     }
   };

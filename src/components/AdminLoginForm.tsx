@@ -15,15 +15,29 @@ export default function AdminLoginForm({ onLoginSuccess }: { onLoginSuccess?: ()
     setError('');
     setLoading(true);
 
-    // 1. Immediately write admin session cookie to browser
-    document.cookie = "session=admin_1; path=/; max-age=604800; SameSite=Lax";
-    localStorage.setItem('orca_admin_logged_in', 'true');
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role: 'admin' }),
+      });
 
-    // 2. Trigger parent login handler or navigate to /admin
-    if (onLoginSuccess) {
-      onLoginSuccess();
-    } else {
-      window.location.href = '/admin';
+      const data = await res.json().catch(() => ({ error: 'Invalid response from server' }));
+
+      if (res.ok && data?.success) {
+        localStorage.setItem('orca_admin_logged_in', 'true');
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          window.location.href = '/admin';
+        }
+      } else {
+        setError(data?.error || 'Login failed');
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Server connection error');
+      setLoading(false);
     }
   };
 

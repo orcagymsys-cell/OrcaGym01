@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GymClass, Schedule, Booking, Child, User, toISODateString } from '@/lib/types';
-import { adminCancelBooking } from '@/app/actions/admin';
+import { supabase } from '@/lib/supabase';
 import { Calendar as CalendarIcon, Users } from 'lucide-react';
 
 function parseDaysFromLabel(label?: string): string[] {
@@ -97,6 +97,36 @@ export default function AdminScheduleMatrix({
   const [selectedCell, setSelectedCell] = useState<{ day: string, time: string, classes: { gymClass: GymClass, tag?: string }[] } | null>(null);
   const [bookingSearch, setBookingSearch] = useState('');
   const router = useRouter();
+
+  const handleAdminCancelBooking = async (bookingId: string) => {
+    try {
+      const { data: booking } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
+      if (!booking) throw new Error('Booking not found');
+
+      const { data: child } = await supabase.from('children').select('*').eq('id', booking.child_id).single();
+      if (!child) throw new Error('Child not found');
+
+      const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+      if (parentUser && parentUser.courses_purchased) {
+        const targetClassId = booking.class_id || booking.schedule_id;
+        const familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === targetClassId);
+        if (familyCourse) {
+          familyCourse.remaining_classes += 1;
+          familyCourse.used_classes = Math.max(0, familyCourse.used_classes - 1);
+          await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+          await supabase.from('children').update({ remaining_classes: familyCourse.remaining_classes }).eq('id', child.id);
+        }
+      }
+
+      const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+      if (error) throw error;
+      
+      alert('✅ ยกเลิกการจองโดย Admin สำเร็จ');
+      router.refresh();
+    } catch (e: any) {
+      alert('❌ ' + (e.message || 'เกิดข้อผิดพลาดในการยกเลิก'));
+    }
+  };
 
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   const timeslots = ['09:00-10:30', '10:30-12:00', '12:00-13:30', '13:00-14:30', '14:30-16:00', '16:00-17:00', '17:30-19:30'];
@@ -436,9 +466,7 @@ export default function AdminScheduleMatrix({
                               <button
                                 onClick={async () => {
                                   if (confirm(`คุณต้องการยกเลิกการจองคลาสนี้ของ น้อง ${child?.nickname || ''} ใช่หรือไม่? (ยกเลิกโดย Admin ไม่ติดเงื่อนไข 1 วัน)`)) {
-                                    const res = await adminCancelBooking(b.id);
-                                    if (res.error) alert(res.error);
-                                    else router.refresh();
+                                    await handleAdminCancelBooking(b.id);
                                   }
                                 }}
                                 className="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 rounded-lg font-bold text-xs transition-colors"
@@ -569,15 +597,12 @@ export default function AdminScheduleMatrix({
                                 ✅ Booked (จองเรียนแล้ว)
                               </span>
                             )}
-                          </td>
                           <td className="p-3.5 text-center">
                             {!isCancelled ? (
                               <button
                                 onClick={async () => {
-                                  if (confirm(`คุณต้องการยกเลิกการจองคลาสนี้ของ น้อง ${child?.nickname || ''} ใช่หรือไม่? (ยกเลิกโดย Admin ไม่ติดเงื่อนไข 1 วัน)`)) {
-                                    const res = await adminCancelBooking(bk.id);
-                                    if (res.error) alert(res.error);
-                                    else router.refresh();
+                                  if (confirm(`คุณต้องการยกเลิกการจองคลาสนี้ของ น้อง ${child?.nickname || ''} ใช่หรือไม่?`)) {
+                                    await handleAdminCancelBooking(bk.id);
                                   }
                                 }}
                                 className="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 rounded-lg font-bold text-xs transition-colors"

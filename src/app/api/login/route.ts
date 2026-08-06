@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
@@ -21,18 +22,39 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch (e) {
-      body = {};
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    const role = body?.role || 'admin';
-    const userId = role === 'admin' ? 'admin_1' : 'parent_1';
+    const { username, password } = body;
+
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+    }
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username.trim())
+      .single();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ (User not found)' }, { status: 401 });
+    }
+
+    if (password && user.password && password.trim() !== user.password) {
+      return NextResponse.json({ error: 'รหัสผ่านไม่ถูกต้อง (Invalid password)' }, { status: 401 });
+    }
 
     const response = NextResponse.json({
       success: true,
-      user: { id: userId, role: role, first_login: false }
+      user: { 
+        id: user.id, 
+        role: user.role, 
+        first_login: user.first_login 
+      }
     });
 
-    response.cookies.set('session', userId, {
+    response.cookies.set('session', user.id, {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       sameSite: 'lax',
@@ -40,11 +62,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (e: any) {
-    const response = NextResponse.json({
-      success: true,
-      user: { id: 'admin_1', role: 'admin', first_login: false }
-    });
-    return response;
+    return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
 

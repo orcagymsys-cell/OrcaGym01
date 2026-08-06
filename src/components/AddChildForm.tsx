@@ -12,6 +12,7 @@ export default function AddChildForm({ userId }: { userId: string }) {
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,8 +35,8 @@ export default function AddChildForm({ userId }: { userId: string }) {
     try {
       if (!userId) throw new Error('Not authorized. Please login again.');
 
-      const { data: dbUser } = await supabase.from('users').select('*').eq('id', userId).single();
-      if (!dbUser) throw new Error('User not found');
+      const { data: dbUser, error: userError } = await supabase.from('users').select('*').eq('id', userId).single();
+      if (!dbUser) throw new Error(`User not found for ID: ${userId}. Error: ${userError?.message || 'none'}`);
 
       const maxAllowed = dbUser.max_children_allowed || 10;
       const { data: currentChildren } = await supabase.from('children').select('id').eq('parent_id', userId);
@@ -162,17 +163,27 @@ export default function AddChildForm({ userId }: { userId: string }) {
           </div>
         </div>
         
-        <div className="mt-6 mb-6">
-          <a href="#" className="text-xs sm:text-sm font-bold text-[#1a2d5c] underline underline-offset-4 decoration-1 hover:text-blue-800">
-            + Add Another Child
-          </a>
+        <div className="w-full max-w-sm mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-1 w-4 h-4 text-[#1a2d5c] rounded border-gray-300 focus:ring-[#1a2d5c]"
+            />
+            <span className="text-xs text-slate-700 leading-tight">
+              ฉันยอมรับ <a href="#" className="text-blue-600 underline">ข้อตกลงและเงื่อนไขการใช้บริการ</a> (I accept the terms and conditions)
+            </span>
+          </label>
         </div>
         
         <div className="flex justify-center w-full">
           <button
             type="submit"
-            disabled={loading}
-            className="w-32 py-2 text-white bg-[#1a2d5c] rounded-full hover:bg-[#111d3d] focus:outline-none font-bold shadow-[0px_3px_0px_0px_#ef4444,0px_3px_0px_1px_#1a2d5c] border border-[#1a2d5c] active:translate-y-1 active:shadow-[0px_0px_0px_0px_#ef4444] disabled:opacity-50 transition-all"
+            disabled={loading || !acceptedTerms}
+            className={`w-32 py-2 text-white rounded-full focus:outline-none font-bold shadow-[0px_3px_0px_0px_#ef4444,0px_3px_0px_1px_#1a2d5c] border border-[#1a2d5c] active:translate-y-1 active:shadow-[0px_0px_0px_0px_#ef4444] transition-all ${
+              !acceptedTerms ? 'bg-slate-400 border-slate-500 shadow-none cursor-not-allowed' : 'bg-[#1a2d5c] hover:bg-[#111d3d]'
+            }`}
           >
             {loading ? 'Wait...' : 'Done'}
           </button>

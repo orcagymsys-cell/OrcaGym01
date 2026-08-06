@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Child, GymClass, Schedule, Booking, User } from '@/lib/types';
 import Link from 'next/link';
 import { Calendar, Clock, ChevronRight } from 'lucide-react';
-import { cancelBooking } from '@/app/actions/booking';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 function parseDayCode(dateStr: string): string {
@@ -156,11 +156,32 @@ export default function ParentScheduleView({
     }
 
     if (confirm('คุณต้องการยกเลิกการจองคลาสเรียนนี้ใช่หรือไม่? (ต้องทำล่วงหน้าอย่างน้อย 1 วัน)')) {
-      const res = await cancelBooking(bookingId);
-      if (res.error) {
-        alert(res.error);
-      } else {
+      try {
+        const { data: booking } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
+        if (!booking) throw new Error('Booking not found');
+
+        const { data: child } = await supabase.from('children').select('*').eq('id', booking.child_id).single();
+        if (!child) throw new Error('Child not found');
+
+        const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+        if (parentUser && parentUser.courses_purchased) {
+          const targetClassId = booking.class_id || booking.schedule_id;
+          const familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === targetClassId);
+          if (familyCourse) {
+            familyCourse.remaining_classes += 1;
+            familyCourse.used_classes = Math.max(0, familyCourse.used_classes - 1);
+            
+            await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+            await supabase.from('children').update({ remaining_classes: familyCourse.remaining_classes }).eq('id', child.id);
+          }
+        }
+
+        await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
+        
+        alert('✅ ยกเลิกการจองสำเร็จ');
         router.refresh();
+      } catch (e: any) {
+        alert('❌ ' + (e.message || 'เกิดข้อผิดพลาดในการยกเลิก'));
       }
     }
   };
