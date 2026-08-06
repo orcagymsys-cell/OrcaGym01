@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function AddFamilyMemberPage() {
   return (
-    <div className="relative -mt-4 sm:-mt-6">
+    <div className="relative pt-4 sm:pt-6">
       <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
         <Link 
           href="/dashboard" 
