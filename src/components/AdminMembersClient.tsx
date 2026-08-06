@@ -931,7 +931,12 @@ ${coursesStr}
                   <div><span className="font-bold text-slate-500">Username:</span> <span className="font-black text-[#183363]">{createdResult.username}</span></div>
                   <div><span className="font-bold text-slate-500">Password:</span> <span className="font-black text-[#183363]">{createdResult.password || 'orca1234'}</span></div>
                   <div><span className="font-bold text-slate-500">ผู้ปกครอง:</span> <span className="font-bold text-slate-800">{createdResult.full_name}</span></div>
-                  <div><span className="font-bold text-slate-500">คลาสที่ซื้อ:</span> <span className="font-bold text-emerald-700">{createdResult.purchased_course_name} ({createdResult.purchased_classes} ครั้ง)</span></div>
+                  <div><span className="font-bold text-slate-500">คลาสที่ซื้อ:</span> <span className="font-bold text-emerald-700">
+                    {createdResult.courses_purchased && createdResult.courses_purchased.length > 0
+                      ? createdResult.courses_purchased.map(c => `${c.class_title} (${c.total_classes} ครั้ง)`).join(', ')
+                      : `${createdResult.purchased_course_name || 'ไม่ระบุ'} (${createdResult.purchased_classes || 0} ครั้ง)`
+                    }
+                  </span></div>
                 </div>
 
                 <div className="flex flex-col gap-2 pt-2">
