@@ -343,14 +343,28 @@ ${coursesStr}
   const handleDeleteParent = async (parentId: string, parentName: string) => {
     if (window.confirm(`คุณต้องการลบบัญชีผู้ปกครอง "${parentName}" และข้อมูลบุตรหลานที่เกี่ยวข้องใช่หรือไม่?`)) {
       setLoading(true);
-      const res = await deleteParentAccount(parentId);
-      if (res.success) {
-        setParents(parents.filter(p => p.id !== parentId));
-        setChildren(children.filter(c => c.parent_id !== parentId));
-      } else {
-        alert(res.error || 'เกิดข้อผิดพลาดในการลบบัญชี');
+      try {
+        const { data: childrenData } = await supabase.from('children').select('id').eq('parent_id', parentId);
+        const childrenIds = childrenData?.map(c => c.id) || [];
+
+        if (childrenIds.length > 0) {
+          await supabase.from('bookings').delete().in('child_id', childrenIds);
+          await supabase.from('children').delete().eq('parent_id', parentId);
+        }
+
+        const { error } = await supabase.from('users').delete().eq('id', parentId);
+
+        if (error) {
+          alert(`เกิดข้อผิดพลาดในการลบบัญชี: ${error.message}`);
+        } else {
+          setParents(parents.filter(p => p.id !== parentId));
+          setChildren(children.filter(c => c.parent_id !== parentId));
+        }
+      } catch (err: any) {
+        alert(err.message || 'เกิดข้อผิดพลาดในการลบบัญชี');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
   };
 
