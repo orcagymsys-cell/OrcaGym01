@@ -72,9 +72,13 @@ export default function AdminMembersClient({
   const [formError, setFormError] = useState('');
   const [createdResult, setCreatedResult] = useState<User | null>(null);
   const [copied, setCopied] = useState(false);
-  const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Stats
+  const activeParents = parents.length;
 
   const [selectedCoursesMap, setSelectedCoursesMap] = useState<{ [childId: string]: string }>({});
+  const router = useRouter();
 
   const [editingChildModal, setEditingChildModal] = useState<{
     childId: string;
@@ -189,6 +193,29 @@ export default function AdminMembersClient({
       alert(res.error || 'เกิดข้อผิดพลาดในการอนุมัติสิทธิ์คลาส');
     }
     setLoading(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('slips')
+      .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+    if (uploadError) {
+      alert(`อัปโหลดล้มเหลว: ${uploadError.message}`);
+      setIsUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from('slips').getPublicUrl(fileName);
+    setParentForm(prev => ({ ...prev, payment_slip_url: data.publicUrl }));
+    setIsUploading(false);
   };
 
   const handleAddCourses = async () => {
@@ -888,14 +915,22 @@ ${coursesStr}
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1 text-xs">URL สลิปโอนเงิน / ลิงก์แนบรูปสลิป</label>
-                    <input 
-                      type="text"
-                      placeholder="https://... หรือแนบลิงก์รูปสลิปโอนเงิน"
-                      value={parentForm.payment_slip_url}
-                      onChange={e => setParentForm({ ...parentForm, payment_slip_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-800 bg-white focus:ring-2 focus:ring-[#183363] outline-none text-xs"
-                    />
+                    <label className="block font-bold text-slate-700 mb-1 text-xs">อัปโหลดสลิปโอนเงิน (ถ้ามี)</label>
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                      />
+                      {isUploading && <span className="text-xs text-emerald-600 font-bold animate-pulse flex-shrink-0">กำลังอัปโหลด...</span>}
+                    </div>
+                    {parentForm.payment_slip_url && (
+                      <div className="mt-2 text-xs text-emerald-600 flex items-center font-bold">
+                        <Check size={14} className="mr-1" /> แนบไฟล์สลิปเรียบร้อยแล้ว
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -909,7 +944,7 @@ ${coursesStr}
                   </button>
                   <button 
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || isUploading}
                     className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 text-sm shadow-md"
                   >
                     {loading ? 'กำลังสร้าง...' : 'สร้างบัญชีผู้ปกครอง'}
