@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { Child, User, GymClass } from '@/lib/types';
-import { approveChild, approveChildCourse, addCoursesToChild, createParentAccount, deleteParentAccount, updateChildCourse } from '@/app/actions/admin';
+import { approveChild, approveChildCourse, addCoursesToChild, deleteParentAccount, updateChildCourse } from '@/app/actions/admin';
 import { Check, Edit, UserPlus, Users, Key, Phone, BookOpen, Clock, ShieldCheck, Copy, X, Trash2, Bell, BellRing, Edit3 } from 'lucide-react';
 
 function calculateAge(dobStr?: string): string {
@@ -223,26 +224,76 @@ export default function AdminMembersClient({
       return;
     }
 
-    const res = await createParentAccount({
-      ...parentForm,
-      courses_purchased: coursesPurchased,
-      payment_details: {
-        amount_paid: parseFloat(parentForm.amount_paid) || 0,
-        payment_ref_no: parentForm.payment_ref_no,
-        payment_slip_url: parentForm.payment_slip_url,
-        sender_bank_info: parentForm.sender_bank_info,
-        payment_time: parentForm.payment_time,
-        remark: parentForm.remark
+    try {
+      const { data: existingUsers } = await supabase.from('users').select('*');
+      const existingUser = existingUsers?.find(u => u.username.toLowerCase() === parentForm.username.trim().toLowerCase());
+      if (existingUser) {
+        setFormError('Username นี้มีในระบบแล้ว กรุณาเลือก Username อื่น');
+        setLoading(false);
+        return;
       }
-    });
-    if (res.error) {
-      setFormError(res.error);
-    } else if (res.user) {
-      const newUser = { ...res.user, role: 'parent' as const };
-      setCreatedResult(newUser as unknown as User);
-      setParents([...parents, newUser as unknown as User]);
+
+      const coursesPurchasedList = coursesPurchased.map(cp => {
+        const cls = classes.find(c => c.id === cp.class_id);
+        const count = Number(cp.total_classes) || 0;
+        return {
+          class_id: cp.class_id,
+          class_title: cls?.title || cls?.name || 'ORCA Gymnastics Course',
+          purchased_classes: count,
+          bonus_classes: 0,
+          total_classes: count,
+          used_classes: 0,
+          remaining_classes: count
+        };
+      });
+
+      const genId = () => Math.random().toString(36).substr(2, 9);
+      const newUser = {
+        id: `user_${genId()}`,
+        role: 'parent',
+        username: parentForm.username.trim(),
+        password: parentForm.password?.trim() || 'orca1234',
+        full_name: parentForm.full_name.trim(),
+        phone_number: parentForm.phone_number.trim(),
+        first_login: true,
+        max_children_allowed: 10,
+        courses_purchased: coursesPurchasedList,
+        purchased_course_id: coursesPurchasedList[0]?.class_id || '',
+        purchased_course_name: coursesPurchasedList[0]?.class_title || '',
+        purchased_classes: coursesPurchasedList[0]?.total_classes || 0
+      };
+
+      const auditLog = {
+        id: `audit_${Date.now()}_${genId()}`,
+        timestamp: new Date().toISOString(),
+        admin_id: 'admin',
+        admin_name: 'Admin',
+        action_type: 'REGISTER_PARENT',
+        target_user_id: newUser.id,
+        target_user_name: newUser.full_name,
+        amount_paid: parseFloat(parentForm.amount_paid) || 0,
+        payment_ref_no: parentForm.payment_ref_no || '',
+        payment_slip_url: parentForm.payment_slip_url || '',
+        sender_bank_info: parentForm.sender_bank_info || '',
+        payment_time: parentForm.payment_time || '',
+        remark: parentForm.remark || `Admin สร้างบัญชีผู้ปกครองใหม่ (${newUser.username})`
+      };
+
+      await supabase.from('audit_logs').insert([auditLog]);
+      const { error: insertError } = await supabase.from('users').insert([newUser]);
+
+      if (insertError) {
+        setFormError(insertError.message);
+      } else {
+        const userObj = { ...newUser, role: 'parent' as const };
+        setCreatedResult(userObj as unknown as User);
+        setParents([...parents, userObj as unknown as User]);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'เกิดข้อผิดพลาดในการสร้างบัญชี');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCopyCredentials = (user: User) => {
