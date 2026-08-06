@@ -29,11 +29,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 sm:px-0">
-      {/* Floating Menu on the top left */}
-      <div className="fixed sm:absolute top-4 left-4 sm:top-0 sm:left-0 z-50">
-        <ParentMenu />
-      </div>
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
 
       {/* Header with Logo on Left and Add Family Member Clickable Link Inline in Middle */}
       <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-2 relative sm:pt-4">
@@ -66,17 +62,30 @@ export default async function DashboardPage() {
         <div className="w-[120px] hidden sm:block" />
       </div>
       
-      <div className="w-full max-w-5xl h-[4px] bg-slate-300 mb-6 rounded-full"></div>
+      <div className="w-full max-w-5xl mx-auto h-[4px] bg-slate-300 mb-6 rounded-full"></div>
 
-      <div className="w-full max-w-5xl">
-            <DashboardClient 
-              childrenData={children} 
-              parentUser={user} 
-              classes={classes}
-              schedules={schedules}
-              bookings={bookings}
-            />
-          </div>
+      <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-start gap-6">
+        {/* Left Sidebar Menu */}
+        <div className="w-full md:w-[240px] shrink-0 sticky top-6 z-40 hidden md:block">
+          <ParentMenu />
+        </div>
+        
+        {/* Mobile Menu (shows on top of content on small screens) */}
+        <div className="w-full shrink-0 mb-4 md:hidden flex justify-center">
+          <ParentMenu />
+        </div>
+
+        {/* Right Main Content */}
+        <div className="flex-1 w-full min-w-0">
+          <DashboardClient 
+            childrenData={children} 
+            parentUser={user} 
+            classes={classes}
+            schedules={schedules}
+            bookings={bookings}
+          />
+        </div>
+      </div>
     </div>
   );
 }

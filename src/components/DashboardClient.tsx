@@ -281,35 +281,23 @@ export default function DashboardClient({
         );
       })()}
 
-      {/* Family Basket Banner */}
+      {/* Family Basket (Shopee Cart Style) */}
       {parentUser?.courses_purchased && parentUser.courses_purchased.length > 0 && (
-        <div className="w-full max-w-2xl sm:max-w-3xl mx-auto bg-gradient-to-r from-sky-50 to-blue-50 border-2 border-sky-200 rounded-3xl p-5 sm:p-6 mb-8 shadow-sm">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-sky-100 shrink-0">
-              <span className="text-2xl leading-none">🎒</span>
-            </div>
-            <h2 className="font-black text-lg sm:text-xl text-[#1a2d5c]">ตะกร้าเรียนครอบครัว <span className="text-sky-600 font-bold text-base sm:text-lg ml-1">(Family Basket Pool)</span></h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {parentUser.courses_purchased.map(cp => (
-              <div key={cp.class_id} className="bg-white p-4 rounded-2xl border-2 border-transparent hover:border-sky-300 shadow-sm transition-all flex items-center justify-between group">
-                <div>
-                  <h3 className="font-extrabold text-base text-[#1a2d5c] group-hover:text-sky-600 transition-colors">{cp.class_title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-1">
-                    {cp.bonus_classes ? (
-                      <span>ซื้อ {cp.purchased_classes || (cp.total_classes - cp.bonus_classes)} ครั้ง <span className="font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100 ml-1 shadow-xs">🎁 แถม {cp.bonus_classes} ครั้ง</span></span>
-                    ) : (
-                      <span>ซื้อทั้งหมด {cp.total_classes} ครั้ง</span>
-                    )} <br className="sm:hidden" /> (ใช้ไปแล้ว {cp.used_classes} ครั้ง)
-                  </p>
-                </div>
-                <div className="text-right shrink-0 pl-3 border-l-2 border-dashed border-sky-100">
-                  <p className="text-[10px] sm:text-xs text-sky-600 font-extrabold uppercase tracking-wide">คงเหลือ</p>
-                  <p className="text-2xl sm:text-3xl font-black text-[#0fa3b1] leading-none mt-1">{cp.remaining_classes} <span className="text-sm font-bold">ครั้ง</span></p>
-                </div>
+        <div className="w-full max-w-2xl sm:max-w-3xl mx-auto mb-8 flex flex-wrap gap-6 px-2 justify-center sm:justify-start">
+          {parentUser.courses_purchased.map((cp, idx) => (
+            <div key={cp.class_id || idx} className="flex items-center space-x-4 bg-white/50 backdrop-blur-sm p-3 rounded-2xl">
+              <div className="relative shrink-0">
+                <ShoppingCart size={36} className="text-[#1a2d5c]" strokeWidth={2.5} />
+                <span className="absolute -top-2 -right-4 bg-rose-500 text-white text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm">
+                  {cp.remaining_classes}/{cp.total_classes}
+                </span>
               </div>
-            ))}
-          </div>
+              <div>
+                <h2 className="font-black text-sm sm:text-base text-[#1a2d5c]">ตะกร้าเรียนครอบครัว</h2>
+                <h3 className="font-bold text-xs sm:text-sm text-sky-600">{cp.class_title}</h3>
+              </div>
+            </div>
+          ))}
         </div>
       )}
       {childrenData.length === 0 ? (
