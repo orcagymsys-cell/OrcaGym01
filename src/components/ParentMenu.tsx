@@ -26,7 +26,7 @@ export default function ParentMenu() {
       </button>
 
       {isOpen && (
-        <div className="mt-6 w-[250px] bg-white flex flex-col space-y-5 px-2">
+        <div className="absolute top-full right-0 mt-2 w-[250px] bg-white flex flex-col space-y-5 px-2 py-4 rounded-2xl shadow-xl border border-slate-100 z-50">
           <Link href="/" className="block text-[#0a3161] font-extrabold text-xl hover:text-sky-600 uppercase tracking-wide">
             HOME
           </Link>
