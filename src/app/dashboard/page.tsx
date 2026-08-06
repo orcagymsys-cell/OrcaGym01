@@ -30,18 +30,22 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 sm:px-0">
-      {/* Header with Logo on Left and Add Family Member Clickable Link Inline in Middle */}
+      {/* Header with Menu, Logo on Left and Add Family Member Clickable Link Inline in Middle */}
       <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-2 relative">
-        <div className="shrink-0">
+        
+        {/* Left Side: Menu + Logo */}
+        <div className="flex flex-col sm:flex-row items-center sm:space-x-4 shrink-0 z-50">
+          <ParentMenu />
           <Image 
             src="/images/logo.png" 
             alt="ORCA" 
-            width={160} 
-            height={160} 
-            className="object-contain" 
+            width={120} 
+            height={120} 
+            className="object-contain mt-3 sm:mt-0" 
           />
         </div>
 
+        {/* Center: Add Family Member Button */}
         <Link 
           href="/family/add"
           className="flex items-center space-x-3 sm:absolute sm:left-1/2 sm:-translate-x-1/2 my-2 sm:my-0 group hover:scale-105 transition-all cursor-pointer"
@@ -53,10 +57,9 @@ export default async function DashboardPage() {
             <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 ml-1 shadow-xs group-hover:bg-emerald-600 group-hover:text-white transition-all">+ เพิ่มเด็ก</span>
           </h1>
         </Link>
-
-        <div className="shrink-0 z-50">
-          <ParentMenu />
-        </div>
+        
+        {/* Right Side spacer to balance the absolute center */}
+        <div className="w-[120px] hidden sm:block" />
       </div>
       
       <div className="w-full max-w-5xl h-[4px] bg-slate-300 mb-6 rounded-full"></div>
