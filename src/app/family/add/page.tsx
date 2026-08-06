@@ -2,6 +2,8 @@ import AddChildForm from '@/components/AddChildForm';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export const runtime = 'edge';
 
@@ -10,7 +12,14 @@ export const metadata: Metadata = {
   title: 'Add Family Member - ORCA GYMNASTICS',
 };
 
-export default function AddFamilyMemberPage() {
+export default async function AddFamilyMemberPage() {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get('session')?.value;
+  
+  if (!userId) {
+    redirect('/login');
+  }
+
   return (
     <div className="relative pt-4 sm:pt-6">
       <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
@@ -28,7 +37,7 @@ export default function AddFamilyMemberPage() {
         <div className="w-20 hidden sm:block" />
       </div>
       
-      <AddChildForm />
+      <AddChildForm userId={userId} />
     </div>
   );
 }

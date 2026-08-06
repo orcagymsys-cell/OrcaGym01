@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function AddChildForm() {
+export default function AddChildForm({ userId }: { userId: string }) {
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
   const [dob, setDob] = useState('');
@@ -32,10 +32,7 @@ export default function AddChildForm() {
     setError('');
 
     try {
-      const cookies = document.cookie.split('; ');
-      const sessionCookie = cookies.find(c => c.startsWith('session='));
-      if (!sessionCookie) throw new Error('Not authorized. Please login again.');
-      const userId = sessionCookie.split('=')[1];
+      if (!userId) throw new Error('Not authorized. Please login again.');
 
       const { data: dbUser } = await supabase.from('users').select('*').eq('id', userId).single();
       if (!dbUser) throw new Error('User not found');
