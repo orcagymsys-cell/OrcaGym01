@@ -80,20 +80,13 @@ export default function LandingPageClient() {
       {/* TOP HEADER BAR & NAVBAR */}
       <header className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
-          {/* Top-Left: Logo & Orca Gymnastics Text Under Logo */}
-          <Link href="/" className="flex flex-col items-center group shrink-0">
+          {/* Top-Left: Logo */}
+          <Link href="/" className="flex items-center shrink-0">
             <img 
-              src="/images/logo.png" 
+              src="/orca-logo.png" 
               alt="ORCA GYMNASTICS" 
-              className="w-[60px] h-[60px] object-contain transition-transform group-hover:scale-105"
+              className="h-12 sm:h-16 object-contain transition-transform hover:scale-105"
             />
-
-            <span 
-              className="text-[12px] sm:text-[13px] font-bold text-[#183363] tracking-[0.18em] uppercase mt-0.5 group-hover:text-sky-600 transition-colors"
-              style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
-            >
-              ORCA GYMNASTICS
-            </span>
           </Link>
 
           {/* Center Navigation Links (Desktop) */}
@@ -151,7 +144,7 @@ export default function LandingPageClient() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="w-full bg-gradient-to-b from-sky-100/60 via-slate-50 to-slate-50 py-10 sm:py-16 px-4">
+      <section id="classes-section" className="w-full bg-gradient-to-b from-sky-100/60 via-slate-50 to-slate-50 py-10 sm:py-16 px-4">
         <div className="max-w-5xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center space-x-2 bg-amber-100 border border-amber-300 px-4 py-1.5 rounded-full text-amber-900 font-black text-xs sm:text-sm shadow-xs animate-bounce">
             <Sparkles size={16} className="text-amber-600" />
@@ -593,7 +586,7 @@ export default function LandingPageClient() {
           onClick={() => scrollToSection('contact-form-section')}
           className="flex items-center space-x-2 bg-[#06C755] text-white px-5 py-3.5 rounded-full font-black text-xs sm:text-sm shadow-2xl hover:bg-[#05b34c] transition-all border-2 border-white cursor-pointer"
         >
-          <span className="text-lg">💬</span>
+          <MessageCircle size={20} className="text-white fill-white" />
           <span>แอดไลน์พูดคุยกับแอดมิน</span>
         </button>
       </div>
