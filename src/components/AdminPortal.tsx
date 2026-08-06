@@ -8,7 +8,7 @@ import AdminAboutEditor from './AdminAboutEditor';
 import AdminAuditClient from './AdminAuditClient';
 import CourseEditor from './CourseEditor';
 
-import { getAdminMembersData, getScheduleMatrix, getAboutUs, getAuditLogsAction } from '@/app/actions/admin';
+import { getScheduleMatrix, getAboutUs, getAuditLogsAction } from '@/app/actions/admin';
 import { supabase } from '@/lib/supabase';
 import { 
   Home, 
@@ -52,7 +52,15 @@ export default function AdminPortal() {
   const loadAllData = async () => {
     try {
       const [mRes, sRes, aRes, auditRes, cRes] = await Promise.all([
-        getAdminMembersData().catch(() => null),
+        Promise.all([
+          supabase.from('children').select('*'),
+          supabase.from('users').select('*').eq('role', 'parent'),
+          supabase.from('classes').select('*')
+        ]).then(([cRes, pRes, clRes]) => ({
+          children: cRes.data || [],
+          parents: pRes.data || [],
+          classes: clRes.data || []
+        })).catch(() => null),
         getScheduleMatrix().catch(() => null),
         getAboutUs().catch(() => null),
         getAuditLogsAction().catch(() => null),
