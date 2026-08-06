@@ -28,8 +28,10 @@ export async function updateClass(id: string, data: Partial<GymClass>) {
   const { error } = await supabase.from('classes').update(data).eq('id', id);
   
   if (!error) {
-    revalidatePath('/classes');
-    revalidatePath('/admin/classes');
+    try {
+      revalidatePath('/classes');
+      revalidatePath('/admin/classes');
+    } catch (e) { console.error('revalidate error', e); }
     return { success: true };
   }
   
@@ -43,8 +45,10 @@ export async function createClass(data: GymClass) {
   const { error } = await supabase.from('classes').insert([data]);
   
   if (!error) {
-    revalidatePath('/classes');
-    revalidatePath('/admin/classes');
+    try {
+      revalidatePath('/classes');
+      revalidatePath('/admin/classes');
+    } catch (e) { console.error('revalidate error', e); }
     return { success: true };
   }
   return { error: 'Failed to create course' };
@@ -57,8 +61,10 @@ export async function deleteClass(id: string) {
   const { error } = await supabase.from('classes').delete().eq('id', id);
   
   if (!error) {
-    revalidatePath('/classes');
-    revalidatePath('/admin/classes');
+    try {
+      revalidatePath('/classes');
+      revalidatePath('/admin/classes');
+    } catch (e) { console.error('revalidate error', e); }
     return { success: true };
   }
   

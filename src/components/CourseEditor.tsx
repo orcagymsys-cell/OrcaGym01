@@ -29,18 +29,23 @@ export default function CourseEditor({ initialData }: { initialData?: any }) {
     setLoading(true);
     setError('');
 
-    let res;
-    if (initialData?.id) {
-      res = await updateClass(initialData.id, formData);
-    } else {
-      res = await createClass({ ...formData, id: `class_${Date.now()}` } as GymClass);
-    }
+    try {
+      let res;
+      if (initialData?.id) {
+        res = await updateClass(initialData.id, formData);
+      } else {
+        res = await createClass({ ...formData, id: `class_${Date.now()}` } as GymClass);
+      }
 
-    if (res.error) {
-      setError(res.error);
+      if (res.error) {
+        setError(res.error);
+      } else {
+        window.location.reload();
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred while saving.');
+    } finally {
       setLoading(false);
-    } else {
-      router.push('/admin/classes');
     }
   };
 
