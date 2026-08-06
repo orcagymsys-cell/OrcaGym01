@@ -257,10 +257,7 @@ export default function AdminMembersClient({
         phone_number: parentForm.phone_number.trim(),
         first_login: true,
         max_children_allowed: 10,
-        courses_purchased: coursesPurchasedList,
-        purchased_course_id: coursesPurchasedList[0]?.class_id || '',
-        purchased_course_name: coursesPurchasedList[0]?.class_title || '',
-        purchased_classes: coursesPurchasedList[0]?.total_classes || 0
+        courses_purchased: coursesPurchasedList
       };
 
       const auditLog = {
