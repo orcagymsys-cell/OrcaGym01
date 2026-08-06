@@ -1,12 +1,12 @@
 import React from 'react';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import CourseCard from '@/components/CourseCard';
 
 export const runtime = 'edge';
 
 export default async function ClassesPage() {
-  const db = getDb();
-  const classes = db.classes;
+  const { data: classesData } = await supabase.from('classes').select('*');
+  const classes = classesData || [];
 
   return (
     <div className="flex flex-col items-center space-y-12 py-4">

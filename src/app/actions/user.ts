@@ -1,13 +1,11 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { User } from '@/lib/types';
 
 export async function getUser(): Promise<User | null> {
   try {
-    const db = getDb();
-    
     let sessionId: string | undefined;
     try {
       const cookieStore = await cookies();
@@ -17,22 +15,30 @@ export async function getUser(): Promise<User | null> {
     }
 
     if (sessionId) {
-      const user = db.users.find(u => u.id === sessionId);
-      if (user) return user;
+      const { data: user } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      if (user) return user as User;
     }
 
     // Default to admin user for admin portal access
-    return db.users.find(u => u.role === 'admin') || {
-      id: 'admin_1',
-      role: 'admin',
-      username: 'admin',
-      password: 'orca1234',
-      full_name: 'Super Admin',
-      phone_number: '0812345678',
-      first_login: false
-    };
+    const { data: adminUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'admin')
+      .limit(1)
+      .single();
+
+    return adminUser as User || null;
   } catch (e) {
-    const db = getDb();
-    return db.users.find(u => u.role === 'admin') || null;
+    const { data: adminUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('role', 'admin')
+      .limit(1)
+      .single();
+    return adminUser as User || null;
   }
 }

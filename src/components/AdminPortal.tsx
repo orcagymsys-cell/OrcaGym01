@@ -256,7 +256,7 @@ export default function AdminPortal() {
                 >
                   ← กลับสู่รายการคลาสเรียน
                 </button>
-                <CourseEditor courseId={editingClassId} />
+                <CourseEditor initialData={classesList.find(c => c.id === editingClassId) || (scheduleData?.classes || []).find((c: any) => c.id === editingClassId) || membersData?.classes?.find((c: any) => c.id === editingClassId)} />
               </div>
             ) : (
               <div className="space-y-6">

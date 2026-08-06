@@ -1,11 +1,11 @@
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
 
 export default async function AboutUsPage() {
-  const db = getDb();
-  const info = db.aboutUs || {
+  const { data } = await supabase.from('aboutUs').select('*');
+  const info = (data && data.length > 0 ? data[0] : null) || {
     company_name_th: 'บริษัท ออก้ายิม จำกัด',
     company_name_en: 'ORCA GYM CO., LTD.',
     registration_number: '0105569135935',

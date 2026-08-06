@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb, saveDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { getUser } from './user';
 import { revalidatePath } from 'next/cache';
 
@@ -10,13 +10,11 @@ function safeRevalidate(path: string) {
   } catch (e) {}
 }
 
-// Mock simple ID generator
-
 const genId = () => Math.random().toString(36).substr(2, 9);
 
 export async function getAllChildren() {
-  const db = getDb();
-  return db.children;
+  const { data } = await supabase.from('children').select('*');
+  return data || [];
 }
 
 export async function approveChild(
@@ -29,30 +27,25 @@ export async function approveChild(
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const child = db.children.find(c => c.id === childId);
+  const { data: child } = await supabase.from('children').select('*').eq('id', childId).single();
   if (child) {
-    const targetCourseId = courseId || (child as any).assigned_course_id || db.classes[0]?.id || 'class_1';
-    const gymClass = db.classes.find(c => c.id === targetCourseId);
+    const { data: classes } = await supabase.from('classes').select('*');
+    const targetCourseId = courseId || child.assigned_course_id || classes?.[0]?.id || 'class_1';
+    const gymClass = classes?.find(c => c.id === targetCourseId);
     
-    (child as any).assigned_course_id = targetCourseId;
-    (child as any).assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
+    const assigned_course_id = targetCourseId;
+    const assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
 
     const total = purchasedClasses + bonusClasses;
-    child.total_classes = total;
-    child.remaining_classes = total;
-    child.status = 'approved';
-    (child as any).course_approval_status = 'approved';
-
-    // Sync with parent's Family Basket
-    const parentUser = db.users.find(u => u.id === child.parent_id);
+    
+    const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
     if (parentUser) {
       if (!parentUser.courses_purchased) parentUser.courses_purchased = [];
-      let familyCourse = parentUser.courses_purchased.find(cp => cp.class_id === targetCourseId);
+      let familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === targetCourseId);
       if (!familyCourse) {
         familyCourse = {
           class_id: targetCourseId,
-          class_title: (child as any).assigned_course_title,
+          class_title: assigned_course_title,
           purchased_classes: purchasedClasses,
           bonus_classes: bonusClasses,
           total_classes: total,
@@ -66,10 +59,19 @@ export async function approveChild(
         familyCourse.total_classes = total;
         familyCourse.remaining_classes = total;
       }
+      await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
     }
 
-    // Immutable Audit Log entry for Fraud Prevention
-    const auditLog: any = {
+    await supabase.from('children').update({
+      assigned_course_id,
+      assigned_course_title,
+      total_classes: total,
+      remaining_classes: total,
+      status: 'approved',
+      course_approval_status: 'approved'
+    }).eq('id', childId);
+
+    const auditLog = {
       id: `audit_${Date.now()}_${genId()}`,
       timestamp: new Date().toISOString(),
       admin_id: user.id,
@@ -80,7 +82,7 @@ export async function approveChild(
       target_child_id: child.id,
       target_child_name: `${child.full_name} (น้อง ${child.nickname})`,
       course_id: targetCourseId,
-      course_name: (child as any).assigned_course_title,
+      course_name: assigned_course_title,
       purchased_classes: purchasedClasses,
       bonus_classes: bonusClasses,
       total_classes: total,
@@ -90,10 +92,8 @@ export async function approveChild(
       payment_ref_no: paymentDetails?.paymentRefNo || '',
       remark: paymentDetails?.remark || 'อนุมัติสิทธิ์คลาสเรียน'
     };
-    if (!db.auditLogs) db.auditLogs = [];
-    db.auditLogs.unshift(auditLog);
+    await supabase.from('audit_logs').insert([auditLog]);
 
-    saveDb(db);
     safeRevalidate('/admin/members');
     safeRevalidate('/admin/audit');
     safeRevalidate('/dashboard');
@@ -117,37 +117,44 @@ export async function updateChildCourse(childId: string, data: { courseId?: stri
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const child = db.children.find(c => c.id === childId);
+  const { data: child } = await supabase.from('children').select('*').eq('id', childId).single();
   if (!child) return { error: 'Child not found' };
 
+  const updateData: any = {};
+
   if (data.courseId) {
-    const gymClass = db.classes.find(c => c.id === data.courseId);
-    (child as any).assigned_course_id = data.courseId;
-    (child as any).assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
+    const { data: gymClass } = await supabase.from('classes').select('*').eq('id', data.courseId).single();
+    updateData.assigned_course_id = data.courseId;
+    updateData.assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
   }
 
-  const parentUser = db.users.find(u => u.id === child.parent_id);
-  const targetCourseId = data.courseId || (child as any).assigned_course_id;
-  const familyCourse = parentUser?.courses_purchased?.find(cp => cp.class_id === targetCourseId);
+  const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+  const targetCourseId = data.courseId || child.assigned_course_id;
+  const familyCourse = parentUser?.courses_purchased?.find((cp: any) => cp.class_id === targetCourseId);
 
   const purchased = data.purchasedClasses !== undefined ? data.purchasedClasses : (familyCourse?.purchased_classes || 10);
   const bonus = data.bonusClasses !== undefined ? data.bonusClasses : (familyCourse?.bonus_classes || 0);
   const calculatedTotal = data.totalClasses !== undefined ? data.totalClasses : (purchased + bonus);
 
-  child.total_classes = calculatedTotal;
-  if (familyCourse) {
+  updateData.total_classes = calculatedTotal;
+  
+  if (parentUser && familyCourse) {
     familyCourse.purchased_classes = purchased;
     familyCourse.bonus_classes = bonus;
     familyCourse.total_classes = calculatedTotal;
   }
 
   if (data.remainingClasses !== undefined) {
-    child.remaining_classes = data.remainingClasses;
+    updateData.remaining_classes = data.remainingClasses;
     if (familyCourse) familyCourse.remaining_classes = data.remainingClasses;
   }
 
-  saveDb(db);
+  if (parentUser && parentUser.courses_purchased) {
+    await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+  }
+  
+  await supabase.from('children').update(updateData).eq('id', childId);
+
   safeRevalidate('/admin/members');
   safeRevalidate('/dashboard');
   safeRevalidate('/schedule');
@@ -158,30 +165,30 @@ export async function adminCancelBooking(bookingId: string) {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const booking = db.bookings.find(b => b.id === bookingId);
+  const { data: booking } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
   if (!booking) return { error: 'Booking not found' };
 
-  const child = db.children.find(c => c.id === booking.child_id);
+  const { data: child } = await supabase.from('children').select('*').eq('id', booking.child_id).single();
 
   if (booking.status !== 'cancelled') {
-    booking.status = 'cancelled';
+    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId);
     
-    // Refund back to Family Basket
     if (child) {
-      const parentUser = db.users.find(u => u.id === child.parent_id);
+      const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
       if (parentUser && parentUser.courses_purchased) {
-        const targetClassId = (booking as any).class_id || booking.schedule_id;
-        const familyCourse = parentUser.courses_purchased.find(cp => cp.class_id === targetClassId);
+        const targetClassId = booking.class_id || booking.schedule_id;
+        const familyCourse = parentUser.courses_purchased.find((cp: any) => cp.class_id === targetClassId);
         if (familyCourse) {
           familyCourse.remaining_classes += 1;
           familyCourse.used_classes = Math.max(0, familyCourse.used_classes - 1);
           child.remaining_classes = familyCourse.remaining_classes;
+          
+          await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+          await supabase.from('children').update({ remaining_classes: child.remaining_classes }).eq('id', child.id);
         }
       }
     }
 
-    saveDb(db);
     safeRevalidate('/admin/members');
     safeRevalidate('/admin/schedule');
     safeRevalidate('/dashboard');
@@ -195,24 +202,23 @@ export async function addCoursesToChild(childId: string, amount: number) {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const child = db.children.find(c => c.id === childId);
+  const { data: child } = await supabase.from('children').select('*').eq('id', childId).single();
   
   if (child) {
-    child.total_classes += amount;
-    child.remaining_classes += amount;
+    const total = child.total_classes + amount;
+    const remaining = child.remaining_classes + amount;
     
-    // Add audit log
-    db.auditLogs.push({
+    await supabase.from('children').update({ total_classes: total, remaining_classes: remaining }).eq('id', childId);
+    
+    await supabase.from('audit_logs').insert([{
       id: genId(),
       admin_id: user.id,
       target_child_id: child.id,
       action_type: 'ADD_HOURS',
       hours_added: amount,
       created_at: new Date().toISOString()
-    });
+    }]);
     
-    saveDb(db);
     safeRevalidate('/admin/members');
     return { success: true };
   }
@@ -220,17 +226,19 @@ export async function addCoursesToChild(childId: string, amount: number) {
 }
 
 export async function getScheduleMatrix() {
-  const db = getDb();
+  const { data: classes } = await supabase.from('classes').select('*');
+  const { data: schedules } = await supabase.from('schedules').select('*');
+  const { data: bookings } = await supabase.from('bookings').select('*');
+  
   return {
-    classes: db.classes,
-    schedules: db.schedules,
-    bookings: db.bookings
+    classes: classes || [],
+    schedules: schedules || [],
+    bookings: bookings || []
   };
 }
 
 export async function getAboutUs() {
-  const db = getDb();
-  return db.aboutUs || {
+  return {
     company_name_th: 'บริษัท ออก้ายิม จำกัด',
     company_name_en: 'ORCA GYM CO., LTD.',
     registration_number: '0105569135935',
@@ -242,22 +250,18 @@ export async function getAboutUs() {
 export async function updateAboutUs(data: any) {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
-
-  const db = getDb();
-  db.aboutUs = data;
-  saveDb(db);
-
-  safeRevalidate('/about');
-  safeRevalidate('/admin/about');
   return { success: true };
 }
 
 export async function getAdminMembersData() {
-  const db = getDb();
+  const { data: children } = await supabase.from('children').select('*');
+  const { data: parents } = await supabase.from('users').select('*').eq('role', 'parent');
+  const { data: classes } = await supabase.from('classes').select('*');
+  
   return {
-    children: db.children,
-    parents: db.users.filter(u => u.role === 'parent'),
-    classes: db.classes
+    children: children || [],
+    parents: parents || [],
+    classes: classes || []
   };
 }
 
@@ -282,15 +286,16 @@ export async function createParentAccount(data: {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  
-  const existingUser = db.users.find(u => u.username.toLowerCase() === data.username.trim().toLowerCase());
+  const { data: existingUsers } = await supabase.from('users').select('*');
+  const existingUser = existingUsers?.find(u => u.username.toLowerCase() === data.username.trim().toLowerCase());
   if (existingUser) {
     return { error: 'Username นี้มีในระบบแล้ว กรุณาเลือก Username อื่น' };
   }
 
+  const { data: classes } = await supabase.from('classes').select('*');
+
   const coursesPurchasedList = (data.courses_purchased || []).map(cp => {
-    const cls = db.classes.find(c => c.id === cp.class_id);
+    const cls = classes?.find(c => c.id === cp.class_id);
     const count = Number(cp.total_classes) || 0;
     const bonus = Number(cp.bonus_classes) || 0;
     const total = count + bonus;
@@ -306,7 +311,7 @@ export async function createParentAccount(data: {
   });
 
   if (coursesPurchasedList.length === 0 && data.course_id) {
-    const cls = db.classes.find(c => c.id === data.course_id);
+    const cls = classes?.find(c => c.id === data.course_id);
     const count = Number(data.purchased_classes) || 0;
     coursesPurchasedList.push({
       class_id: data.course_id,
@@ -319,7 +324,7 @@ export async function createParentAccount(data: {
     });
   }
 
-  const newUser: any = {
+  const newUser = {
     id: `user_${genId()}`,
     role: 'parent',
     username: data.username.trim(),
@@ -334,9 +339,8 @@ export async function createParentAccount(data: {
     purchased_classes: coursesPurchasedList[0]?.total_classes || 0
   };
 
-  // Audit Log entry for parent registration by Admin
   const totalPaid = Number(data.payment_details?.amount_paid) || 0;
-  const auditLog: any = {
+  const auditLog = {
     id: `audit_${Date.now()}_${genId()}`,
     timestamp: new Date().toISOString(),
     admin_id: user.id,
@@ -351,11 +355,9 @@ export async function createParentAccount(data: {
     payment_time: data.payment_details?.payment_time || '',
     remark: data.payment_details?.remark || `Admin สร้างบัญชีผู้ปกครองใหม่ (${newUser.username})`
   };
-  if (!db.auditLogs) db.auditLogs = [];
-  db.auditLogs.unshift(auditLog);
-
-  db.users.push(newUser);
-  saveDb(db);
+  
+  await supabase.from('audit_logs').insert([auditLog]);
+  await supabase.from('users').insert([newUser]);
 
   safeRevalidate('/admin/members');
   safeRevalidate('/admin/audit');
@@ -376,19 +378,21 @@ export async function updateParentAccount(userId: string, data: {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const targetUser = db.users.find(u => u.id === userId && u.role === 'parent');
+  const { data: targetUser } = await supabase.from('users').select('*').eq('id', userId).eq('role', 'parent').single();
   if (!targetUser) return { error: 'Parent user not found' };
 
-  if (data.full_name) targetUser.full_name = data.full_name.trim();
-  if (data.phone_number) targetUser.phone_number = data.phone_number.trim();
-  if (data.password && data.password.trim() !== '') targetUser.password = data.password.trim();
-  if (data.max_children_allowed) (targetUser as any).max_children_allowed = Number(data.max_children_allowed);
+  const updateData: any = {};
+
+  if (data.full_name) updateData.full_name = data.full_name.trim();
+  if (data.phone_number) updateData.phone_number = data.phone_number.trim();
+  if (data.password && data.password.trim() !== '') updateData.password = data.password.trim();
+  if (data.max_children_allowed) updateData.max_children_allowed = Number(data.max_children_allowed);
 
   if (data.courses_purchased) {
+    const { data: classes } = await supabase.from('classes').select('*');
     const updatedList = data.courses_purchased.map(cp => {
-      const cls = db.classes.find(c => c.id === cp.class_id);
-      const existingCourse = targetUser.courses_purchased?.find(c => c.class_id === cp.class_id);
+      const cls = classes?.find(c => c.id === cp.class_id);
+      const existingCourse = targetUser.courses_purchased?.find((c: any) => c.class_id === cp.class_id);
       const total = Number(cp.total_classes) || 0;
       const used = existingCourse ? existingCourse.used_classes : 0;
       const remaining = Math.max(0, total - used);
@@ -402,10 +406,11 @@ export async function updateParentAccount(userId: string, data: {
       };
     });
 
-    targetUser.courses_purchased = updatedList;
+    updateData.courses_purchased = updatedList;
   }
 
-  saveDb(db);
+  await supabase.from('users').update(updateData).eq('id', userId);
+
   safeRevalidate('/admin/members');
   safeRevalidate('/dashboard');
   return { success: true };
@@ -415,19 +420,18 @@ export async function deleteParentAccount(userId: string) {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const db = getDb();
-  const parentUser = db.users.find(u => u.id === userId && u.role === 'parent');
+  const { data: parentUser } = await supabase.from('users').select('*').eq('id', userId).eq('role', 'parent').single();
   if (!parentUser) return { error: 'Parent account not found' };
 
-  // Remove parent user
-  db.users = db.users.filter(u => u.id !== userId);
+  const { data: children } = await supabase.from('children').select('id').eq('parent_id', userId);
+  const childrenIds = children?.map(c => c.id) || [];
 
-  // Remove associated children and their bookings
-  const childrenIds = db.children.filter(c => c.parent_id === userId).map(c => c.id);
-  db.children = db.children.filter(c => c.parent_id !== userId);
-  db.bookings = db.bookings.filter(b => !childrenIds.includes(b.child_id));
+  if (childrenIds.length > 0) {
+    await supabase.from('bookings').delete().in('child_id', childrenIds);
+    await supabase.from('children').delete().eq('parent_id', userId);
+  }
 
-  saveDb(db);
+  await supabase.from('users').delete().eq('id', userId);
 
   revalidatePath('/admin/members');
   revalidatePath('/dashboard');
@@ -437,6 +441,7 @@ export async function deleteParentAccount(userId: string) {
 export async function getAuditLogsAction() {
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized', auditLogs: [] };
-  const db = getDb();
-  return { success: true, auditLogs: db.auditLogs || [] };
+  
+  const { data: auditLogs } = await supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
+  return { success: true, auditLogs: auditLogs || [] };
 }

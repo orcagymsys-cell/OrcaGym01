@@ -1,6 +1,6 @@
 import { getChildren } from '@/app/actions/children';
 import { getUser } from '@/app/actions/user';
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import DashboardClient from '@/components/DashboardClient';
 import Image from 'next/image';
@@ -11,12 +11,15 @@ export default async function DashboardPage() {
 
   const user = await getUser();
   const children = await getChildren();
-  const db = getDb();
 
-  const classes = db.classes;
-  const schedules = db.schedules;
+  const { data: classesData } = await supabase.from('classes').select('*');
+  const classes = classesData || [];
+  const { data: schedulesData } = await supabase.from('schedules').select('*');
+  const schedules = schedulesData || [];
   const childIds = children.map(c => c.id);
-  const bookings = db.bookings.filter(b => childIds.includes(b.child_id));
+  const { data: bookingsData } = await supabase.from('bookings').select('*');
+  const allBookings = bookingsData || [];
+  const bookings = allBookings.filter((b: any) => childIds.includes(b.child_id));
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto">

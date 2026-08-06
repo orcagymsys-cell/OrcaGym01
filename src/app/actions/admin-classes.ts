@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb, saveDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { GymClass } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getUser } from './user';
@@ -9,29 +9,25 @@ export async function getClasses() {
   const admin = await getUser();
   if (!admin || admin.role !== 'admin') return { error: 'Unauthorized', classes: [] };
 
-  const db = getDb();
-  return { classes: db.classes };
+  const { data: classes, error } = await supabase.from('classes').select('*');
+  return { classes: classes || [] };
 }
 
 export async function getClass(id: string) {
   const admin = await getUser();
   if (!admin || admin.role !== 'admin') return { error: 'Unauthorized', class: null };
 
-  const db = getDb();
-  const cls = db.classes.find(c => c.id === id);
-  return { class: cls || null };
+  const { data, error } = await supabase.from('classes').select('*').eq('id', id).single();
+  return { class: data || null };
 }
 
 export async function updateClass(id: string, data: Partial<GymClass>) {
   const admin = await getUser();
   if (!admin || admin.role !== 'admin') return { error: 'Unauthorized' };
 
-  const db = getDb();
-  const index = db.classes.findIndex(c => c.id === id);
+  const { error } = await supabase.from('classes').update(data).eq('id', id);
   
-  if (index !== -1) {
-    db.classes[index] = { ...db.classes[index], ...data };
-    saveDb(db);
+  if (!error) {
     revalidatePath('/classes');
     revalidatePath('/admin/classes');
     return { success: true };
@@ -44,24 +40,23 @@ export async function createClass(data: GymClass) {
   const admin = await getUser();
   if (!admin || admin.role !== 'admin') return { error: 'Unauthorized' };
 
-  const db = getDb();
-  db.classes.push(data);
-  saveDb(db);
-  revalidatePath('/classes');
-  revalidatePath('/admin/classes');
-  return { success: true };
+  const { error } = await supabase.from('classes').insert([data]);
+  
+  if (!error) {
+    revalidatePath('/classes');
+    revalidatePath('/admin/classes');
+    return { success: true };
+  }
+  return { error: 'Failed to create course' };
 }
 
 export async function deleteClass(id: string) {
   const admin = await getUser();
   if (!admin || admin.role !== 'admin') return { error: 'Unauthorized' };
 
-  const db = getDb();
-  const initialLength = db.classes.length;
-  db.classes = db.classes.filter(c => c.id !== id);
+  const { error } = await supabase.from('classes').delete().eq('id', id);
   
-  if (db.classes.length < initialLength) {
-    saveDb(db);
+  if (!error) {
     revalidatePath('/classes');
     revalidatePath('/admin/classes');
     return { success: true };

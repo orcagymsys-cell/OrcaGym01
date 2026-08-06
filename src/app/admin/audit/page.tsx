@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { getUser } from '@/app/actions/user';
 import AdminAuditClient from '@/components/AdminAuditClient';
 import { redirect } from 'next/navigation';
@@ -11,17 +11,21 @@ export default async function AdminAuditPage() {
     redirect('/admin/login');
   }
 
-  const db = getDb();
-  const initialAuditLogs = db.auditLogs || [];
-  const users = db.users || [];
-  const childrenData = db.children || [];
-  const classes = db.classes || [];
+  const { data: auditLogs } = await supabase.from('audit_logs').select('*');
+  const { data: usersData } = await supabase.from('users').select('*');
+  const { data: childrenData } = await supabase.from('children').select('*');
+  const { data: classesData } = await supabase.from('classes').select('*');
+
+  const initialAuditLogs = auditLogs || [];
+  const users = usersData || [];
+  const childrenDataArray = childrenData || [];
+  const classes = classesData || [];
 
   return (
     <AdminAuditClient 
       initialAuditLogs={initialAuditLogs}
       users={users}
-      childrenData={childrenData}
+      childrenData={childrenDataArray as any}
       classes={classes}
     />
   );

@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb, saveDb } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 
 export async function submitLeadContact(data: {
   parent_name: string;
@@ -11,11 +11,6 @@ export async function submitLeadContact(data: {
 }) {
   if (!data.parent_name || !data.phone_number) {
     return { error: 'กรุณากรอกชื่อผู้ปกครองและเบอร์โทรศัพท์ติดต่อ' };
-  }
-
-  const db = getDb();
-  if (!db.leads) {
-    (db as any).leads = [];
   }
 
   const newLead = {
@@ -29,8 +24,7 @@ export async function submitLeadContact(data: {
     status: 'pending' // pending, contacted
   };
 
-  (db as any).leads.unshift(newLead);
-  saveDb(db);
+  await supabase.from('leads').insert([newLead]);
 
   return { success: true };
 }

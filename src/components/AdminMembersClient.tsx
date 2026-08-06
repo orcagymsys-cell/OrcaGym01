@@ -238,8 +238,9 @@ export default function AdminMembersClient({
     if (res.error) {
       setFormError(res.error);
     } else if (res.user) {
-      setCreatedResult(res.user);
-      setParents([...parents, res.user]);
+      const newUser = { ...res.user, role: 'parent' as const };
+      setCreatedResult(newUser as unknown as User);
+      setParents([...parents, newUser as unknown as User]);
     }
     setLoading(false);
   };
