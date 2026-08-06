@@ -597,6 +597,7 @@ export default function AdminScheduleMatrix({
                                 ✅ Booked (จองเรียนแล้ว)
                               </span>
                             )}
+                          </td>
                           <td className="p-3.5 text-center">
                             {!isCancelled ? (
                               <button
