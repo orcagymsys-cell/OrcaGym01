@@ -280,11 +280,15 @@ export default function AdminPortal() {
                       <div>
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-extrabold text-lg text-[#183363]">{cls.title || cls.name}</h3>
-                          <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">{cls.age_range || 'ทุกช่วงอายุ'}</span>
+                          <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">{cls.ageRange || cls.age_range || 'ทุกช่วงอายุ'}</span>
                         </div>
                         <p className="text-xs text-slate-600 mb-4 line-clamp-2">{cls.description}</p>
                         <div className="text-sm font-black text-emerald-600">
-                          ฿{cls.price ? Number(cls.price).toLocaleString() : 'N/A'} / {cls.total_classes || 10} คลาส
+                          {cls.pricing && cls.pricing.length > 0 ? (
+                            `เริ่มต้น ${cls.pricing[0].fees} / ${cls.pricing[0].times} คลาส`
+                          ) : (
+                            cls.price ? `฿${Number(cls.price).toLocaleString()} / ${cls.total_classes || 10} คลาส` : 'ยังไม่ได้ตั้งราคา'
+                          )}
                         </div>
                       </div>
 
