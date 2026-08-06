@@ -10,6 +10,7 @@ export default function AddChildForm({ userId }: { userId: string }) {
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState<'Boy' | 'Girl'>('Girl');
   const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -19,6 +20,7 @@ export default function AddChildForm({ userId }: { userId: string }) {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoUrl(reader.result as string);
@@ -46,14 +48,39 @@ export default function AddChildForm({ userId }: { userId: string }) {
       }
 
       const initialClasses = dbUser.purchased_classes || 0;
+      const childId = `child_${Date.now()}`;
+
+      let finalPhotoUrl = '';
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${childId}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, photoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          // Proceed without photo if upload fails, or we could throw. Proceeding is safer.
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          finalPhotoUrl = publicUrlData.publicUrl;
+        }
+      }
 
       const newChild = {
-        id: `child_${Date.now()}`,
+        id: childId,
         parent_id: userId,
         full_name: fullName,
         nickname,
         dob,
         gender,
+        photo_url: finalPhotoUrl,
         assigned_course_id: '',
         assigned_course_title: 'รอ Admin เลือกคลาส & อนุมัติ',
         course_approval_status: 'pending',

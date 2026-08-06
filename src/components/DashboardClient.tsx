@@ -136,6 +136,34 @@ export default function DashboardClient({
       finalPhotoUrl = await processCroppedImage(finalPhotoUrl, zoom, offsetX, offsetY);
     }
 
+    // If it's a new photo (base64 data URL), upload it to Storage
+    if (finalPhotoUrl && finalPhotoUrl.startsWith('data:image/')) {
+      try {
+        const resFetch = await fetch(finalPhotoUrl);
+        const blob = await resFetch.blob();
+        const fileExt = blob.type.split('/')[1] || 'jpeg';
+        const fileName = `${editingChild.id}_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, blob, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          finalPhotoUrl = publicUrlData.publicUrl;
+        } else {
+          console.error('Failed to upload avatar to storage:', uploadError);
+        }
+      } catch (e) {
+        console.error('Error processing image upload:', e);
+      }
+    }
+
     const res = await updateChild(editingChild.id, {
       ...editForm,
       photo_url: finalPhotoUrl
