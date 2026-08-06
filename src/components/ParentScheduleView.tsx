@@ -187,7 +187,7 @@ export default function ParentScheduleView({
   };
 
   return (
-    <div className="w-full flex flex-col items-center space-y-6" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
+    <div className="w-full max-w-[100vw] flex flex-col items-center space-y-6 px-2 sm:px-6 pb-12 overflow-x-hidden" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
       {/* Header Title */}
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-black text-[#1a2d5c]">
@@ -317,13 +317,13 @@ export default function ParentScheduleView({
           )}
 
           {/* PERSONAL SCHEDULE MATRIX TABLE */}
-          <div className="w-full overflow-x-auto border-2 border-[#1a2d5c] rounded-2xl shadow-md bg-white">
-            <table className="w-full border-collapse text-center text-xs">
+          <div className="w-full max-w-full overflow-x-auto border-2 border-[#1a2d5c] rounded-2xl shadow-md bg-white">
+            <table className="w-full border-collapse text-center text-[10px] sm:text-xs">
               <thead>
                 <tr className="bg-[#1a2d5c] text-white font-black">
-                  <th className="p-3 border-r border-blue-900 w-24">Day / Time</th>
+                  <th className="p-2 sm:p-3 border-r border-blue-900 w-16 sm:w-24">Day / Time</th>
                   {timeslots.map(t => (
-                    <th key={t} className="p-3 border-r border-blue-900 min-w-[110px] font-bold text-xs whitespace-nowrap">
+                    <th key={t} className="p-2 sm:p-3 border-r border-blue-900 min-w-[70px] sm:min-w-[110px] font-bold whitespace-nowrap">
                       {t}
                     </th>
                   ))}
@@ -405,13 +405,13 @@ export default function ParentScheduleView({
             </div>
           </div>
 
-          <div className="w-full overflow-x-auto border-2 border-[#1a2d5c] rounded-2xl shadow-md bg-white">
-            <table className="w-full border-collapse text-center text-xs">
+          <div className="w-full max-w-full overflow-x-auto border-2 border-[#1a2d5c] rounded-2xl shadow-md bg-white">
+            <table className="w-full border-collapse text-center text-[10px] sm:text-xs">
               <thead>
                 <tr className="bg-[#1a2d5c] text-white font-black">
-                  <th className="p-3 border-r border-blue-900 w-24">Day / Time</th>
+                  <th className="p-2 sm:p-3 border-r border-blue-900 w-16 sm:w-24">Day / Time</th>
                   {timeslots.map(t => (
-                    <th key={t} className="p-3 border-r border-blue-900 min-w-[120px] font-bold text-xs whitespace-nowrap">
+                    <th key={t} className="p-2 sm:p-3 border-r border-blue-900 min-w-[70px] sm:min-w-[120px] font-bold whitespace-nowrap">
                       {t}
                     </th>
                   ))}
