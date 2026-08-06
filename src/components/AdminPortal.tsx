@@ -9,7 +9,7 @@ import AdminAuditClient from './AdminAuditClient';
 import CourseEditor from './CourseEditor';
 
 import { getAdminMembersData, getScheduleMatrix, getAboutUs, getAuditLogsAction } from '@/app/actions/admin';
-import { getClasses } from '@/app/actions/admin-classes';
+import { supabase } from '@/lib/supabase';
 import { 
   Home, 
   Users, 
@@ -56,7 +56,7 @@ export default function AdminPortal() {
         getScheduleMatrix().catch(() => null),
         getAboutUs().catch(() => null),
         getAuditLogsAction().catch(() => null),
-        getClasses().catch(() => null)
+        supabase.from('classes').select('*').then(res => ({ classes: res.data || [] })).catch(() => null)
       ]);
 
       if (mRes) setMembersData(mRes);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateClass, createClass } from '@/app/actions/admin-classes';
+import { supabase } from '@/lib/supabase';
 import { GymClass, GymClassPricing, GymClassScheduleRow } from '@/lib/types';
 import { Trash2, Plus } from 'lucide-react';
 
@@ -32,13 +32,13 @@ export default function CourseEditor({ initialData }: { initialData?: any }) {
     try {
       let res;
       if (initialData?.id) {
-        res = await updateClass(initialData.id, formData);
+        res = await supabase.from('classes').update(formData).eq('id', initialData.id);
       } else {
-        res = await createClass({ ...formData, id: `class_${Date.now()}` } as GymClass);
+        res = await supabase.from('classes').insert([{ ...formData, id: `class_${Date.now()}` }]);
       }
 
       if (res.error) {
-        setError(res.error);
+        setError(res.error.message);
       } else {
         window.location.reload();
       }
