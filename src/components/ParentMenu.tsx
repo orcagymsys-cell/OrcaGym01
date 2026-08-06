@@ -27,7 +27,7 @@ export default function ParentMenu() {
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-3 w-[240px] bg-white/95 backdrop-blur-sm flex flex-col p-3 rounded-3xl shadow-2xl border-4 border-sky-100 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
-          <Link href="/" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
+          <Link href="/dashboard" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
             <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🏠</span> HOME
           </Link>
           <Link href="/classes" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
@@ -36,7 +36,7 @@ export default function ParentMenu() {
           <Link href="/schedule" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
             <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">📅</span> SCHEDULE
           </Link>
-          <Link href="/#about" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
+          <Link href="/about" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
             <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌊</span> ABOUT US
           </Link>
           <div className="h-1 w-full bg-slate-100 my-1 rounded-full"></div>
