@@ -232,13 +232,13 @@ export default function AdminPortal() {
           <AdminMembersClient 
             initialChildren={membersData.children || []} 
             initialParents={membersData.parents || []}
-            classes={membersData.classes || []}
+            classes={classesList.length > 0 ? classesList : (membersData.classes || [])}
           />
         )}
 
         {activeTab === 'schedule' && (
           <AdminScheduleMatrix 
-            classes={scheduleData.classes || []} 
+            classes={classesList.length > 0 ? classesList : (scheduleData.classes || [])} 
             schedules={scheduleData.schedules || []} 
             bookings={scheduleData.bookings || []}
             childrenData={membersData.children || []}
