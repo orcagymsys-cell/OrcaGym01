@@ -54,7 +54,6 @@ export default function AddChildForm({ userId }: { userId: string }) {
         nickname,
         dob,
         gender,
-        photo_url: photoUrl || '',
         assigned_course_id: '',
         assigned_course_title: 'รอ Admin เลือกคลาส & อนุมัติ',
         course_approval_status: 'pending',
