@@ -225,8 +225,8 @@ export default function DashboardClient({
               }
             }
 
-            // Alert condition: within 7 days before/on last booking OR remaining_classes <= 1
-            if ((diffDays >= 0 && diffDays <= 7) || remainingClasses <= 1) {
+            // Alert condition: remaining_classes is low (<= 2) AND we are within 5 days of the last booking (or it has passed)
+            if (remainingClasses <= 2 && diffDays <= 5) {
               expiryAlerts.push({
                 childNickname: child.nickname,
                 courseTitle,
