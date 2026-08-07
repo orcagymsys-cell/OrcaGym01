@@ -18,7 +18,6 @@ export default function ParentMenu() {
       {/* Menu Header (looks like Image 2) */}
       <div 
         className="bg-[#113264] text-white px-5 py-2.5 rounded-full shadow-md flex items-center justify-center space-x-2 border-2 border-white/20 w-fit"
-        style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
       >
         <span className="text-3xl leading-none">🏠</span>
         <span className="text-2xl font-black text-white drop-shadow-sm uppercase tracking-wide">Menu</span>

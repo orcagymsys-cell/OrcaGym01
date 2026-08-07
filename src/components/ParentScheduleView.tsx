@@ -187,7 +187,7 @@ export default function ParentScheduleView({
   };
 
   return (
-    <div className="w-full max-w-[100vw] flex flex-col items-center space-y-6 px-2 sm:px-6 pb-12 overflow-x-hidden" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
+    <div className="w-full max-w-[100vw] flex flex-col items-center space-y-6 px-2 sm:px-6 pb-12 overflow-x-hidden">
       {/* Header Title */}
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-black text-[#1a2d5c]">

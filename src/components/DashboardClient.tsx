@@ -179,7 +179,7 @@ export default function DashboardClient({
   };
 
   return (
-    <div className="w-full flex flex-col items-center" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
+    <div className="w-full">
       {/* ⚠️ Expiry & Remaining Hours Alert Banner */}
       {(() => {
         const today = new Date();

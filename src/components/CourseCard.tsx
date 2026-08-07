@@ -37,10 +37,7 @@ export default function CourseCard({ course }: { course: GymClass }) {
   }
 
   return (
-    <div 
-      className={`w-full rounded-3xl overflow-hidden shadow-2xl p-6 md:p-8 bg-gradient-to-br ${cardBg} border-2 relative transition-all`}
-      style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
-    >
+    <div className={`p-4 rounded-[2rem] border-4 transition-all duration-300 ${isSelected ? 'border-[#1a2d5c] bg-blue-50/50 shadow-md scale-[1.02]' : 'border-white/50 bg-white/50 hover:border-blue-200 hover:bg-white/80'} cursor-pointer relative group h-full flex flex-col justify-between`}>
       {/* Top Banner Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 border-b border-black/10 pb-4">
         <div>

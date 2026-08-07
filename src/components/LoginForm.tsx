@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/app/actions/auth';
 import Image from 'next/image';
@@ -11,14 +11,33 @@ export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('orca_parent_username');
+    const savedPass = localStorage.getItem('orca_parent_password');
+    if (savedUser && savedPass) {
+      setUsername(savedUser);
+      setPassword(savedPass);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (rememberMe) {
+      localStorage.setItem('orca_parent_username', username);
+      localStorage.setItem('orca_parent_password', password);
+    } else {
+      localStorage.removeItem('orca_parent_username');
+      localStorage.removeItem('orca_parent_password');
+    }
 
     try {
       const res = await fetch('/api/login', {
@@ -51,7 +70,6 @@ export default function LoginForm() {
     <div className="flex flex-col items-center justify-center min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 sm:px-6 lg:px-8">
       <div 
         className="w-full max-w-md bg-white/80 backdrop-blur-md p-8 sm:p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col items-center" 
-        style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}
       >
         
         <img 
@@ -107,7 +125,12 @@ export default function LoginForm() {
           <div className="flex items-center sm:pl-[112px] pt-1">
             <label className="flex items-center space-x-3 text-sm sm:text-base text-black cursor-pointer group select-none">
               <div className="relative flex items-center justify-center">
-                <input type="checkbox" className="peer appearance-none w-5 h-5 rounded-md border-2 border-black checked:bg-[#183363] checked:border-[#183363] transition-colors cursor-pointer" />
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="peer appearance-none w-5 h-5 rounded-md border-2 border-black checked:bg-[#183363] checked:border-[#183363] transition-colors cursor-pointer" 
+                />
                 <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>

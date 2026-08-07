@@ -106,7 +106,7 @@ export default function AddChildForm({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md mx-auto bg-white p-5 sm:p-7 rounded-3xl shadow-sm border border-slate-200" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif" }}>
+    <div className="flex flex-col items-center w-full max-w-4xl bg-white/90 backdrop-blur-sm p-4 sm:p-8 rounded-[2rem] shadow-xl border-4 border-white">
       <h2 className="text-xl font-bold text-[#1a2d5c] mb-4">Student Information</h2>
       
       {error && (

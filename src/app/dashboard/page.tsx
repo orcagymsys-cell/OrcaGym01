@@ -49,7 +49,7 @@ export default async function DashboardPage() {
         <Link 
           href="/family/add"
           className="flex items-center space-x-3 sm:absolute sm:left-1/2 sm:-translate-x-1/2 my-4 sm:my-0 group hover:scale-105 transition-all cursor-pointer"
-          title="คลิกที่นี่เพื่อเพิ่มข้อมูลเด็ก / นักเรียนใหม่ (Add Family Member)"
+          title="สำหรับผู้ที่ซื้อ Course เรียนแล้ว"
         >
           <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform" role="img" aria-label="family">👩‍👧‍👦</span>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#183363] border-b-4 border-[#183363] group-hover:border-sky-600 group-hover:text-sky-700 pb-1 whitespace-nowrap transition-colors flex items-center gap-1">
