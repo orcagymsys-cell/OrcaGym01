@@ -1375,7 +1375,7 @@ ${coursesStr}
                 className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black hover:bg-emerald-700 disabled:opacity-50 text-xs shadow-md flex items-center space-x-1"
               >
                 <Check size={16} />
-                <span>{loading ? 'กำลังอนุมัติ...' : 'ยืนยันอนุมัติคลาสเรียน & บันทึก Audit'}</span>
+                <span>{loading ? 'กำลังอนุมัติ...' : 'ยืนยันการอนุมัติคลาสเรียน'}</span>
               </button>
             </div>
           </div>
