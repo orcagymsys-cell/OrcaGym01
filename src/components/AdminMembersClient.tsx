@@ -777,13 +777,16 @@ ${coursesStr}
                                         .from('audit_logs')
                                         .select('amount_paid, payment_ref_no, payment_slip_url')
                                         .eq('target_user_id', parent.id)
-                                        .order('timestamp', { ascending: false })
-                                        .limit(1);
+                                        .order('timestamp', { ascending: false });
                                       
                                       if (logs && logs.length > 0) {
-                                        lastAmountPaid = logs[0].amount_paid || 0;
-                                        lastRefNo = logs[0].payment_ref_no || '';
-                                        lastSlipUrl = logs[0].payment_slip_url || '';
+                                        // Find the most recent log that actually has payment information
+                                        const validLog = logs.find(log => (log.amount_paid && log.amount_paid > 0) || (log.payment_slip_url && log.payment_slip_url.trim() !== ''));
+                                        if (validLog) {
+                                          lastAmountPaid = validLog.amount_paid || 0;
+                                          lastRefNo = validLog.payment_ref_no || '';
+                                          lastSlipUrl = validLog.payment_slip_url || '';
+                                        }
                                       }
                                     }
 
