@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { submitLeadContact } from '@/app/actions/lead';
 import { Sparkles, Phone, User, CheckCircle2, ChevronDown, Lock, Shield, Award, Gift, ArrowRight, MessageCircle } from 'lucide-react';
 
-export default function LandingPageClient() {
+export default function LandingPageClient({ loggedInUser }: { loggedInUser?: any }) {
   const [showLoginMenu, setShowLoginMenu] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState('Orca Cubs Promo (10 + 2 แถมฟรี)');
 
@@ -124,13 +124,23 @@ export default function LandingPageClient() {
           </nav>
 
           {/* Top-Right: Direct Sign In Button (Parent Login) */}
-          <Link
-            href="/login"
-            className="flex items-center space-x-2 bg-[#183363] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-blue-900 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
-          >
-            <User size={16} />
-            <span>เข้าสู่ระบบ (Sign in)</span>
-          </Link>
+          {loggedInUser ? (
+            <Link
+              href="/dashboard"
+              className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
+            >
+              <User size={16} />
+              <span>👤 {loggedInUser.username || 'ไปที่ Dashboard'}</span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center space-x-2 bg-[#183363] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-blue-900 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
+            >
+              <User size={16} />
+              <span>เข้าสู่ระบบ (Sign in)</span>
+            </Link>
+          )}
         </div>
 
         {/* Mobile Navigation Links Bar */}

@@ -37,6 +37,9 @@ export default function ParentMenu() {
         <Link href="/about" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
           <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌊</span> ABOUT US
         </Link>
+        <Link href="/" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
+          <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌐</span> WEBSITE
+        </Link>
         <div className="h-1 w-full bg-slate-100 my-1 rounded-full"></div>
         <button 
           onClick={handleLogout}
