@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import DashboardClient from '@/components/DashboardClient';
 import ParentMenu from '@/components/ParentMenu';
-import { kanit } from '@/app/layout';
+import { kanit } from '@/lib/fonts';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 

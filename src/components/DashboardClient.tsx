@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Trash2, Edit2, X, Save, ZoomIn, Move, ChevronRight, ArrowLeft, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { Child, Gender, User, GymClass, Schedule, Booking } from '@/lib/types';
-import { kanit } from '@/app/layout';
+import { kanit } from '@/lib/fonts';
 
 function processCroppedImage(imageSrc: string, zoom: number, offsetX: number, offsetY: number): Promise<string> {
   return new Promise((resolve) => {
