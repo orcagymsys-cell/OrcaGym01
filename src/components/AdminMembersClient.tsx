@@ -380,8 +380,6 @@ export default function AdminMembersClient({
         amount_paid: parseFloat(parentForm.amount_paid) || 0,
         payment_ref_no: parentForm.payment_ref_no || '',
         payment_slip_url: parentForm.payment_slip_url || '',
-        sender_bank_info: parentForm.sender_bank_info || '',
-        payment_time: parentForm.payment_time || '',
         remark: parentForm.remark || `Admin สร้างบัญชีผู้ปกครองใหม่ (${newUser.username})`
       };
 

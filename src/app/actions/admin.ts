@@ -351,8 +351,6 @@ export async function createParentAccount(data: {
     amount_paid: totalPaid,
     payment_ref_no: data.payment_details?.payment_ref_no || '',
     payment_slip_url: data.payment_details?.payment_slip_url || '',
-    sender_bank_info: data.payment_details?.sender_bank_info || '',
-    payment_time: data.payment_details?.payment_time || '',
     remark: data.payment_details?.remark || `Admin สร้างบัญชีผู้ปกครองใหม่ (${newUser.username})`
   };
   
