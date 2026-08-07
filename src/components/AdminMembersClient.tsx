@@ -762,11 +762,31 @@ ${coursesStr}
                             <div className="flex items-center justify-center space-x-2">
                               {isPending ? (
                                 <button 
-                                  onClick={() => {
+                                  onClick={async () => {
                                     const chosenCourseId = selectedCoursesMap[child.id] || (child as any).assigned_course_id || (parent?.courses_purchased?.[0]?.class_id) || classes[0]?.id || '';
                                     const familyCourse = parent?.courses_purchased?.find(cp => cp.class_id === chosenCourseId);
                                     const purchased = familyCourse ? familyCourse.purchased_classes : 10;
                                     const bonus = familyCourse ? familyCourse.bonus_classes : 0;
+                                    
+                                    let lastAmountPaid = 0;
+                                    let lastRefNo = '';
+                                    let lastSlipUrl = '';
+
+                                    if (parent) {
+                                      const { data: logs } = await supabase
+                                        .from('audit_logs')
+                                        .select('amount_paid, payment_ref_no, payment_slip_url')
+                                        .eq('target_user_id', parent.id)
+                                        .order('timestamp', { ascending: false })
+                                        .limit(1);
+                                      
+                                      if (logs && logs.length > 0) {
+                                        lastAmountPaid = logs[0].amount_paid || 0;
+                                        lastRefNo = logs[0].payment_ref_no || '';
+                                        lastSlipUrl = logs[0].payment_slip_url || '';
+                                      }
+                                    }
+
                                     setApprovingChildModal({
                                       childId: child.id,
                                       childName: `น้อง ${child.nickname} (${child.full_name})`,
@@ -774,9 +794,9 @@ ${coursesStr}
                                       courseId: chosenCourseId,
                                       purchasedClasses: purchased || 10,
                                       bonusClasses: bonus || 0,
-                                      amountPaid: 0,
-                                      paymentRefNo: '',
-                                      paymentSlipUrl: '',
+                                      amountPaid: lastAmountPaid,
+                                      paymentRefNo: lastRefNo,
+                                      paymentSlipUrl: lastSlipUrl,
                                       remark: 'อนุมัติสิทธิ์คลาสเรียน'
                                     });
                                   }}
