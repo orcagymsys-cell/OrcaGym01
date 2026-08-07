@@ -105,7 +105,10 @@ export default function DashboardClient({
     e.preventDefault();
     if (window.confirm('Are you sure you want to delete this child?')) {
       setLoadingId(id);
-      await deleteChild(id);
+      const res = await deleteChild(id);
+      if (res?.error) {
+        alert(res.error);
+      }
       router.refresh();
       setLoadingId(null);
     }

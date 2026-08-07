@@ -66,9 +66,17 @@ export async function addChild(data: { full_name: string, nickname: string, dob:
 
 export async function deleteChild(childId: string) {
   const user = await getUser();
-  if (!user || user.role !== 'parent') return { error: 'Unauthorized' };
+  if (!user) return { error: 'Unauthorized' };
 
-  const { error } = await supabase.from('children').delete().eq('id', childId).eq('parent_id', user.id);
+  if (user.role !== 'admin') {
+    const { data: check } = await supabase.from('children').select('id').eq('id', childId).eq('parent_id', user.id).single();
+    if (!check) return { error: 'Unauthorized' };
+  }
+
+  // Delete bookings to prevent foreign key constraint errors
+  await supabase.from('bookings').delete().eq('child_id', childId);
+
+  const { error } = await supabase.from('children').delete().eq('id', childId);
   
   if (!error) {
     revalidatePath('/dashboard');
@@ -76,7 +84,7 @@ export async function deleteChild(childId: string) {
     return { success: true };
   }
   
-  return { error: 'Child not found' };
+  return { error: 'Failed to delete child' };
 }
 
 export async function updateChild(childId: string, data: { full_name: string, nickname: string, dob: string, gender: Gender, photo_url?: string, assigned_course_id?: string }) {
