@@ -131,15 +131,15 @@ export default function LandingPageClient({ loggedInUser }: { loggedInUser?: any
           </nav>
 
           {/* Top-Right: Direct Sign In Button (Parent Login) */}
-          {loggedInUser ? (
+          {loggedInUser && loggedInUser.role !== 'admin' ? (
             <div className="flex items-center space-x-2">
               <Link
-                href={loggedInUser.role === 'admin' ? '/admin' : '/dashboard'}
+                href="/dashboard"
                 className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
               >
                 <User size={16} />
-                <span className="hidden sm:inline">👤 {loggedInUser.role === 'admin' ? 'แอดมิน (Admin)' : loggedInUser.username || 'ไปที่ Dashboard'}</span>
-                <span className="sm:hidden">👤 {loggedInUser.role === 'admin' ? 'แอดมิน' : 'Dashboard'}</span>
+                <span className="hidden sm:inline">👤 {loggedInUser.username || 'ไปที่ Dashboard'}</span>
+                <span className="sm:hidden">👤 Dashboard</span>
               </Link>
               <button
                 onClick={handleLogout}
