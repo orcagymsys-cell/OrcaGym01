@@ -1339,16 +1339,17 @@ ${coursesStr}
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-slate-600">คลิกดูสลิปการโอนเงิน</label>
-                    {approvingChildModal.paymentSlipUrl && approvingChildModal.paymentSlipUrl.startsWith('http') && (
+                    {approvingChildModal.paymentSlipUrl ? (
                       <a 
-                        href={approvingChildModal.paymentSlipUrl} 
-                        target="_blank" 
+                        href={approvingChildModal.paymentSlipUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-sky-600 hover:text-sky-800 underline flex items-center space-x-1 bg-sky-50 px-2 py-0.5 rounded"
+                        className="block text-[11px] font-bold text-sky-600 hover:text-sky-800 underline cursor-pointer"
                       >
-                        <span role="img" aria-label="link">🔗</span> <span>คลิกดูสลิป</span>
+                        🔗 คลิกดูสลิปการโอนเงิน
                       </a>
+                    ) : (
+                      <label className="block text-[11px] font-bold text-slate-600">คลิกดูสลิปการโอนเงิน</label>
                     )}
                   </div>
                   <input
