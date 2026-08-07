@@ -23,7 +23,7 @@ export default async function AddFamilyMemberPage() {
   }
 
   return (
-    <div className="relative pt-4 sm:pt-6">
+    <div className="relative pt-4 sm:pt-6 max-w-5xl mx-auto w-full px-4 sm:px-6">
       <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
         <Link 
           href="/dashboard" 
