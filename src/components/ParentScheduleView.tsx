@@ -323,8 +323,8 @@ export default function ParentScheduleView({
                 <tr className="bg-[#1a2d5c] text-white font-black">
                   <th className="p-2 sm:p-3 border-r border-blue-900 w-16 sm:w-24">Day / Time</th>
                   {timeslots.map(t => (
-                    <th key={t} className="p-2 sm:p-3 border-r border-blue-900 min-w-[70px] sm:min-w-[110px] font-bold whitespace-nowrap">
-                      {t}
+                    <th key={t} className="p-1 sm:p-2 border-r border-blue-900 w-auto font-bold text-[9px] sm:text-[11px] leading-tight">
+                      {t.replace('-', '\n')}
                     </th>
                   ))}
                 </tr>
@@ -411,8 +411,8 @@ export default function ParentScheduleView({
                 <tr className="bg-[#1a2d5c] text-white font-black">
                   <th className="p-2 sm:p-3 border-r border-blue-900 w-16 sm:w-24">Day / Time</th>
                   {timeslots.map(t => (
-                    <th key={t} className="p-2 sm:p-3 border-r border-blue-900 min-w-[70px] sm:min-w-[120px] font-bold whitespace-nowrap">
-                      {t}
+                    <th key={t} className="p-1 sm:p-2 border-r border-blue-900 w-auto font-bold text-[9px] sm:text-[11px] leading-tight">
+                      {t.replace('-', '\n')}
                     </th>
                   ))}
                 </tr>
