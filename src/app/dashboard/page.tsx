@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import DashboardClient from '@/components/DashboardClient';
 import ParentMenu from '@/components/ParentMenu';
+import { kanit } from '@/app/layout';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
           title="สำหรับผู้ที่ซื้อ Course เรียนแล้ว"
         >
           <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform" role="img" aria-label="family">👩‍👧‍👦</span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#183363] border-b-4 border-[#183363] group-hover:border-sky-600 group-hover:text-sky-700 pb-1 whitespace-nowrap transition-colors flex items-center gap-1">
+          <h1 className={`text-2xl sm:text-3xl font-black text-[#183363] border-b-4 border-[#183363] group-hover:border-sky-600 group-hover:text-sky-700 pb-1 whitespace-nowrap transition-colors flex items-center gap-1 ${kanit.className}`}>
             <span>Add Family Member</span>
             <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 ml-1 shadow-xs group-hover:bg-emerald-600 group-hover:text-white transition-all">+ เพิ่มเด็ก</span>
           </h1>

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Trash2, Edit2, X, Save, ZoomIn, Move, ChevronRight, ArrowLeft, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import { Child, Gender, User, GymClass, Schedule, Booking } from '@/lib/types';
+import { kanit } from '@/app/layout';
 
 function processCroppedImage(imageSrc: string, zoom: number, offsetX: number, offsetY: number): Promise<string> {
   return new Promise((resolve) => {
@@ -241,7 +242,7 @@ export default function DashboardClient({
         if (expiryAlerts.length === 0) return null;
 
         return (
-          <div className="w-full max-w-2xl sm:max-w-3xl mx-auto bg-amber-50/90 border-2 border-amber-400 rounded-2xl p-4 sm:p-5 mb-6 shadow-md">
+          <div className={`w-full max-w-2xl sm:max-w-3xl mx-auto bg-amber-50/90 border-2 border-amber-400 rounded-2xl p-4 sm:p-5 mb-6 shadow-md ${kanit.className}`}>
             <div className="flex items-start space-x-3 sm:space-x-4">
               <span className="text-2xl sm:text-3xl animate-pulse shrink-0 leading-none pt-0.5">
                 ⚠️

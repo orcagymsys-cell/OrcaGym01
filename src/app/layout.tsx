@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Inter } from 'next/font/google';
+import { Kanit } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+export const kanit = Kanit({ 
+  weight: ['400', '600', '700', '800', '900'],
+  subsets: ['latin', 'thai'],
+});
 
 export const metadata: Metadata = {
   title: 'ORCA GYMNASTICS',
@@ -16,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th">
-      <body className={`antialiased bg-slate-50 min-h-screen ${inter.className}`}>
+      <body className="antialiased bg-slate-50 min-h-screen" style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Mali', 'Comic Neue', sans-serif" }}>
         {children}
       </body>
     </html>
