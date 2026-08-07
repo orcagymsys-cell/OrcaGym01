@@ -1358,20 +1358,21 @@ ${coursesStr}
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    {approvingChildModal.paymentSlipUrl ? (
-                      <a 
-                        href={approvingChildModal.paymentSlipUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-[11px] font-bold text-sky-600 hover:text-sky-800 underline cursor-pointer"
-                      >
-                        🔗 หลักฐานการชำระเงิน
-                      </a>
-                    ) : (
-                      <label className="block text-[11px] font-bold text-slate-600">หลักฐานการชำระเงิน</label>
-                    )}
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] font-bold text-slate-600">หลักฐานการชำระเงิน</label>
                   </div>
+                  {approvingChildModal.paymentSlipUrl && (
+                    <div className="mt-2 mb-3 border-2 border-emerald-200 rounded-xl overflow-hidden bg-emerald-50/50 p-2 text-center">
+                      <p className="text-[10px] text-emerald-700 font-bold mb-2">✅ ดึงข้อมูลสลิปอัตโนมัติจากประวัติผู้ปกครอง</p>
+                      <a href={approvingChildModal.paymentSlipUrl} target="_blank" rel="noopener noreferrer">
+                        <img 
+                          src={approvingChildModal.paymentSlipUrl} 
+                          alt="Payment Slip" 
+                          className="max-w-full max-h-48 mx-auto rounded-lg shadow-sm border border-slate-200 hover:scale-[1.02] transition-transform cursor-pointer"
+                        />
+                      </a>
+                    </div>
+                  )}
                   <input
                     type="text"
                     placeholder="https://... หรือแนบลิงก์สลิปโอนเงิน"
