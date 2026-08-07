@@ -1310,7 +1310,7 @@ ${coursesStr}
               {/* PAYMENT VERIFICATION FIELDS */}
               <div className="pt-2 border-t border-slate-200 space-y-3">
                 <h4 className="font-black text-slate-800 text-xs flex items-center gap-1">
-                  💳 ตรวจสอบหลักฐานการโอนเงิน (Anti-Fraud Record)
+                  💳 ตรวจสอบหลักฐานการโอนเงิน <span className="text-slate-500 font-semibold">(ไม่บังคับ หากชำระแล้ว)</span>
                 </h4>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1346,10 +1346,10 @@ ${coursesStr}
                         rel="noopener noreferrer"
                         className="block text-[11px] font-bold text-sky-600 hover:text-sky-800 underline cursor-pointer"
                       >
-                        🔗 คลิกดูสลิปการโอนเงิน
+                        🔗 หลักฐานการชำระเงิน
                       </a>
                     ) : (
-                      <label className="block text-[11px] font-bold text-slate-600">คลิกดูสลิปการโอนเงิน</label>
+                      <label className="block text-[11px] font-bold text-slate-600">หลักฐานการชำระเงิน</label>
                     )}
                   </div>
                   <input
