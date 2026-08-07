@@ -46,6 +46,23 @@ export default function AdminMembersClient({
     setChildren(initialChildren);
     setParents(initialParents);
   }, [initialChildren, initialParents]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-children-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'children' },
+        () => {
+          router.refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [router]);
   
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [addAmount, setAddAmount] = useState(10);
