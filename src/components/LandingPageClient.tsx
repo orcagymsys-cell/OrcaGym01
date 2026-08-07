@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { submitLeadContact } from '@/app/actions/lead';
-import { Sparkles, Phone, User, CheckCircle2, ChevronDown, Lock, Shield, Award, Gift, ArrowRight, MessageCircle } from 'lucide-react';
+import { Sparkles, Phone, User, CheckCircle2, ChevronDown, Lock, Shield, Award, Gift, ArrowRight, MessageCircle, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPageClient({ loggedInUser }: { loggedInUser?: any }) {
+  const router = useRouter();
   const [showLoginMenu, setShowLoginMenu] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState('Orca Cubs Promo (10 + 2 แถมฟรี)');
 
@@ -38,6 +40,11 @@ export default function LandingPageClient({ loggedInUser }: { loggedInUser?: any
       setForm({ parent_name: '', phone_number: '', child_info: '', note: '' });
     }
     setLoading(false);
+  };
+
+  const handleLogout = () => {
+    document.cookie = 'session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    router.refresh();
   };
 
   const handleSelectPromoClick = (promoName: string) => {
@@ -125,13 +132,24 @@ export default function LandingPageClient({ loggedInUser }: { loggedInUser?: any
 
           {/* Top-Right: Direct Sign In Button (Parent Login) */}
           {loggedInUser ? (
-            <Link
-              href={loggedInUser.role === 'admin' ? '/admin' : '/dashboard'}
-              className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
-            >
-              <User size={16} />
-              <span>👤 {loggedInUser.role === 'admin' ? 'แอดมิน (Admin)' : loggedInUser.username || 'ไปที่ Dashboard'}</span>
-            </Link>
+            <div className="flex items-center space-x-2">
+              <Link
+                href={loggedInUser.role === 'admin' ? '/admin' : '/dashboard'}
+                className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer shrink-0"
+              >
+                <User size={16} />
+                <span className="hidden sm:inline">👤 {loggedInUser.role === 'admin' ? 'แอดมิน (Admin)' : loggedInUser.username || 'ไปที่ Dashboard'}</span>
+                <span className="sm:hidden">👤 {loggedInUser.role === 'admin' ? 'แอดมิน' : 'Dashboard'}</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 sm:space-x-2 bg-rose-50 text-rose-600 border border-rose-200 px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl font-black text-xs sm:text-sm hover:bg-rose-100 transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
+                title="Log Out"
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">ออกจากระบบ</span>
+              </button>
+            </div>
           ) : (
             <Link
               href="/login"
