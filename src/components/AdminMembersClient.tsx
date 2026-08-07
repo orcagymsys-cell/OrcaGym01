@@ -1339,7 +1339,7 @@ ${coursesStr}
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-slate-600">URL รูปสลิปโอนเงิน / ลิงก์แนบสลิป (ถ้ามี)</label>
+                    <label className="block text-[11px] font-bold text-slate-600">คลิกดูสลิปการโอนเงิน</label>
                     {approvingChildModal.paymentSlipUrl && approvingChildModal.paymentSlipUrl.startsWith('http') && (
                       <a 
                         href={approvingChildModal.paymentSlipUrl} 
