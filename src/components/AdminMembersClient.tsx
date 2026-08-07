@@ -41,6 +41,7 @@ export default function AdminMembersClient({
   const [parents, setParents] = useState<User[]>(initialParents);
   const [activeTab, setActiveTab] = useState<'parents' | 'children'>('parents');
   const [courseFilter, setCourseFilter] = useState<string>('all');
+  const router = useRouter();
 
   useEffect(() => {
     setChildren(initialChildren);
@@ -100,7 +101,6 @@ export default function AdminMembersClient({
   const activeParents = parents.length;
 
   const [selectedCoursesMap, setSelectedCoursesMap] = useState<{ [childId: string]: string }>({});
-  const router = useRouter();
 
   const [editingChildModal, setEditingChildModal] = useState<{
     childId: string;
