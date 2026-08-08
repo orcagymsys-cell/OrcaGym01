@@ -148,7 +148,14 @@ export default function AdminMembersClient({
 
       if (response.ok && res.success) {
         setEditingChildModal(null);
-        window.location.reload();
+        
+        // Fetch fresh data to update UI without page reload
+        const { data: newChildren } = await supabase.from('children').select('*');
+        const { data: newParents } = await supabase.from('users').select('*').eq('role', 'parent');
+        
+        if (newChildren) setChildren(newChildren as any[]);
+        if (newParents) setParents(newParents as any[]);
+        
       } else {
         alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขคอร์ส');
       }
