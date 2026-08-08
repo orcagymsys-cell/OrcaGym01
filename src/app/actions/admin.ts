@@ -114,51 +114,61 @@ export async function approveChildCourse(
 }
 
 export async function updateChildCourse(childId: string, data: { courseId?: string; purchasedClasses?: number; bonusClasses?: number; totalClasses?: number; remainingClasses?: number }) {
-  const user = await getUser();
-  if (user?.role !== 'admin') return { error: 'Not authorized' };
+  try {
+    const user = await getUser();
+    if (user?.role !== 'admin') return { error: 'Not authorized' };
 
-  const { data: child } = await supabase.from('children').select('*').eq('id', childId).single();
-  if (!child) return { error: 'Child not found' };
+    const { data: child, error: childErr } = await supabase.from('children').select('*').eq('id', childId).single();
+    if (childErr) throw new Error('Child not found or DB error: ' + childErr.message);
+    if (!child) return { error: 'Child not found' };
 
-  const updateData: any = {};
+    const updateData: any = {};
 
-  if (data.courseId) {
-    const { data: gymClass } = await supabase.from('classes').select('*').eq('id', data.courseId).single();
-    updateData.assigned_course_id = data.courseId;
-    updateData.assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
+    if (data.courseId) {
+      const { data: gymClass } = await supabase.from('classes').select('*').eq('id', data.courseId).single();
+      updateData.assigned_course_id = data.courseId;
+      updateData.assigned_course_title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
+    }
+
+    const { data: parentUser, error: parentErr } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
+    if (parentErr) throw new Error('Parent not found or DB error: ' + parentErr.message);
+
+    const targetCourseId = data.courseId || child.assigned_course_id;
+    const familyCourse = parentUser?.courses_purchased?.find((cp: any) => cp.class_id === targetCourseId);
+
+    const purchased = data.purchasedClasses !== undefined ? data.purchasedClasses : (familyCourse?.purchased_classes || 10);
+    const bonus = data.bonusClasses !== undefined ? data.bonusClasses : (familyCourse?.bonus_classes || 0);
+    const calculatedTotal = data.totalClasses !== undefined ? data.totalClasses : (purchased + bonus);
+
+    updateData.total_classes = calculatedTotal;
+    
+    if (parentUser && familyCourse) {
+      familyCourse.purchased_classes = purchased;
+      familyCourse.bonus_classes = bonus;
+      familyCourse.total_classes = calculatedTotal;
+    }
+
+    if (data.remainingClasses !== undefined) {
+      updateData.remaining_classes = data.remainingClasses;
+      if (familyCourse) familyCourse.remaining_classes = data.remainingClasses;
+    }
+
+    if (parentUser && parentUser.courses_purchased) {
+      const { error: userUpdateErr } = await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
+      if (userUpdateErr) throw new Error('Failed to update user: ' + userUpdateErr.message);
+    }
+    
+    const { error: childUpdateErr } = await supabase.from('children').update(updateData).eq('id', childId);
+    if (childUpdateErr) throw new Error('Failed to update child: ' + childUpdateErr.message);
+
+    safeRevalidate('/admin/members');
+    safeRevalidate('/dashboard');
+    safeRevalidate('/schedule');
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateChildCourse error:", err);
+    return { error: err.message || 'Internal Server Error' };
   }
-
-  const { data: parentUser } = await supabase.from('users').select('*').eq('id', child.parent_id).single();
-  const targetCourseId = data.courseId || child.assigned_course_id;
-  const familyCourse = parentUser?.courses_purchased?.find((cp: any) => cp.class_id === targetCourseId);
-
-  const purchased = data.purchasedClasses !== undefined ? data.purchasedClasses : (familyCourse?.purchased_classes || 10);
-  const bonus = data.bonusClasses !== undefined ? data.bonusClasses : (familyCourse?.bonus_classes || 0);
-  const calculatedTotal = data.totalClasses !== undefined ? data.totalClasses : (purchased + bonus);
-
-  updateData.total_classes = calculatedTotal;
-  
-  if (parentUser && familyCourse) {
-    familyCourse.purchased_classes = purchased;
-    familyCourse.bonus_classes = bonus;
-    familyCourse.total_classes = calculatedTotal;
-  }
-
-  if (data.remainingClasses !== undefined) {
-    updateData.remaining_classes = data.remainingClasses;
-    if (familyCourse) familyCourse.remaining_classes = data.remainingClasses;
-  }
-
-  if (parentUser && parentUser.courses_purchased) {
-    await supabase.from('users').update({ courses_purchased: parentUser.courses_purchased }).eq('id', parentUser.id);
-  }
-  
-  await supabase.from('children').update(updateData).eq('id', childId);
-
-  safeRevalidate('/admin/members');
-  safeRevalidate('/dashboard');
-  safeRevalidate('/schedule');
-  return { success: true };
 }
 
 export async function adminCancelBooking(bookingId: string) {
