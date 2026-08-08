@@ -53,9 +53,9 @@ export default async function DashboardPage() {
           title="สำหรับผู้ที่ซื้อ Course เรียนแล้ว"
         >
           <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform" role="img" aria-label="family">👩‍👧‍👦</span>
-          <h1 className={`text-2xl sm:text-3xl font-black text-[#183363] border-b-4 border-[#183363] group-hover:border-sky-600 group-hover:text-sky-700 pb-1 whitespace-nowrap transition-colors flex items-center gap-1 ${kanit.className}`}>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#183363] border-b-4 border-[#183363] group-hover:border-sky-600 group-hover:text-sky-700 pb-1 whitespace-nowrap transition-colors flex items-center gap-1 font-[family-name:'MiPancake',_sans-serif]">
             <span>Add Family Member</span>
-            <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 ml-1 shadow-xs group-hover:bg-emerald-600 group-hover:text-white transition-all">+ เพิ่มเด็ก</span>
+            <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 ml-1 shadow-xs group-hover:bg-emerald-600 group-hover:text-white transition-all">+เพิ่มเด็ก</span>
           </h1>
         </Link>
         
