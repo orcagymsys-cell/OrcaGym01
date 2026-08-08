@@ -402,7 +402,6 @@ export default function AdminAuditClient({
             </div>
           </>
         )}
-      </div>
 
       {/* Payment Slip Modal */}
       {activeSlipModal && (
