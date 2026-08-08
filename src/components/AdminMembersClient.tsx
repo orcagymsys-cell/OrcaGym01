@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Child, User, GymClass } from '@/lib/types';
-import { approveChild, approveChildCourse, addCoursesToChild, deleteParentAccount, updateChildCourse } from '@/app/actions/admin';
+import { approveChild, approveChildCourse, addCoursesToChild, deleteParentAccount } from '@/app/actions/admin';
 import { Check, Edit, UserPlus, Users, Key, Phone, BookOpen, Clock, ShieldCheck, Copy, X, Trash2, Bell, BellRing, Edit3 } from 'lucide-react';
 
 function calculateAge(dobStr?: string): string {
@@ -130,15 +130,23 @@ export default function AdminMembersClient({
     setLoading(true);
     try {
       const calculatedTotal = editingChildModal.purchasedClasses + editingChildModal.bonusClasses;
-      const res = await updateChildCourse(editingChildModal.childId, {
-        courseId: editingChildModal.courseId,
-        purchasedClasses: editingChildModal.purchasedClasses,
-        bonusClasses: editingChildModal.bonusClasses,
-        totalClasses: calculatedTotal,
-        remainingClasses: editingChildModal.remainingClasses
+      const response = await fetch('/api/admin/update-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          childId: editingChildModal.childId,
+          data: {
+            courseId: editingChildModal.courseId,
+            purchasedClasses: editingChildModal.purchasedClasses,
+            bonusClasses: editingChildModal.bonusClasses,
+            totalClasses: calculatedTotal,
+            remainingClasses: editingChildModal.remainingClasses
+          }
+        })
       });
+      const res = await response.json();
 
-      if (res.success) {
+      if (response.ok && res.success) {
         const gymClass = classes.find(c => c.id === editingChildModal.courseId);
         const title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
         setChildren(children.map(c => c.id === editingChildModal.childId ? {
