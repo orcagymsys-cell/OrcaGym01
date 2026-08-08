@@ -95,6 +95,7 @@ export default function AdminScheduleMatrix({
 
   const [selectedDate, setSelectedDate] = useState(''); // Init empty to show full week by default
   const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('ALL'); // Added course tab state
   const [selectedCell, setSelectedCell] = useState<{ day: string, time: string, classes: { gymClass: GymClass, tag?: string }[] } | null>(null);
   const [bookingSearch, setBookingSearch] = useState('');
   const [bookingsState, setBookingsState] = useState<Booking[]>(bookings);
@@ -159,7 +160,9 @@ export default function AdminScheduleMatrix({
   const getClassesForCell = (day: string, time: string) => {
     const matchedMap = new Map<string, { gymClass: GymClass, tag?: string }>();
 
-    classes.forEach(cls => {
+    const filteredClasses = selectedCourseId === 'ALL' ? classes : classes.filter(c => c.id === selectedCourseId);
+
+    filteredClasses.forEach(cls => {
       cls.scheduleGrid?.forEach(row => {
         const dayGroupDays = parseDaysFromLabel(row.label);
 
@@ -191,7 +194,7 @@ export default function AdminScheduleMatrix({
       const sch = schedules.find(s => s.day_of_week === day && s.start_time === start);
       if (sch) {
         const cls = classes.find(c => c.id === sch.class_id);
-        if (cls) {
+        if (cls && (selectedCourseId === 'ALL' || cls.id === selectedCourseId)) {
           matchedMap.set(cls.id, { gymClass: cls });
         }
       }
@@ -273,9 +276,17 @@ export default function AdminScheduleMatrix({
   }
 
   const weekDatesSet = new Set(Object.values(currentWeekMap).map(d => toISODateString(d)));
+  
+  const relevantBookings = selectedCourseId === 'ALL' 
+    ? bookingsState 
+    : bookingsState.filter(b => {
+        const bClassId = (b as any).class_id || b.schedule_id;
+        return bClassId === selectedCourseId;
+      });
+
   const displayedBookings = selectedDate 
-    ? bookingsState.filter(b => toISODateString(b.date) === toISODateString(selectedDate) && b.status !== 'cancelled')
-    : bookingsState.filter(b => b.status !== 'cancelled' && weekDatesSet.has(toISODateString(b.date)));
+    ? relevantBookings.filter(b => toISODateString(b.date) === toISODateString(selectedDate) && b.status !== 'cancelled')
+    : relevantBookings.filter(b => b.status !== 'cancelled' && weekDatesSet.has(toISODateString(b.date)));
 
   return (
     <div className="space-y-6">
@@ -309,6 +320,33 @@ export default function AdminScheduleMatrix({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Course Tabs */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setSelectedCourseId('ALL')}
+          className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
+            selectedCourseId === 'ALL'
+              ? 'bg-[#183363] text-white shadow-md'
+              : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          All Courses
+        </button>
+        {classes.map(cls => (
+          <button
+            key={cls.id}
+            onClick={() => setSelectedCourseId(cls.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
+              selectedCourseId === cls.id
+                ? 'bg-[#183363] text-white shadow-md'
+                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {cls.title || cls.name}
+          </button>
+        ))}
       </div>
 
       {/* Selected Date Summary Banner */}
@@ -523,7 +561,7 @@ export default function AdminScheduleMatrix({
 
       {/* 📋 ALL BOOKINGS TABLE FOR ADMIN */}
       {(() => {
-        const filteredBookings = bookings
+        const filteredBookings = relevantBookings
           .filter(bk => {
             if (!bookingSearch.trim()) return true;
             const child = childrenData.find(c => c.id === bk.child_id);

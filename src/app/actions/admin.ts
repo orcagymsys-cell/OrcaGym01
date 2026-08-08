@@ -2,7 +2,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { getUser } from './user';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 
 function safeRevalidate(path: string) {
   try {
@@ -226,6 +226,7 @@ export async function addCoursesToChild(childId: string, amount: number) {
 }
 
 export async function getScheduleMatrix() {
+  noStore();
   const { data: classes } = await supabase.from('classes').select('*');
   const { data: schedules } = await supabase.from('schedules').select('*');
   const { data: bookings } = await supabase.from('bookings').select('*');
