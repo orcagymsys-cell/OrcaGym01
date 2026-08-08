@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AuditLog, User, Child, GymClass } from '@/lib/types';
 import { Calendar, Search, ShieldCheck, UserPlus, Award, CreditCard, Eye, X, Filter } from 'lucide-react';
 
@@ -16,6 +16,10 @@ export default function AdminAuditClient({
   classes: GymClass[];
 }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialAuditLogs);
+  
+  useEffect(() => {
+    setLogs(initialAuditLogs);
+  }, [initialAuditLogs]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const todayStr = new Date().toISOString().split('T')[0];
