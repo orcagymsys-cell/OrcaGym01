@@ -130,7 +130,7 @@ export default function AdminPortal() {
         <nav className="w-full flex md:flex-col overflow-x-auto md:overflow-x-visible space-x-2 md:space-x-0 md:space-y-2 px-3 md:px-4 py-3 md:py-0 mt-3 md:mt-6 flex-1 text-xs md:text-sm font-bold no-scrollbar">
           <button 
             onClick={() => { setActiveTab('dashboard'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
           >
             <Home size={16} />
             <span>HOME</span>
@@ -138,7 +138,7 @@ export default function AdminPortal() {
 
           <button 
             onClick={() => { setActiveTab('members'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'members' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'members' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
           >
             <Users size={16} />
             <span>MEMBERS</span>
@@ -146,7 +146,7 @@ export default function AdminPortal() {
 
           <button 
             onClick={() => { setActiveTab('classes'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'classes' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'classes' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
           >
             <Package size={16} />
             <span>CLASSES</span>
@@ -154,7 +154,7 @@ export default function AdminPortal() {
 
           <button 
             onClick={() => { setActiveTab('schedule'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'schedule' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'schedule' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
           >
             <Calendar size={16} />
             <span>SCHEDULE</span>
@@ -162,7 +162,7 @@ export default function AdminPortal() {
 
           <button 
             onClick={() => { setActiveTab('audit'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'audit' ? 'bg-emerald-700 text-white shadow-md' : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'audit' ? 'bg-emerald-700 text-white shadow-md' : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'}`}
           >
             <ShieldCheck size={16} />
             <span>AUDIT</span>
@@ -170,7 +170,7 @@ export default function AdminPortal() {
 
           <button 
             onClick={() => { setActiveTab('about'); setEditingClassId(null); }}
-            className={`w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'about' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
+            className={`whitespace-nowrap md:w-full flex items-center space-x-2 shrink-0 px-3 md:px-4 py-2.5 rounded-xl transition-all ${activeTab === 'about' ? 'bg-[#183363] text-white shadow-md' : 'text-[#183363] hover:bg-blue-50'}`}
           >
             <Info size={16} />
             <span>ABOUT US</span>
