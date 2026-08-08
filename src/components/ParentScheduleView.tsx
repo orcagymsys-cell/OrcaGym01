@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Child, GymClass, Schedule, Booking, User } from '@/lib/types';
 import Link from 'next/link';
-import { Calendar, Clock, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Calendar, Clock, ChevronRight, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -188,6 +188,17 @@ export default function ParentScheduleView({
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col items-center space-y-6 px-4 sm:px-6 pb-12">
+      {/* Top Bar with Back Button */}
+      <div className="w-full flex items-center justify-between mt-4">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center space-x-2 px-4 py-2 bg-white hover:bg-slate-100 text-[#183363] rounded-2xl font-extrabold text-sm border-2 border-[#183363] shadow-2xs transition-all active:scale-95 cursor-pointer"
+        >
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </Link>
+      </div>
+
       {/* Header Title */}
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-black text-[#1a2d5c]">
