@@ -671,11 +671,11 @@ export default function AdminScheduleMatrix({
                           </td>
                           <td className="p-3.5 text-center">
                             {isCancelled ? (
-                              <span className="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-full text-[11px] font-bold border border-rose-200">
+                              <span className="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-full text-[11px] font-bold border border-rose-200 whitespace-nowrap inline-flex items-center">
                                 ❌ Cancelled (ยกเลิกแล้ว)
                               </span>
                             ) : (
-                              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold border border-emerald-200">
+                              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold border border-emerald-200 whitespace-nowrap inline-flex items-center">
                                 ✅ Booked (จองเรียนแล้ว)
                               </span>
                             )}
