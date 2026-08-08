@@ -16,10 +16,24 @@ export default function AdminAuditClient({
   classes: GymClass[];
 }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialAuditLogs);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    setLogs(initialAuditLogs);
-  }, [initialAuditLogs]);
+    const fetchLogs = async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data } = await supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
+        if (data) {
+          setLogs(data);
+        }
+      } catch (err) {
+        console.error('Error fetching audit logs:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -135,248 +149,257 @@ export default function AdminAuditClient({
         </div>
 
         {/* Date Selector & Filters */}
-        <div className="flex flex-wrap items-center gap-2 bg-sky-50 p-3 rounded-2xl border-2 border-[#183363] shadow-xs">
-          <div className="flex items-center space-x-2 mr-2">
-            <Calendar className="text-[#183363]" size={20} />
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase">วันที่ตรวจสอบ:</label>
-              <input 
-                type="date" 
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="text-[#183363] font-black text-sm focus:outline-none bg-transparent cursor-pointer"
-              />
+        {isLoading ? (
+          <div className="py-20 text-center">
+            <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-emerald-700 font-bold">กำลังโหลดประวัติการทำงาน...</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2 bg-sky-50 p-3 rounded-2xl border-2 border-[#183363] shadow-xs">
+              <div className="flex items-center space-x-2 mr-2">
+                <Calendar className="text-[#183363]" size={20} />
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase">วันที่ตรวจสอบ:</label>
+                  <input 
+                    type="date" 
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="text-[#183363] font-black text-sm focus:outline-none bg-transparent cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-1 border-l border-sky-300 pl-2">
+                <button 
+                  onClick={setTodayDate}
+                  className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all ${
+                    selectedDate === new Date().toISOString().split('T')[0] 
+                      ? 'bg-[#183363] text-white shadow-xs' 
+                      : 'bg-white text-slate-700 hover:bg-sky-100 border border-sky-200'
+                  }`}
+                >
+                  วันนี้
+                </button>
+                <button 
+                  onClick={setYesterdayDate}
+                  className="px-2.5 py-1 text-xs font-extrabold bg-white text-slate-700 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all"
+                >
+                  เมื่อวาน
+                </button>
+                <button 
+                  onClick={setAllTimeDate}
+                  className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all ${
+                    selectedDate === '' 
+                      ? 'bg-[#183363] text-white shadow-xs' 
+                      : 'bg-white text-slate-700 hover:bg-sky-100 border border-sky-200'
+                  }`}
+                >
+                  แสดงทั้งหมด
+                </button>
+              </div>
             </div>
-          </div>
+      
+            {/* Metric Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+                  <UserPlus size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500">บัญชีผู้ปกครองใหม่</p>
+                  <h3 className="text-2xl font-black text-[#183363]">{stats.parentRegistrations} <span className="text-xs font-extrabold text-slate-400">บัญชี</span></h3>
+                </div>
+              </div>
 
-          <div className="flex items-center space-x-1 border-l border-sky-300 pl-2">
-            <button 
-              onClick={setTodayDate}
-              className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all ${
-                selectedDate === new Date().toISOString().split('T')[0] 
-                  ? 'bg-[#183363] text-white shadow-xs' 
-                  : 'bg-white text-slate-700 hover:bg-sky-100 border border-sky-200'
-              }`}
-            >
-              วันนี้
-            </button>
-            <button 
-              onClick={setYesterdayDate}
-              className="px-2.5 py-1 text-xs font-extrabold bg-white text-slate-700 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all"
-            >
-              เมื่อวาน
-            </button>
-            <button 
-              onClick={setAllTimeDate}
-              className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all ${
-                selectedDate === '' 
-                  ? 'bg-[#183363] text-white shadow-xs' 
-                  : 'bg-white text-slate-700 hover:bg-sky-100 border border-sky-200'
-              }`}
-            >
-              แสดงทั้งหมด
-            </button>
-          </div>
-        </div>
-      </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500">อนุมัติคลาสเรียน</p>
+                  <h3 className="text-2xl font-black text-emerald-600">{stats.courseApprovals} <span className="text-xs font-extrabold text-slate-400">รายการ</span></h3>
+                </div>
+              </div>
 
-      {/* Metric Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
-            <UserPlus size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500">บัญชีผู้ปกครองใหม่</p>
-            <h3 className="text-2xl font-black text-[#183363]">{stats.parentRegistrations} <span className="text-xs font-extrabold text-slate-400">บัญชี</span></h3>
-          </div>
-        </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+                  <Award size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500">ชั่วโมงแถม (Bonus Granted)</p>
+                  <h3 className="text-2xl font-black text-amber-600">{stats.totalBonusGranted} <span className="text-xs font-extrabold text-slate-400">ครั้ง</span></h3>
+                </div>
+              </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500">อนุมัติคลาสเรียน</p>
-            <h3 className="text-2xl font-black text-emerald-600">{stats.courseApprovals} <span className="text-xs font-extrabold text-slate-400">รายการ</span></h3>
-          </div>
-        </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+                  <CreditCard size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500">ยอดเงินโอนตรวจสอบแล้ว</p>
+                  <h3 className="text-2xl font-black text-indigo-700">฿ {stats.totalAmountVerified.toLocaleString()}</h3>
+                </div>
+              </div>
+            </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
-            <Award size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500">ชั่วโมงแถม (Bonus Granted)</p>
-            <h3 className="text-2xl font-black text-amber-600">{stats.totalBonusGranted} <span className="text-xs font-extrabold text-slate-400">ครั้ง</span></h3>
-          </div>
-        </div>
+            {/* Filter and Search Controls */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="ค้นหาชื่อ Admin, ผู้ปกครอง, ชื่อเด็ก, คลาส, เลขที่สลิปโอนเงิน หรือหมายเหตุ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#183363]"
+                />
+              </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
-            <CreditCard size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500">ยอดเงินโอนตรวจสอบแล้ว</p>
-            <h3 className="text-2xl font-black text-indigo-700">฿ {stats.totalAmountVerified.toLocaleString()}</h3>
-          </div>
-        </div>
-      </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <Filter className="text-slate-500" size={18} />
+                <select 
+                  value={selectedActionType}
+                  onChange={(e) => setSelectedActionType(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">กิจกรรมทั้งหมด (All Actions)</option>
+                  <option value="APPROVE_COURSE">อนุมัติคลาสเรียน (Approve Course)</option>
+                  <option value="REGISTER_PARENT">สร้างบัญชีผู้ปกครอง (Register Parent)</option>
+                  <option value="CANCEL_BOOKING">ยกเลิกการจองคลาส (Cancel Booking)</option>
+                </select>
+              </div>
+            </div>
 
-      {/* Filter and Search Controls */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="ค้นหาชื่อ Admin, ผู้ปกครอง, ชื่อเด็ก, คลาส, เลขที่สลิปโอนเงิน หรือหมายเหตุ..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#183363]"
-          />
-        </div>
-
-        <div className="flex items-center space-x-2 shrink-0">
-          <Filter className="text-slate-500" size={18} />
-          <select 
-            value={selectedActionType}
-            onChange={(e) => setSelectedActionType(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
-          >
-            <option value="ALL">กิจกรรมทั้งหมด (All Actions)</option>
-            <option value="APPROVE_COURSE">อนุมัติคลาสเรียน (Approve Course)</option>
-            <option value="REGISTER_PARENT">สร้างบัญชีผู้ปกครอง (Register Parent)</option>
-            <option value="CANCEL_BOOKING">ยกเลิกการจองคลาส (Cancel Booking)</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Audit Log Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
-          <thead>
-            <tr className="bg-[#183363] text-white text-xs font-black">
-              <th className="p-3.5 border-r border-[#2a4a8c]">วัน-เวลา (Timestamp)</th>
-              <th className="p-3.5 border-r border-[#2a4a8c]">กิจกรรม (Action)</th>
-              <th className="p-3.5 border-r border-[#2a4a8c]">ผู้ดำเนินการ (Admin)</th>
-              <th className="p-3.5 border-r border-[#2a4a8c]">ผู้ปกครอง / เด็ก</th>
-              <th className="p-3.5 border-r border-[#2a4a8c]">คลาสเรียน (Course)</th>
-              <th className="p-3.5 border-r border-[#2a4a8c] text-center">ซื้อ / แถม / รวม</th>
-              <th className="p-3.5 border-r border-[#2a4a8c] text-right">ยอดเงิน / สลิปโอน</th>
-              <th className="p-3.5">หมายเหตุ (Remark)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
-            {filteredLogs.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-500 font-bold">
-                  ❄️ ไม่พบประวัติกิจกรรมในช่วงเวลา หรือเงื่อนไขที่เลือก
-                </td>
-              </tr>
-            ) : (
-              filteredLogs.map(log => {
-                const isApproval = log.action_type === 'APPROVE_COURSE';
-                const isRegister = log.action_type === 'REGISTER_PARENT';
-                const isCancel = log.action_type === 'CANCEL_BOOKING';
-
-                return (
-                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 font-bold text-slate-600 whitespace-nowrap border-r border-slate-100">
-                      {formatTimeStr(log.timestamp || log.created_at || '')}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100 whitespace-nowrap">
-                      {isApproval && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          ✅ อนุมัติคลาสเรียน
-                        </span>
-                      )}
-                      {isRegister && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-100 text-blue-800 border border-blue-300">
-                          👤 สร้างบัญชีผู้ปกครอง
-                        </span>
-                      )}
-                      {isCancel && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
-                          ❌ ยกเลิกคลาสเรียน
-                        </span>
-                      )}
-                      {!isApproval && !isRegister && !isCancel && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300">
-                          ⚙️ {log.action_type}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100 font-extrabold text-[#183363]">
-                      {log.admin_name || 'Admin System'}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100">
-                      <div className="font-extrabold text-slate-800">{log.target_user_name || '-'}</div>
-                      {log.target_child_name && (
-                        <div className="text-[11px] font-semibold text-sky-700 mt-0.5">
-                          👶 {log.target_child_name}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100 font-bold text-slate-700">
-                      {log.course_name || '-'}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100 text-center">
-                      {isApproval ? (
-                        <div className="font-extrabold">
-                          <span>{log.purchased_classes || 0}</span>
-                          <span className="text-amber-600 mx-1">+{log.bonus_classes || 0}</span>
-                          <span className="text-emerald-700 font-black"> = {log.total_classes || 0} ครั้ง</span>
-                        </div>
-                      ) : (
-                        <span>-</span>
-                      )}
-                    </td>
-
-                    <td className="p-3.5 border-r border-slate-100 text-right">
-                      {log.amount_paid ? (
-                        <div className="font-black text-indigo-700 text-sm">
-                          ฿{log.amount_paid.toLocaleString()}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-bold">-</span>
-                      )}
-
-                      {log.payment_ref_no && (
-                        <div className="text-[10px] font-extrabold text-slate-500 mt-0.5">
-                          Ref: {log.payment_ref_no}
-                        </div>
-                      )}
-                      {log.sender_bank_info && (
-                        <div className="text-[10px] font-bold text-sky-800 mt-0.5">
-                          {log.sender_bank_info}
-                        </div>
-                      )}
-
-                      {log.payment_slip_url && (
-                        <button 
-                          onClick={() => setActiveSlipModal(log)}
-                          className="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 underline"
-                        >
-                          <Eye size={12} />
-                          <span>ดูสลิปโอนเงิน</span>
-                        </button>
-                      )}
-                    </td>
-
-                    <td className="p-3.5 font-semibold text-slate-600 max-w-xs truncate" title={log.remark}>
-                      {log.remark || '-'}
-                    </td>
+            {/* Audit Log Table */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[1000px]">
+                <thead>
+                  <tr className="bg-[#183363] text-white text-xs font-black">
+                    <th className="p-3.5 border-r border-[#2a4a8c]">วัน-เวลา (Timestamp)</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c]">กิจกรรม (Action)</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c]">ผู้ดำเนินการ (Admin)</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c]">ผู้ปกครอง / เด็ก</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c]">คลาสเรียน (Course)</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c] text-center">ซื้อ / แถม / รวม</th>
+                    <th className="p-3.5 border-r border-[#2a4a8c] text-right">ยอดเงิน / สลิปโอน</th>
+                    <th className="p-3.5">หมายเหตุ (Remark)</th>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
+                  {filteredLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-500 font-bold">
+                        ❄️ ไม่พบประวัติกิจกรรมในช่วงเวลา หรือเงื่อนไขที่เลือก
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLogs.map(log => {
+                      const isApproval = log.action_type === 'APPROVE_COURSE';
+                      const isRegister = log.action_type === 'REGISTER_PARENT';
+                      const isCancel = log.action_type === 'CANCEL_BOOKING';
+
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-3.5 font-bold text-slate-600 whitespace-nowrap border-r border-slate-100">
+                            {formatTimeStr(log.timestamp || log.created_at || '')}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100 whitespace-nowrap">
+                            {isApproval && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                ✅ อนุมัติคลาสเรียน
+                              </span>
+                            )}
+                            {isRegister && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-100 text-blue-800 border border-blue-300">
+                                👤 สร้างบัญชีผู้ปกครอง
+                              </span>
+                            )}
+                            {isCancel && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                                ❌ ยกเลิกคลาสเรียน
+                              </span>
+                            )}
+                            {!isApproval && !isRegister && !isCancel && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                                ⚙️ {log.action_type}
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100 font-extrabold text-[#183363]">
+                            {log.admin_name || 'Admin System'}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100">
+                            <div className="font-extrabold text-slate-800">{log.target_user_name || '-'}</div>
+                            {log.target_child_name && (
+                              <div className="text-[11px] font-semibold text-sky-700 mt-0.5">
+                                👶 {log.target_child_name}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100 font-bold text-slate-700">
+                            {log.course_name || '-'}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100 text-center">
+                            {isApproval ? (
+                              <div className="font-extrabold">
+                                <span>{log.purchased_classes || 0}</span>
+                                <span className="text-amber-600 mx-1">+{log.bonus_classes || 0}</span>
+                                <span className="text-emerald-700 font-black"> = {log.total_classes || 0} ครั้ง</span>
+                              </div>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+
+                          <td className="p-3.5 border-r border-slate-100 text-right">
+                            {log.amount_paid ? (
+                              <div className="font-black text-indigo-700 text-sm">
+                                ฿{log.amount_paid.toLocaleString()}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-bold">-</span>
+                            )}
+
+                            {log.payment_ref_no && (
+                              <div className="text-[10px] font-extrabold text-slate-500 mt-0.5">
+                                Ref: {log.payment_ref_no}
+                              </div>
+                            )}
+                            {log.sender_bank_info && (
+                              <div className="text-[10px] font-bold text-sky-800 mt-0.5">
+                                {log.sender_bank_info}
+                              </div>
+                            )}
+
+                            {log.payment_slip_url && (
+                              <button 
+                                onClick={() => setActiveSlipModal(log)}
+                                className="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 underline"
+                              >
+                                <Eye size={12} />
+                                <span>ดูสลิปโอนเงิน</span>
+                              </button>
+                            )}
+                          </td>
+
+                          <td className="p-3.5 font-semibold text-slate-600 max-w-xs truncate" title={log.remark}>
+                            {log.remark || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Payment Slip Modal */}
