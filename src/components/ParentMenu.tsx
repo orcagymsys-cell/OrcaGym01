@@ -26,7 +26,7 @@ export default function ParentMenu() {
       {/* Permanently Open Menu List */}
       <div className="mt-3 w-[240px] bg-white/95 backdrop-blur-sm flex flex-col p-3 rounded-3xl shadow-2xl border-4 border-sky-100 animate-in fade-in slide-in-from-top-4 duration-500">
         <Link href="/dashboard" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
-          <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🏠</span> HOME
+          <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🏠</span> DASHBOARD
         </Link>
         <Link href="/classes" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
           <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🐬</span> CLASSES
@@ -38,7 +38,7 @@ export default function ParentMenu() {
           <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌊</span> ABOUT US
         </Link>
         <Link href="/" className="group flex items-center px-4 py-3 text-[#183363] font-extrabold text-lg hover:bg-sky-50 rounded-2xl transition-colors">
-          <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌐</span> WEBSITE
+          <span className="mr-3 text-2xl group-hover:scale-125 transition-transform">🌐</span> MAIN WEBSITE
         </Link>
         <div className="h-1 w-full bg-slate-100 my-1 rounded-full"></div>
         <button 
