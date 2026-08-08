@@ -132,9 +132,6 @@ export default function AdminAuditClient({
             <ShieldCheck className="text-emerald-600" size={28} />
             <h1 className="text-2xl md:text-3xl font-black text-[#183363]">Daily Audit & Fraud Prevention</h1>
           </div>
-          <p className="text-slate-600 text-sm mt-1">
-            รายงานตรวจสอบการทำงานของ Admin บันทึกประวัติการสร้างบัญชี การอนุมัติคลาส ชั่วโมงแถม และการโอนเงินเพื่อป้องกันการทุจริต 100%
-          </p>
         </div>
 
         {/* Date Selector & Filters */}
