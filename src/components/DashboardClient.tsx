@@ -319,7 +319,7 @@ export default function DashboardClient({
           {childrenData.map(child => {
             const formattedDob = child.dob ? new Date(child.dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
             return (
-              <div key={child.id} className={`flex flex-col items-center w-full transition-all duration-300 relative group px-1 sm:px-4 ${expandedChildId === child.id ? 'max-w-5xl' : 'max-w-2xl sm:max-w-3xl'}`}>
+              <div key={child.id} className={`flex flex-col items-center w-full transition-all duration-300 relative group px-1 sm:px-4 ${expandedChildId === child.id ? 'max-w-7xl' : 'max-w-2xl sm:max-w-3xl'}`}>
                 <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between w-full space-y-6 sm:space-y-0">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start sm:space-x-8 w-full">
                     <Link 
@@ -429,7 +429,7 @@ export default function DashboardClient({
                             return (
                               <div className="mt-0.5">
                                 <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-0.5 rounded-lg border border-sky-300">
-                                  🧺 {familyCourse?.class_title || child.assigned_course_title || 'Mega Orca'}: คงเหลือ <span className="text-emerald-600 font-black">{remainingClasses}</span>/{totalClasses} ครั้ง
+                                  🛒 {familyCourse?.class_title || child.assigned_course_title || 'Mega Orca'}: คงเหลือ <span className="text-emerald-600 font-black">{remainingClasses}</span>/{totalClasses} ครั้ง
                                 </span>
                               </div>
                             );
@@ -512,8 +512,8 @@ export default function DashboardClient({
                                 <tr className="bg-[#1a2d5c] text-white font-black">
                                   <th className="p-2.5 border-r border-blue-900 w-20 sm:w-24 text-[11px] sm:text-xs">Day / Time</th>
                                   {timeslots.map(t => (
-                                    <th key={t} className="p-2 border-r border-blue-900 font-bold text-[10px] sm:text-xs whitespace-nowrap">
-                                      {t}
+                                    <th key={t} className="p-1 sm:p-2 border-r border-blue-900 font-bold text-[9px] sm:text-[11px] leading-tight w-auto">
+                                      {t.replace('-', '\n')}
                                     </th>
                                   ))}
                                 </tr>
