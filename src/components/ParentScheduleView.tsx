@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Child, GymClass, Schedule, Booking, User } from '@/lib/types';
 import Link from 'next/link';
-import { Calendar, Clock, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, ChevronRight, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -291,8 +291,9 @@ export default function ParentScheduleView({
                     if (familyCourse) {
                       return (
                         <div className="flex flex-wrap gap-2 mt-1">
-                          <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-1 rounded-lg border border-sky-300">
-                            🛒 {familyCourse.class_title}: คงเหลือ <span className="text-emerald-600 font-black">{familyCourse.remaining_classes}</span>/{familyCourse.total_classes} ครั้ง
+                          <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-1 rounded-lg border border-sky-300 flex items-center space-x-1 w-fit">
+                            <ShoppingCart size={14} className="text-[#1a2d5c]" />
+                            <span>{familyCourse.class_title}: คงเหลือ <span className="text-emerald-600 font-black">{familyCourse.remaining_classes}</span>/{familyCourse.total_classes} ครั้ง</span>
                           </span>
                         </div>
                       );

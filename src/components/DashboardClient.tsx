@@ -428,8 +428,9 @@ export default function DashboardClient({
                             const remainingClasses = familyCourse ? familyCourse.remaining_classes : (child.remaining_classes || 10);
                             return (
                               <div className="mt-0.5">
-                                <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-0.5 rounded-lg border border-sky-300">
-                                  🛒 {familyCourse?.class_title || child.assigned_course_title || 'Mega Orca'}: คงเหลือ <span className="text-emerald-600 font-black">{remainingClasses}</span>/{totalClasses} ครั้ง
+                                <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-0.5 rounded-lg border border-sky-300 flex items-center w-fit space-x-1">
+                                  <ShoppingCart size={14} className="text-[#1a2d5c]" />
+                                  <span>{familyCourse?.class_title || child.assigned_course_title || 'Mega Orca'}: คงเหลือ <span className="text-emerald-600 font-black">{remainingClasses}</span>/{totalClasses} ครั้ง</span>
                                 </span>
                               </div>
                             );
