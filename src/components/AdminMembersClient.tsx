@@ -128,31 +128,37 @@ export default function AdminMembersClient({
   const handleSaveChildCourse = async () => {
     if (!editingChildModal) return;
     setLoading(true);
-    const calculatedTotal = editingChildModal.purchasedClasses + editingChildModal.bonusClasses;
-    const res = await updateChildCourse(editingChildModal.childId, {
-      courseId: editingChildModal.courseId,
-      purchasedClasses: editingChildModal.purchasedClasses,
-      bonusClasses: editingChildModal.bonusClasses,
-      totalClasses: calculatedTotal,
-      remainingClasses: editingChildModal.remainingClasses
-    });
+    try {
+      const calculatedTotal = editingChildModal.purchasedClasses + editingChildModal.bonusClasses;
+      const res = await updateChildCourse(editingChildModal.childId, {
+        courseId: editingChildModal.courseId,
+        purchasedClasses: editingChildModal.purchasedClasses,
+        bonusClasses: editingChildModal.bonusClasses,
+        totalClasses: calculatedTotal,
+        remainingClasses: editingChildModal.remainingClasses
+      });
 
-    if (res.success) {
-      const gymClass = classes.find(c => c.id === editingChildModal.courseId);
-      const title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
-      setChildren(children.map(c => c.id === editingChildModal.childId ? {
-        ...c,
-        assigned_course_id: editingChildModal.courseId,
-        assigned_course_title: title,
-        total_classes: calculatedTotal,
-        remaining_classes: editingChildModal.remainingClasses
-      } as any : c));
-      setEditingChildModal(null);
-      router.refresh();
-    } else {
-      alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขคอร์ส');
+      if (res.success) {
+        const gymClass = classes.find(c => c.id === editingChildModal.courseId);
+        const title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
+        setChildren(children.map(c => c.id === editingChildModal.childId ? {
+          ...c,
+          assigned_course_id: editingChildModal.courseId,
+          assigned_course_title: title,
+          total_classes: calculatedTotal,
+          remaining_classes: editingChildModal.remainingClasses
+        } as any : c));
+        setEditingChildModal(null);
+        router.refresh();
+      } else {
+        alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขคอร์ส');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาด: ' + (err.message || String(err)));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleConfirmApproveModal = async () => {
