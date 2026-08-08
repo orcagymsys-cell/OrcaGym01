@@ -147,17 +147,8 @@ export default function AdminMembersClient({
       const res = await response.json();
 
       if (response.ok && res.success) {
-        const gymClass = classes.find(c => c.id === editingChildModal.courseId);
-        const title = gymClass?.title || gymClass?.name || 'Orca Cubs Class';
-        setChildren(children.map(c => c.id === editingChildModal.childId ? {
-          ...c,
-          assigned_course_id: editingChildModal.courseId,
-          assigned_course_title: title,
-          total_classes: calculatedTotal,
-          remaining_classes: editingChildModal.remainingClasses
-        } as any : c));
         setEditingChildModal(null);
-        router.refresh();
+        window.location.reload();
       } else {
         alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขคอร์ส');
       }

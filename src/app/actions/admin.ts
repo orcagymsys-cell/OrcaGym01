@@ -265,6 +265,7 @@ export async function updateAboutUs(data: any) {
 }
 
 export async function getAdminMembersData() {
+  noStore();
   const { data: children } = await supabase.from('children').select('*');
   const { data: parents } = await supabase.from('users').select('*').eq('role', 'parent');
   const { data: classes } = await supabase.from('classes').select('*');
