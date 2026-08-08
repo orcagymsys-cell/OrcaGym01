@@ -148,15 +148,8 @@ export default function AdminAuditClient({
           </div>
         </div>
 
-        {/* Date Selector & Filters */}
-        {isLoading ? (
-          <div className="py-20 text-center">
-            <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-emerald-700 font-bold">กำลังโหลดประวัติการทำงาน...</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2 bg-sky-50 p-3 rounded-2xl border-2 border-[#183363] shadow-xs">
+        {!isLoading && (
+          <div className="flex flex-wrap items-center gap-2 bg-sky-50 p-3 rounded-2xl border-2 border-[#183363] shadow-xs">
               <div className="flex items-center space-x-2 mr-2">
                 <Calendar className="text-[#183363]" size={20} />
                 <div>
@@ -199,9 +192,18 @@ export default function AdminAuditClient({
                 </button>
               </div>
             </div>
+        )}
+      </div>
       
-            {/* Metric Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {isLoading ? (
+        <div className="py-20 text-center">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-emerald-700 font-bold">กำลังโหลดประวัติการทำงาน...</p>
+        </div>
+      ) : (
+        <>
+          {/* Metric Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
                   <UserPlus size={24} />
