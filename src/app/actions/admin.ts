@@ -449,6 +449,7 @@ export async function deleteParentAccount(userId: string) {
 }
 
 export async function getAuditLogsAction() {
+  noStore();
   const user = await getUser();
   if (user?.role !== 'admin') return { error: 'Not authorized', auditLogs: [] };
   
