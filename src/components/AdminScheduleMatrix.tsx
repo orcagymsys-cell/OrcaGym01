@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GymClass, Schedule, Booking, Child, User, toISODateString } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
@@ -93,10 +93,35 @@ export default function AdminScheduleMatrix({
   parents?: User[]
 }) {
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(''); // Init empty to show full week by default
+  const [weekOffset, setWeekOffset] = useState(0);
   const [selectedCell, setSelectedCell] = useState<{ day: string, time: string, classes: { gymClass: GymClass, tag?: string }[] } | null>(null);
   const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingsState, setBookingsState] = useState<Booking[]>(bookings);
   const router = useRouter();
+
+  useEffect(() => {
+    setBookingsState(bookings);
+  }, [bookings]);
+
+  useEffect(() => {
+    const channel = supabase.channel('admin_realtime_bookings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setBookingsState(prev => [...prev, payload.new as Booking]);
+        } else if (payload.eventType === 'UPDATE') {
+          setBookingsState(prev => prev.map(b => b.id === payload.new.id ? (payload.new as Booking) : b));
+        } else if (payload.eventType === 'DELETE') {
+          setBookingsState(prev => prev.filter(b => b.id !== payload.old.id));
+        }
+        router.refresh(); // Refresh to catch any other server state if needed
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [router]);
 
   const handleAdminCancelBooking = async (bookingId: string) => {
     try {
@@ -176,12 +201,18 @@ export default function AdminScheduleMatrix({
   };
 
   const currentWeekMap = (() => {
-    const today = new Date();
-    const currentDayIndex = today.getDay(); // 0 = Sun, 1 = Mon ...
+    let baseDate = new Date();
+    if (selectedDate) {
+      const [y, m, d] = selectedDate.split('-').map(Number);
+      baseDate = new Date(y, m - 1, d);
+    }
+    baseDate.setDate(baseDate.getDate() + (weekOffset * 7));
+
+    const currentDayIndex = baseDate.getDay(); // 0 = Sun, 1 = Mon ...
     const distToMon = currentDayIndex === 0 ? -6 : 1 - currentDayIndex;
 
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + distToMon);
+    const monday = new Date(baseDate);
+    monday.setDate(baseDate.getDate() + distToMon);
 
     const dayCodes = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
     const map: { [key: string]: string } = {};
@@ -207,7 +238,7 @@ export default function AdminScheduleMatrix({
 
     if (!targetISO) return [];
 
-    return bookings.filter(b => {
+    return bookingsState.filter(b => {
       if (b.status === 'cancelled') return false;
       if (toISODateString(b.date) !== targetISO) return false;
 
@@ -243,8 +274,8 @@ export default function AdminScheduleMatrix({
 
   const weekDatesSet = new Set(Object.values(currentWeekMap).map(d => toISODateString(d)));
   const displayedBookings = selectedDate 
-    ? bookings.filter(b => toISODateString(b.date) === toISODateString(selectedDate) && b.status !== 'cancelled')
-    : bookings.filter(b => b.status !== 'cancelled' && weekDatesSet.has(toISODateString(b.date)));
+    ? bookingsState.filter(b => toISODateString(b.date) === toISODateString(selectedDate) && b.status !== 'cancelled')
+    : bookingsState.filter(b => b.status !== 'cancelled' && weekDatesSet.has(toISODateString(b.date)));
 
   return (
     <div className="space-y-6">
@@ -255,24 +286,28 @@ export default function AdminScheduleMatrix({
         </div>
         <div className="flex items-center space-x-3 bg-sky-50 p-3 rounded-2xl border-2 border-[#183363] shadow-xs">
           <CalendarIcon className="text-[#183363]" size={22} />
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">เลือกวันที่เช็กตาราง (Select Date):</label>
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-[#183363] font-black text-sm focus:outline-none bg-transparent cursor-pointer"
-            />
+          <div className="flex flex-col space-y-2">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">เลือกวันที่เช็กตาราง (Select Date):</label>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="text-[#183363] font-black text-sm focus:outline-none bg-transparent cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <button onClick={() => setWeekOffset(prev => prev - 1)} className="px-2 py-1 bg-white border border-[#183363] text-[#183363] hover:bg-slate-100 rounded text-xs font-bold transition-all shadow-xs">
+                &lt; สัปดาห์ก่อนหน้า
+              </button>
+              <button onClick={() => { setWeekOffset(0); setSelectedDate(''); }} className="px-2 py-1 bg-[#183363] text-white hover:bg-blue-900 rounded text-xs font-bold transition-all shadow-xs">
+                สัปดาห์นี้
+              </button>
+              <button onClick={() => setWeekOffset(prev => prev + 1)} className="px-2 py-1 bg-white border border-[#183363] text-[#183363] hover:bg-slate-100 rounded text-xs font-bold transition-all shadow-xs">
+                สัปดาห์ถัดไป &gt;
+              </button>
+            </div>
           </div>
-          {selectedDate && (
-            <button
-              onClick={() => setSelectedDate('')}
-              className="ml-2 px-3 py-1.5 bg-[#183363] text-white hover:bg-blue-900 rounded-xl text-xs font-bold transition-all shadow-xs"
-              title="ดูตารางตารางรวมทุกวัน MON-SUN"
-            >
-              ดูทุกวัน (Show All Days)
-            </button>
-          )}
         </div>
       </div>
 
