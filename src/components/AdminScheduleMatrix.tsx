@@ -102,7 +102,16 @@ export default function AdminScheduleMatrix({
   const router = useRouter();
 
   useEffect(() => {
-    setBookingsState(bookings);
+    // Fetch directly on client to bypass Next.js Server Action cache
+    const fetchBookings = async () => {
+      const { data, error } = await supabase.from('bookings').select('*');
+      if (data && !error) {
+        setBookingsState(data);
+      } else {
+        setBookingsState(bookings);
+      }
+    };
+    fetchBookings();
   }, [bookings]);
 
   useEffect(() => {

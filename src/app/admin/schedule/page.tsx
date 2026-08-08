@@ -9,7 +9,12 @@ export default function AdminSchedulePage() {
   const [membersData, setMembersData] = useState<any>({ children: [], parents: [], classes: [] });
 
   useEffect(() => {
-    getScheduleMatrix().then(res => { if (res) setData(res); }).catch(() => {});
+    getScheduleMatrix().then(res => { 
+      if (res) {
+        console.log("AdminSchedulePage fetched matrix data:", res);
+        setData(res); 
+      }
+    }).catch(e => console.error(e));
     getAdminMembersData().then(res => { if (res) setMembersData(res); }).catch(() => {});
   }, []);
 
