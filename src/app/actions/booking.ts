@@ -41,18 +41,18 @@ export async function bookClass(childId: string, classId: string, timeSlot: stri
     return { error: `ชั่วโมงเรียนคลาส ${gymClass.title || gymClass.name} ในตะกร้าครอบครัวหมดแล้ว` };
   }
 
+  const targetHour = parseInt(timeSlot.split('-')[0].split(/[:.]/)[0]) || 0;
+  const targetMin = parseInt(timeSlot.split('-')[0].split(/[:.]/)[1]) || 0;
   const [y, m, d] = date.split('-').map(Number);
-  const targetDate = new Date(y, m - 1, d);
-  targetDate.setHours(0, 0, 0, 0);
+  
+  const targetTimeStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(targetHour).padStart(2, '0')}:${String(targetMin).padStart(2, '0')}:00+07:00`;
+  const targetTimeMs = new Date(targetTimeStr).getTime();
+  const nowMs = new Date().getTime();
+  
+  const diffHours = (targetTimeMs - nowMs) / (1000 * 60 * 60);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const diffTime = targetDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 1 && user.role !== 'admin') {
-    return { error: 'การจองคลาสเรียนต้องทำล่วงหน้าอย่างน้อย 1 วัน (ไม่สามารถจองในวันเดียวกันหรือย้อนหลังได้)' };
+  if (diffHours < 24 && user.role !== 'admin') {
+    return { error: 'การจองคลาสเรียนต้องทำล่วงหน้าอย่างน้อย 24 ชั่วโมง (กรณีฉุกเฉินกรุณาให้ Admin เป็นผู้จองให้เท่านั้น)' };
   }
 
   const targetISODate = toISODateString(date);
@@ -126,17 +126,18 @@ export async function cancelBooking(bookingId: string) {
   }
 
   const [y, m, d] = booking.date.split('-').map(Number);
-  const bookingDate = new Date(y, m - 1, d);
-  bookingDate.setHours(0, 0, 0, 0);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const timeSlot = booking.time_slot || booking.timeSlot || '';
+  const targetHour = parseInt(timeSlot.split('-')[0].split(/[:.]/)[0]) || 0;
+  const targetMin = parseInt(timeSlot.split('-')[0].split(/[:.]/)[1]) || 0;
   
-  const diffTime = bookingDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+  const targetTimeStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(targetHour).padStart(2, '0')}:${String(targetMin).padStart(2, '0')}:00+07:00`;
+  const targetTimeMs = new Date(targetTimeStr).getTime();
+  const nowMs = new Date().getTime();
   
-  if (diffDays < 1 && user.role !== 'admin') {
-    return { error: 'Must cancel at least 1 day in advance (การยกเลิกต้องทำล่วงหน้าอย่างน้อย 1 วัน)' };
+  const diffHours = (targetTimeMs - nowMs) / (1000 * 60 * 60);
+  
+  if (diffHours < 24 && user.role !== 'admin') {
+    return { error: 'การยกเลิกคลาสเรียนต้องทำล่วงหน้าอย่างน้อย 24 ชั่วโมง (กรณีฉุกเฉินกรุณาให้ Admin เป็นผู้ยกเลิกให้เท่านั้น)' };
   }
 
   if (booking.status !== 'cancelled') {
