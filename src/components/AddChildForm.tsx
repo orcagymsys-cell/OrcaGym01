@@ -63,8 +63,9 @@ export default function AddChildForm({ userId }: { userId: string }) {
           });
           
         if (uploadError) {
-          console.error('Error uploading photo:', uploadError);
-          throw new Error('ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
+          console.error('Error uploading photo to storage:', uploadError);
+          // Fallback: Use the base64 string directly in the database (matches DashboardClient behavior)
+          finalPhotoUrl = photoUrl;
         } else {
           const { data: publicUrlData } = supabase.storage
             .from('avatars')
