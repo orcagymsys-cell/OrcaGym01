@@ -304,7 +304,7 @@ export default function ParentScheduleView({
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-xs font-extrabold bg-white text-[#1a2d5c] px-2.5 py-1 rounded-lg border border-sky-300 flex items-center space-x-1 w-fit">
                             <ShoppingCart size={14} className="text-[#1a2d5c]" />
-                            <span>{familyCourse.class_title}: คงเหลือ <span className="text-emerald-600 font-black">{familyCourse.remaining_classes}</span>/{familyCourse.total_classes} ครั้ง</span>
+                            <span>{familyCourse.class_title}: จองแล้ว <span className="text-amber-600 font-black">{familyCourse.total_classes - familyCourse.remaining_classes}</span>/{familyCourse.total_classes} ครั้ง</span>
                           </span>
                         </div>
                       );

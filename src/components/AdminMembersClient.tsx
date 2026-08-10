@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Child, User, GymClass } from '@/lib/types';
 import { approveChild, approveChildCourse, addCoursesToChild, deleteParentAccount } from '@/app/actions/admin';
-import { Check, Edit, UserPlus, Users, Key, Phone, BookOpen, Clock, ShieldCheck, Copy, X, Trash2, Bell, BellRing, Edit3 } from 'lucide-react';
+import { Check, Edit, UserPlus, Users, Key, Phone, BookOpen, Clock, ShieldCheck, Copy, X, Trash2, Bell, BellRing, Edit3, Upload } from 'lucide-react';
 
 function calculateAge(dobStr?: string): string {
   if (!dobStr) return '';
@@ -1390,9 +1390,11 @@ ${coursesStr}
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-[11px] font-bold text-slate-600">หลักฐานการชำระเงิน</label>
                   </div>
-                  {approvingChildModal.paymentSlipUrl && (
-                    <div className="mt-2 mb-3 border-2 border-emerald-200 rounded-xl overflow-hidden bg-emerald-50/50 p-2 text-center">
-                      <p className="text-[10px] text-emerald-700 font-bold mb-2">✅ ดึงข้อมูลสลิปอัตโนมัติจากประวัติผู้ปกครอง</p>
+                  {approvingChildModal.paymentSlipUrl ? (
+                    <div className="mt-2 mb-3 border-2 border-emerald-200 rounded-xl overflow-hidden bg-emerald-50/50 p-2 text-center relative group">
+                      {!approvingChildModal.paymentSlipUrl.startsWith('data:') && (
+                        <p className="text-[10px] text-emerald-700 font-bold mb-2">✅ ดึงข้อมูลสลิปอัตโนมัติจากประวัติผู้ปกครอง</p>
+                      )}
                       <a href={approvingChildModal.paymentSlipUrl} target="_blank" rel="noopener noreferrer">
                         <img 
                           src={approvingChildModal.paymentSlipUrl} 
@@ -1400,15 +1402,47 @@ ${coursesStr}
                           className="max-w-full max-h-48 mx-auto rounded-lg shadow-sm border border-slate-200 hover:scale-[1.02] transition-transform cursor-pointer"
                         />
                       </a>
+                      <button 
+                        type="button"
+                        onClick={() => setApprovingChildModal({ ...approvingChildModal, paymentSlipUrl: '' })}
+                        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md text-red-500 hover:bg-red-50"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      <label className="flex-1 cursor-pointer bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center text-slate-500 transition-colors">
+                        <Upload size={20} className="mb-1" />
+                        <span className="text-[10px] font-bold">อัปโหลดไฟล์สลิป (รูปภาพ)</span>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setApprovingChildModal({ ...approvingChildModal, paymentSlipUrl: reader.result as string });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                      <div className="flex items-center justify-center py-1 sm:py-0 px-2">
+                        <span className="text-xs text-slate-400 font-bold">- หรือ -</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="วางลิงก์สลิปโอนเงิน (URL)"
+                        value={approvingChildModal.paymentSlipUrl}
+                        onChange={(e) => setApprovingChildModal({ ...approvingChildModal, paymentSlipUrl: e.target.value })}
+                        className="flex-1 p-2.5 border border-slate-300 rounded-xl text-slate-800 focus:outline-none text-xs h-[76px]"
+                      />
                     </div>
                   )}
-                  <input
-                    type="text"
-                    placeholder="https://... หรือแนบลิงก์สลิปโอนเงิน"
-                    value={approvingChildModal.paymentSlipUrl}
-                    onChange={(e) => setApprovingChildModal({ ...approvingChildModal, paymentSlipUrl: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 rounded-xl text-slate-800 focus:outline-none text-xs"
-                  />
                 </div>
 
                 <div>
