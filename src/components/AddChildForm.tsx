@@ -4,58 +4,12 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-function resizeImage(imageSrc: string): Promise<string> {
-  return new Promise((resolve) => {
-    if (!imageSrc) return resolve('');
-    const img = new window.Image();
-    img.src = imageSrc;
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-      const size = 300;
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(imageSrc);
-
-      // Crop to center square
-      const sizeRatio = Math.max(size / img.width, size / img.height);
-      const drawW = img.width * sizeRatio;
-      const drawH = img.height * sizeRatio;
-      const drawX = (size - drawW) / 2;
-      const drawY = (size - drawH) / 2;
-
-      ctx.fillStyle = '#f8f9fa';
-      ctx.fillRect(0, 0, size, size);
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
-      
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
-      } catch (e) {
-        resolve(imageSrc);
-      }
-    };
-    img.onerror = () => resolve(imageSrc);
-  });
-}
-
-function dataURItoBlob(dataURI: string): Blob {
-  const byteString = atob(dataURI.split(',')[1]);
-  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-  }
-  return new Blob([ab], { type: mimeString });
-}
-
 export default function AddChildForm({ userId }: { userId: string }) {
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState<'Boy' | 'Girl'>('Girl');
   const [photoUrl, setPhotoUrl] = useState<string>('');
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -66,11 +20,8 @@ export default function AddChildForm({ userId }: { userId: string }) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        const resized = await resizeImage(base64);
-        setPhotoUrl(resized);
-        setPhotoFile(null); // We upload using the base64 photoUrl directly
+      reader.onloadend = () => {
+        setPhotoUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -99,28 +50,26 @@ export default function AddChildForm({ userId }: { userId: string }) {
 
       let finalPhotoUrl = '';
       if (photoUrl && photoUrl.startsWith('data:image/')) {
-        try {
-          const blob = dataURItoBlob(photoUrl);
-          const fileExt = blob.type.split('/')[1] || 'jpeg';
-          const fileName = `${childId}_${Date.now()}.${fileExt}`;
+        const resFetch = await fetch(photoUrl);
+        const blob = await resFetch.blob();
+        const fileExt = blob.type.split('/')[1] || 'jpeg';
+        const fileName = `${childId}_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, blob, {
+            cacheControl: '3600',
+            upsert: false
+          });
           
-          const { error: uploadError } = await supabase.storage
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          throw new Error('ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
+        } else {
+          const { data: publicUrlData } = supabase.storage
             .from('avatars')
-            .upload(fileName, blob, {
-              cacheControl: '3600',
-              upsert: false
-            });
-            
-          if (uploadError) {
-            console.error('Error uploading photo:', uploadError);
-          } else {
-            const { data: publicUrlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(fileName);
-            finalPhotoUrl = publicUrlData.publicUrl;
-          }
-        } catch (uploadFail) {
-          console.error('Failed to convert or upload image:', uploadFail);
+            .getPublicUrl(fileName);
+          finalPhotoUrl = publicUrlData.publicUrl;
         }
       }
 
