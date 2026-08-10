@@ -4,6 +4,37 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+function resizeImage(imageSrc: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!imageSrc) return resolve('');
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const size = 300;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(imageSrc);
+
+      // Crop to center square
+      const sizeRatio = Math.max(size / img.width, size / img.height);
+      const drawW = img.width * sizeRatio;
+      const drawH = img.height * sizeRatio;
+      const drawX = (size - drawW) / 2;
+      const drawY = (size - drawH) / 2;
+
+      ctx.fillStyle = '#f8f9fa';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => resolve(imageSrc);
+  });
+}
+
 export default function AddChildForm({ userId }: { userId: string }) {
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
@@ -20,10 +51,12 @@ export default function AddChildForm({ userId }: { userId: string }) {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoUrl(reader.result as string);
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        const resized = await resizeImage(base64);
+        setPhotoUrl(resized);
+        setPhotoFile(null); // We upload using the base64 photoUrl directly
       };
       reader.readAsDataURL(file);
     }
@@ -51,20 +84,21 @@ export default function AddChildForm({ userId }: { userId: string }) {
       const childId = `child_${Date.now()}`;
 
       let finalPhotoUrl = '';
-      if (photoFile) {
-        const fileExt = photoFile.name.split('.').pop();
-        const fileName = `${childId}.${fileExt}`;
+      if (photoUrl && photoUrl.startsWith('data:image/')) {
+        const resFetch = await fetch(photoUrl);
+        const blob = await resFetch.blob();
+        const fileExt = blob.type.split('/')[1] || 'jpeg';
+        const fileName = `${childId}_${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(fileName, photoFile, {
+          .upload(fileName, blob, {
             cacheControl: '3600',
             upsert: false
           });
           
         if (uploadError) {
           console.error('Error uploading photo:', uploadError);
-          // Proceed without photo if upload fails, or we could throw. Proceeding is safer.
         } else {
           const { data: publicUrlData } = supabase.storage
             .from('avatars')
