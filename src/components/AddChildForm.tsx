@@ -8,10 +8,10 @@ function resizeImage(imageSrc: string): Promise<string> {
   return new Promise((resolve) => {
     if (!imageSrc) return resolve('');
     const img = new window.Image();
-    img.crossOrigin = 'anonymous';
     img.src = imageSrc;
     img.onload = () => {
-      const canvas = document.createElement('canvas');
+      try {
+        const canvas = document.createElement('canvas');
       const size = 300;
       canvas.width = size;
       canvas.height = size;
@@ -30,9 +30,23 @@ function resizeImage(imageSrc: string): Promise<string> {
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
       
       resolve(canvas.toDataURL('image/jpeg', 0.8));
+      } catch (e) {
+        resolve(imageSrc);
+      }
     };
     img.onerror = () => resolve(imageSrc);
   });
+}
+
+function dataURItoBlob(dataURI: string): Blob {
+  const byteString = atob(dataURI.split(',')[1]);
+  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeString });
 }
 
 export default function AddChildForm({ userId }: { userId: string }) {
@@ -85,25 +99,28 @@ export default function AddChildForm({ userId }: { userId: string }) {
 
       let finalPhotoUrl = '';
       if (photoUrl && photoUrl.startsWith('data:image/')) {
-        const resFetch = await fetch(photoUrl);
-        const blob = await resFetch.blob();
-        const fileExt = blob.type.split('/')[1] || 'jpeg';
-        const fileName = `${childId}_${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, blob, {
-            cacheControl: '3600',
-            upsert: false
-          });
+        try {
+          const blob = dataURItoBlob(photoUrl);
+          const fileExt = blob.type.split('/')[1] || 'jpeg';
+          const fileName = `${childId}_${Date.now()}.${fileExt}`;
           
-        if (uploadError) {
-          console.error('Error uploading photo:', uploadError);
-        } else {
-          const { data: publicUrlData } = supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('avatars')
-            .getPublicUrl(fileName);
-          finalPhotoUrl = publicUrlData.publicUrl;
+            .upload(fileName, blob, {
+              cacheControl: '3600',
+              upsert: false
+            });
+            
+          if (uploadError) {
+            console.error('Error uploading photo:', uploadError);
+          } else {
+            const { data: publicUrlData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            finalPhotoUrl = publicUrlData.publicUrl;
+          }
+        } catch (uploadFail) {
+          console.error('Failed to convert or upload image:', uploadFail);
         }
       }
 
