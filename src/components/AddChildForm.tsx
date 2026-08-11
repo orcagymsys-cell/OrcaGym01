@@ -4,6 +4,40 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+function resizeImage(imageSrc: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!imageSrc) return resolve('');
+    const img = new window.Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 300;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(imageSrc);
+
+        // Crop to center square
+        const sizeRatio = Math.max(size / img.width, size / img.height);
+        const drawW = img.width * sizeRatio;
+        const drawH = img.height * sizeRatio;
+        const drawX = (size - drawW) / 2;
+        const drawY = (size - drawH) / 2;
+
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, size, size);
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      } catch (e) {
+        resolve(imageSrc);
+      }
+    };
+    img.onerror = () => resolve(imageSrc);
+  });
+}
+
 export default function AddChildForm({ userId }: { userId: string }) {
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
@@ -64,8 +98,9 @@ export default function AddChildForm({ userId }: { userId: string }) {
           
         if (uploadError) {
           console.error('Error uploading photo to storage:', uploadError);
-          // Fallback: Use the base64 string directly in the database (matches DashboardClient behavior)
-          finalPhotoUrl = photoUrl;
+          // Fallback: Compress the base64 string before saving to database to prevent 5MB payloads crashing Next.js
+          const compressed = await resizeImage(photoUrl);
+          finalPhotoUrl = compressed;
         } else {
           const { data: publicUrlData } = supabase.storage
             .from('avatars')

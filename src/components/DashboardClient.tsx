@@ -13,7 +13,6 @@ import { kanit } from '@/lib/fonts';
 function processCroppedImage(imageSrc: string, zoom: number, offsetX: number, offsetY: number): Promise<string> {
   return new Promise((resolve) => {
     if (!imageSrc) return resolve('');
-    if (zoom === 1 && offsetX === 0 && offsetY === 0) return resolve(imageSrc);
 
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
@@ -136,7 +135,7 @@ export default function DashboardClient({
     setError('');
 
     let finalPhotoUrl = editForm.photo_url || '';
-    if (finalPhotoUrl && (zoom !== 1 || offsetX !== 0 || offsetY !== 0)) {
+    if (finalPhotoUrl && finalPhotoUrl.startsWith('data:image/')) {
       finalPhotoUrl = await processCroppedImage(finalPhotoUrl, zoom, offsetX, offsetY);
     }
 
