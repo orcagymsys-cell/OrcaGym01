@@ -80,8 +80,7 @@ export default function AdminMembersClient({
   // New Parent Account Modal State
   const [isAddParentOpen, setIsAddParentOpen] = useState(false);
   const [parentForm, setParentForm] = useState({
-    username: '',
-    password: '',
+    email: '',
     full_name: '',
     phone_number: '',
     max_children_allowed: 10,
@@ -348,6 +347,19 @@ export default function AdminMembersClient({
     setFormError('');
     setLoading(true);
 
+    if (!parentForm.email || !parentForm.full_name || !parentForm.phone_number) {
+      setFormError('กรุณากรอกข้อมูลให้ครบถ้วน (Please fill all fields)');
+      setLoading(false);
+      return;
+    }
+    
+    const emailPrefix = parentForm.email.split('@')[0];
+    const phoneDigits = parentForm.phone_number.replace(/\D/g, '');
+    const last4Phone = phoneDigits.slice(-4) || '1234';
+    
+    const generatedUsername = emailPrefix;
+    const generatedPassword = `${emailPrefix}${last4Phone}`;
+
     const coursesPurchased = Object.keys(courseSelections)
       .filter(cId => courseSelections[cId].selected)
       .map(cId => ({
@@ -363,7 +375,7 @@ export default function AdminMembersClient({
 
     try {
       const { data: existingUsers } = await supabase.from('users').select('*');
-      const existingUser = existingUsers?.find(u => u.username.toLowerCase() === parentForm.username.trim().toLowerCase());
+      const existingUser = existingUsers?.find(u => u.username.toLowerCase() === generatedUsername.trim().toLowerCase());
       if (existingUser) {
         setFormError('Username นี้มีในระบบแล้ว กรุณาเลือก Username อื่น');
         setLoading(false);
@@ -388,8 +400,8 @@ export default function AdminMembersClient({
       const newUser = {
         id: `user_${genId()}`,
         role: 'parent',
-        username: parentForm.username.trim(),
-        password: parentForm.password?.trim() || 'orca1234',
+        username: generatedUsername.trim(),
+        password: generatedPassword,
         full_name: parentForm.full_name.trim(),
         phone_number: parentForm.phone_number.trim(),
         first_login: true,
@@ -897,16 +909,17 @@ ${coursesStr}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center space-x-1">
                     <Key size={13} />
-                    <span>Username (ชื่อผู้ใช้เข้าสู่ระบบ)</span>
+                    <span>อีเมล (Email)</span>
                   </label>
                   <input 
-                    type="text"
-                    placeholder="เช่น somchai01 หรือ parent_orca"
-                    value={parentForm.username}
-                    onChange={e => setParentForm({ ...parentForm, username: e.target.value })}
+                    type="email"
+                    placeholder="เช่น somchai@example.com"
+                    value={parentForm.email}
+                    onChange={e => setParentForm({ ...parentForm, email: e.target.value })}
                     className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none text-sm font-semibold"
                     required
                   />
+                  <p className="text-[10px] text-emerald-600 mt-1">* ระบบจะสร้าง Username และ Password จากอีเมลและเบอร์โทรให้อัตโนมัติ</p>
                 </div>
 
                 <div>

@@ -14,6 +14,13 @@ export default function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -60,6 +67,34 @@ export default function LoginForm() {
     } catch (err: any) {
       setError(err.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotMessage('');
+    setForgotLoading(true);
+
+    try {
+      const res = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail, phone_number: forgotPhone }),
+      });
+
+      const data = await res.json().catch(() => ({ error: 'Invalid response from server' }));
+
+      if (res.ok && data?.success) {
+        setForgotMessage('✅ รหัสผ่านใหม่ถูกส่งไปยังอีเมลของคุณแล้ว (New password sent to your email)');
+        setForgotEmail('');
+        setForgotPhone('');
+      } else {
+        setForgotMessage(`❌ ${data?.error || 'เกิดข้อผิดพลาดในการขอรหัสผ่านใหม่'}`);
+      }
+    } catch (err: any) {
+      setForgotMessage(`❌ ${err.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'}`);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -150,12 +185,74 @@ export default function LoginForm() {
           </div>
 
           <div className="text-center space-y-4 pt-6 sm:pt-8 border-t border-gray-100 mt-4">
+            <button 
+              type="button" 
+              onClick={() => { setShowForgotModal(true); setForgotMessage(''); }}
+              className="text-sm font-bold text-[#183363] hover:underline"
+            >
+              ลืมรหัสผ่าน? (Forgot Password)
+            </button>
             <div className="text-xs sm:text-sm font-semibold text-slate-600 bg-sky-50/80 p-3.5 rounded-2xl border border-sky-200 text-left leading-relaxed">
               💡 ผู้ปกครองจะได้รับ <strong>Username</strong> และ <strong>Password</strong> สำหรับเข้าสู่ระบบจากแอดมินโดยตรงหลังจากสั่งซื้อคลาสเรียนยิมนาสติกเรียบร้อยแล้ว
             </div>
           </div>
         </form>
       </div>
+
+      {/* FORGOT PASSWORD MODAL */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-200 relative">
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <h2 className="text-xl font-black text-[#183363] mb-2">ลืมรหัสผ่าน</h2>
+            <p className="text-xs text-slate-500 mb-6">กรอกอีเมลและเบอร์โทรศัพท์ที่ลงทะเบียนไว้ ระบบจะส่งรหัสผ่านใหม่ไปที่อีเมลของคุณ</p>
+
+            {forgotMessage && (
+              <div className={`p-3 text-xs font-bold rounded-xl mb-4 ${forgotMessage.startsWith('✅') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+                {forgotMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">อีเมล (Email)</label>
+                <input 
+                  type="email"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none text-sm font-semibold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ (Phone Number)</label>
+                <input 
+                  type="text"
+                  value={forgotPhone}
+                  onChange={e => setForgotPhone(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none text-sm font-semibold"
+                  required
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full py-3 text-white bg-[#1a2d5c] rounded-xl hover:bg-[#111d3d] font-bold tracking-wide disabled:opacity-50 mt-2"
+              >
+                {forgotLoading ? 'กำลังส่ง...' : 'ขอรหัสผ่านใหม่'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
