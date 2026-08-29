@@ -30,15 +30,13 @@ export default async function AddFamilyMemberPage() {
     <div className="relative pt-4 sm:pt-6 max-w-5xl mx-auto w-full px-4 sm:px-6">
       <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
         <div className="w-24 sm:w-28 flex justify-start">
-          {hasChildren && (
-            <Link 
-              href="/dashboard" 
-              className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#1a2d5c] rounded-xl font-bold text-xs transition-colors border border-slate-300 w-fit"
-            >
-              <ChevronLeft size={18} />
-              <span>Back</span>
-            </Link>
-          )}
+          <Link 
+            href={hasChildren ? "/dashboard" : "/"} 
+            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#1a2d5c] rounded-xl font-bold text-xs transition-colors border border-slate-300 w-fit"
+          >
+            <ChevronLeft size={18} />
+            <span>Back</span>
+          </Link>
         </div>
         <h1 className="text-xl sm:text-2xl font-black text-[#1a2d5c] flex items-center space-x-2">
           <span className="text-2xl" role="img" aria-label="family">👥</span>
