@@ -505,8 +505,7 @@ ${coursesStr}
             });
             setCourseSelections(resetSel);
             setParentForm({
-              username: '',
-              password: '',
+              email: '',
               full_name: '',
               phone_number: '',
               max_children_allowed: 10,
@@ -922,20 +921,6 @@ ${coursesStr}
                   <p className="text-[10px] text-emerald-600 mt-1">* ระบบจะสร้าง Username และ Password จากอีเมลและเบอร์โทรให้อัตโนมัติ</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center space-x-1">
-                    <Key size={13} />
-                    <span>Password (รหัสผ่านเริ่มต้น)</span>
-                  </label>
-                  <input 
-                    type="text"
-                    placeholder="เช่น orca1234"
-                    value={parentForm.password}
-                    onChange={e => setParentForm({ ...parentForm, password: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none text-sm font-semibold"
-                    required
-                  />
-                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
