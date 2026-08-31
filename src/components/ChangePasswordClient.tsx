@@ -76,77 +76,104 @@ export default function ChangePasswordClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#cce3ee] font-[family-name:'Comic_Sans_MS',_'Chalkboard_SE',_'Comic_Neue',_sans-serif]">
-      {/* Header */}
-      <div className="bg-[#183363] text-white p-4 sticky top-0 z-40 shadow-md">
-        <div className="flex justify-between items-center max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-              <span className="text-[#183363] font-black text-xl">O</span>
-            </div>
-            <h1 className="text-xl font-black tracking-wider uppercase">CHANGE PASSWORD</h1>
+    <div className="min-h-screen bg-slate-50 font-[family-name:'Comic_Sans_MS',_'Chalkboard_SE',_'Comic_Neue',_sans-serif] pb-20">
+      
+      {/* Header Area to match Dashboard */}
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-2 relative sm:pt-4">
+          <div className="shrink-0 flex justify-center sm:justify-start w-full sm:w-auto mt-16 sm:mt-0">
+            <img 
+              src="/images/logo.png" 
+              alt="ORCA" 
+              className="object-contain w-32 sm:w-40 h-auto" 
+            />
           </div>
-          <ParentMenu />
+          
+          <div className="flex items-center space-x-3 sm:absolute sm:left-1/2 sm:-translate-x-1/2 my-4 sm:my-0">
+            <span className="text-4xl sm:text-5xl" role="img" aria-label="key">🔑</span>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#183363] border-b-4 border-[#183363] pb-1 whitespace-nowrap flex items-center font-[family-name:'MiPancake',_sans-serif]">
+              CHANGE PASSWORD
+            </h1>
+          </div>
+          
+          <div className="w-[120px] hidden sm:block" />
         </div>
-      </div>
-
-      <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-[2rem] shadow-xl border-4 border-white/50">
-        <h2 className="text-2xl font-black text-[#183363] mb-6 text-center">เปลี่ยนรหัสผ่าน</h2>
         
-        {error && (
-          <div className="bg-rose-50 text-rose-600 p-3 rounded-xl mb-4 font-bold text-sm border border-rose-200">
-            ❌ {error}
-          </div>
-        )}
-        
-        {success && (
-          <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl mb-4 font-bold text-sm border border-emerald-200">
-            ✅ {success}
-          </div>
-        )}
+        <div className="w-full max-w-5xl mx-auto h-[4px] bg-slate-300 mb-6 rounded-full"></div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">รหัสผ่านปัจจุบัน (Current Password)</label>
-            <input 
-              type="password"
-              value={currentPassword}
-              onChange={e => setCurrentPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none font-semibold"
-              required
-            />
+        <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-start gap-6">
+          {/* Left Sidebar Menu */}
+          <div className="w-full md:w-[240px] shrink-0 sticky top-6 z-40 hidden md:block">
+            <ParentMenu />
           </div>
           
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">รหัสผ่านใหม่ (New Password)</label>
-            <input 
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none font-semibold"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">ยืนยันรหัสผ่านใหม่ (Confirm Password)</label>
-            <input 
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-[#183363] outline-none font-semibold"
-              required
-            />
+          {/* Mobile Menu */}
+          <div className="w-full shrink-0 mb-4 md:hidden flex justify-center">
+            <ParentMenu />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 mt-4 text-white bg-[#1a2d5c] rounded-xl hover:bg-[#111d3d] font-bold text-lg tracking-wide disabled:opacity-50"
-          >
-            {loading ? 'กำลังเปลี่ยนรหัสผ่าน...' : 'บันทึกรหัสผ่านใหม่'}
-          </button>
-        </form>
+          {/* Right Main Content */}
+          <div className="flex-1 w-full min-w-0">
+            <div className="w-full max-w-md mx-auto p-6 sm:p-8 bg-white rounded-3xl shadow-xl border-4 border-sky-100">
+              <h2 className="text-2xl font-black text-[#183363] mb-6 text-center tracking-wide">เปลี่ยนรหัสผ่าน</h2>
+              
+              {error && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl mb-4 font-bold text-sm border border-rose-200">
+                  ❌ {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl mb-4 font-bold text-sm border border-emerald-200">
+                  ✅ {success}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">รหัสผ่านปัจจุบัน (Current Password)</label>
+                  <input 
+                    type="password"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:border-[#183363] focus:ring-4 focus:ring-sky-100 outline-none font-semibold transition-all"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">รหัสผ่านใหม่ (New Password)</label>
+                  <input 
+                    type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:border-[#183363] focus:ring-4 focus:ring-sky-100 outline-none font-semibold transition-all"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">ยืนยันรหัสผ่านใหม่ (Confirm Password)</label>
+                  <input 
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:border-[#183363] focus:ring-4 focus:ring-sky-100 outline-none font-semibold transition-all"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 mt-2 text-white bg-[#1a2d5c] rounded-2xl hover:bg-sky-600 font-bold text-lg tracking-wide shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 disabled:hover:bg-[#1a2d5c]"
+                >
+                  {loading ? 'กำลังเปลี่ยนรหัสผ่าน...' : 'บันทึกรหัสผ่านใหม่'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
