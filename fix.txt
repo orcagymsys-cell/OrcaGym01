@@ -1,0 +1,33 @@
+﻿  async getChildren(parentId?: string): Promise<Child[]> {
+    initLocalSeed();
+    let localChildren = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+    let modified = false;
+    const jeenaIdx = localChildren.findIndex(c => c.id === 'c_jeena');
+    if (jeenaIdx !== -1) {
+      localChildren.splice(jeenaIdx, 1);
+      modified = true;
+    }
+    if (modified) setLocal(STORAGE_KEYS.CHILDREN, localChildren);
+
+    let combinedChildren: Child[] = [...localChildren];
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        let query = supabase.from('children').select('*');
+        if (parentId) query = query.eq('parent_id', parentId);
+        const { data } = await query;
+        if (data) {
+          const childMap = new Map<string, Child>();
+          combinedChildren.forEach(c => childMap.set(c.id, c));
+          data.forEach((c: Child) => childMap.set(c.id, c));
+          combinedChildren = Array.from(childMap.values());
+        }
+      } catch (err) {}
+    }
+
+    if (parentId) {
+      combinedChildren = combinedChildren.filter(c => c.parent_id === parentId);
+    }
+    return combinedChildren;
+  },
+

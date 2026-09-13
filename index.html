@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orca Gymnastics - ระบบจองคลาสเรียนยิมสำหรับเด็ก</title>
+  <meta name="description" content="ระบบจองคลาสเรียนยิม Orca Gymnastics สำหรับผู้ปกครองและแอดมิน">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Main App Container -->
+  <div class="app-frame">
+
+    <!-- Application Top Header Bar (Displays registered parent/admin name when logged in) -->
+    <header class="app-header" style="display:none;">
+      <div class="header-brand">
+        <img src="images/orca_logo.png" class="orca-header-logo" alt="ORCA GYMNASTICS" />
+        <div style="display:flex; flex-direction:column;">
+          <span class="orca-logo-text">ORCA GYMNASTICS</span>
+          <span id="headerUserName" class="header-user-name"></span>
+        </div>
+      </div>
+      <button class="menu-trigger-btn" id="menuTriggerBtn">
+        🏠 MENU ☰
+      </button>
+    </header>
+
+    <!-- Slide-out Menu Drawer Overlay -->
+    <div class="menu-drawer-overlay" id="menuDrawerOverlay">
+      <div class="menu-drawer">
+        <div class="drawer-header">
+          <span>🏠 MENU</span>
+        </div>
+        <nav class="drawer-nav" id="drawerNav">
+          <!-- Rendered dynamically by app.js -->
+        </nav>
+      </div>
+    </div>
+
+    <!-- App Main Content Area -->
+    <main class="app-content">
+
+      <!-- ================= 1. PARENT SIGN IN SCREEN ================= -->
+      <section id="screenSignIn" class="screen active" style="min-height:88vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 10px; background:linear-gradient(to bottom, #eef6ff, #dbebff, #9ec6f5); position:relative; overflow:hidden;">
+        <div style="text-align:center; margin-bottom:16px; position:relative; z-index:10;">
+          <img src="images/orca_logo.png" style="max-width:160px; height:auto; margin-bottom:4px;" alt="ORCA GYMNASTICS" />
+          <h1 style="font-size:26px; font-weight:800; color:#000000; font-family:'Comic Neue', sans-serif; letter-spacing:1px; margin-top:2px;">ORCA GYMNASTICS</h1>
+        </div>
+
+        <div class="auth-container" style="background:#ffffff; border-radius:28px; border:1px solid rgba(255,255,255,0.8); box-shadow:0 25px 50px -12px rgba(37,99,235,0.25); overflow:hidden; max-width:365px; width:100%; padding:0; position:relative; z-index:10;">
+          <div style="background:#2b66c4; color:white; padding:20px; text-align:center; border-top-left-radius:26px; border-top-right-radius:26px;">
+            <svg style="width:40px; height:40px; margin:0 auto 4px auto;" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <h2 style="font-size:18px; font-weight:700; text-transform:uppercase; font-family:'Comic Neue', sans-serif; letter-spacing:1px;">MEMBER LOGIN</h2>
+          </div>
+
+          <form id="loginForm" style="padding:24px; width:100%; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; border:1.5px solid #7ca9ed; border-radius:9999px; overflow:hidden; background:#ffffff; margin-bottom:16px;">
+              <div style="width:48px; height:44px; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-top-left-radius:9999px; border-bottom-left-radius:9999px;">
+                <svg style="width:20px; height:20px; fill:white;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </div>
+              <input type="text" id="loginUsername" value="parent" placeholder="Username" required style="width:100%; height:44px; border:none; background:transparent; padding:0 12px; font-size:16px; font-weight:700; outline:none; color:#1e293b; font-family:'Comic Neue', sans-serif;">
+            </div>
+
+            <div style="display:flex; align-items:center; border:1.5px solid #7ca9ed; border-radius:9999px; overflow:hidden; bg:#ffffff; margin-bottom:16px; position:relative;">
+              <div style="width:48px; height:44px; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-top-left-radius:9999px; border-bottom-left-radius:9999px;">
+                <svg style="width:20px; height:20px; fill:white;" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              </div>
+              <input type="password" id="loginPassword" value="123" placeholder="••••••••" required style="width:100%; height:44px; border:none; background:transparent; padding:0 36px 0 12px; font-size:16px; font-weight:700; outline:none; color:#1e293b; font-family:'Comic Neue', sans-serif;">
+              <button type="button" onclick="const p = document.getElementById('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password';" style="position:absolute; right:12px; border:none; background:transparent; font-size:18px; cursor:pointer; color:#64748b;">👁️</button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-left:4px;">
+              <input type="checkbox" id="rememberMe" checked style="width:18px; height:18px; border-radius:4px; accent-color:#2563eb; cursor:pointer;">
+              <label for="rememberMe" style="font-weight:700; color:#1d4ed8; font-size:15px; cursor:pointer; font-family:'Comic Neue', sans-serif;">Remember me</label>
+            </div>
+
+            <button type="submit" style="width:100%; height:46px; background:#2563eb; color:white; border:none; border-radius:9999px; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 4px 0 #60a5fa; font-family:'Comic Neue', sans-serif; transition:all 0.2s;" onmouseover="this.style.background='#1d4ed8';" onmouseout="this.style.background='#2563eb';">
+              Sign in
+            </button>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:20px; padding-top:16px; border-top:1px solid #f1f5f9; font-size:12px; font-weight:700; font-family:'Comic Neue', sans-serif;">
+              <span style="color:#94a3b8; font-weight:600;">Don't have an account ?</span>
+              <a onclick="app.showScreen('screenRegister')" style="border:1px solid #93c5fd; background:white; color:#2563eb; padding:5px 14px; border-radius:9999px; text-transform:uppercase; font-size:11px; text-decoration:none; cursor:pointer; font-weight:700;">REGISTER HERE</a>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ================= 2. PARENT REGISTER SCREEN ================= -->
+      <section id="screenRegister" class="screen">
+        <div class="auth-container">
+          <div class="auth-logo-box" style="margin-bottom:16px;">
+            <img src="images/orca_logo.png" class="orca-logo-main" style="max-width:220px;" alt="ORCA GYMNASTICS" />
+            <h2 style="font-size:26px; font-weight:700; color:var(--primary-navy); text-decoration:underline; margin-top:8px; font-family:'Comic Neue', sans-serif;">Register</h2>
+          </div>
+
+          <form id="regForm" style="width:100%; max-width:320px;">
+            <div class="form-group">
+              <label class="form-label" for="regFullName">Parent's Full Name</label>
+              <input type="text" id="regFullName" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regPassword">Password</label>
+              <div class="input-wrapper">
+                <input type="password" id="regPassword" class="form-control" required>
+                <button type="button" class="input-eye-btn" onclick="const p = document.getElementById('regPassword'); p.type = p.type === 'password' ? 'text' : 'password';">👁️</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regConfirmPassword">Confirm Password</label>
+              <div class="input-wrapper">
+                <input type="password" id="regConfirmPassword" class="form-control" required>
+                <button type="button" class="input-eye-btn" onclick="const p = document.getElementById('regConfirmPassword'); p.type = p.type === 'password' ? 'text' : 'password';">👁️</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regPhone">Phone Number</label>
+              <input type="tel" id="regPhone" class="form-control" required>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">เงื่อนไขการเข้าเรียน & ความปลอดภัย</label>
+              <div class="terms-box">
+                📌 **เงื่อนไขและข้อตกลงในการเรียน Orca Gymnastics**<br>
+                1. นักเรียนต้องแต่งกายชุดยิมนาสติกหรือชุดกีฬาที่เหมาะสม<br>
+                2. การจองคลาสเรียนหรือยกเลิกคลาสเรียนต้องทำล่วงหน้าอย่างน้อย 1 วัน<br>
+                3. ผู้ปกครองต้องแจ้งประวัติสุขภาพหรือข้อจำกัดทางร่างกายของนักเรียนให้ยิมทราบก่อนเข้าเรียน<br>
+                4. ชั่วโมงเรียนมีอายุตามที่กำหนดในแพ็กเกจ
+              </div>
+              <div class="form-row-checkbox">
+                <input type="checkbox" id="acceptTerms" required>
+                <label for="acceptTerms">ยอมรับเงื่อนไขก่อนเข้าเรียน</label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Sign up</button>
+          </form>
+
+          <div class="auth-links">
+            <p>Already have an account? <a onclick="app.showScreen('screenSignIn')" class="link-bold-blue">Sign in</a></p>
+            <span class="thai-tag-highlight">ข้อมูลผู้ปกครอง</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. PARENT HOME / FAMILY MEMBERS LIST ================= -->
+      <section id="screenHome" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+          <div class="home-badge-header">HOME</div>
+        </div>
+
+        <!-- Add Family Member button -->
+        <div class="add-family-link-card" onclick="app.openAddChildScreen()">
+          <svg class="family-icon-svg" viewBox="0 0 100 100">
+            <circle cx="36" cy="38" r="16" fill="#fde047"/>
+            <path d="M 20 70 C 20 52, 52 52, 52 70 Z" fill="#ec4899"/>
+            <circle cx="64" cy="40" r="16" fill="#fde047"/>
+            <path d="M 48 72 C 48 56, 80 56, 80 72 Z" fill="#eab308"/>
+            <circle cx="68" cy="68" r="12" fill="#10b981" stroke="white" stroke-width="2"/>
+            <path d="M 68 62 L 68 74 M 62 68 L 74 68" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <span class="add-family-text-link">Add Family Member</span>
+        </div>
+
+        <hr class="home-divider-line">
+
+        <!-- Children List Rendered in Image 2 format -->
+        <div id="parentChildrenList" class="children-list">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="red-booking-annotation">
+          กดที่รูปแล้วจะสามารถเช็คคอร์สและจองได้
+        </div>
+      </section>
+
+      <!-- ================= 4. ADD CHILD FORM SCREEN ================= -->
+      <section id="screenAddChild" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title" id="addChildTitle">Student Information</h2>
+
+        <!-- Photo Upload Preview Box -->
+        <div class="photo-upload-container" onclick="document.getElementById('childPhotoInput').click();" title="กดเพื่ออัปโหลดรูปภาพเด็ก">
+          <div id="childPhotoPreview" class="photo-preview-circle">👧🏻</div>
+          <div class="photo-add-badge-red">+</div>
+        </div>
+        <input type="file" id="childPhotoInput" accept="image/*" style="display:none;" onchange="app.handlePhotoUpload(this)">
+
+        <form id="childForm">
+          <div class="form-group">
+            <label class="form-label" for="childFullName">Child's Full Name:</label>
+            <input type="text" id="childFullName" class="form-control" placeholder="" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="childNickname">Nickname:</label>
+            <input type="text" id="childNickname" class="form-control" placeholder="" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="childDob">Date of Birth:</label>
+            <input type="date" id="childDob" class="form-control" value="2020-05-05" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="childGender">Gender:</label>
+            <select id="childGender" class="form-control" required>
+              <option value="Girl">Girl (เด็กหญิง)</option>
+              <option value="Boy">Boy (เด็กชาย)</option>
+            </select>
+          </div>
+
+          <!-- + Add Another Child Button (Max 20 children!) -->
+          <button type="button" class="btn-add-another" onclick="app.handleAddAnotherChild()">+ Add Another Child</button>
+
+          <!-- Done Button -->
+          <button type="submit" class="btn-primary">Done</button>
+        </form>
+      </section>
+
+      <!-- ================= 5. STUDENT DASHBOARD & HOURS SUMMARY ================= -->
+      <section id="screenStudentDashboard" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <div style="text-align:center;">
+          <img id="studentDashAvatar" src="" class="child-card-avatar" style="width:80px; height:80px; margin:0 auto 8px auto;" />
+          <h2 id="studentDashName" class="child-name" style="font-size:20px;">-</h2>
+          <div id="studentDashNickname" class="child-nickname" style="font-size:16px;">-</div>
+          <div id="studentDashMeta" class="child-meta">-</div>
+        </div>
+
+        <!-- Approval Pending Alert Banner -->
+        <div id="studentApprovalPendingAlert" class="alert-banner alert-banner-admin" style="display:none; margin-top:14px;">
+          🔒 รอแอดมินอนุมัติคอร์สและเติมชั่วโมงเรียนก่อน จึงจะสามารถจองคลาสได้
+        </div>
+
+        <div id="studentLowHoursAlert" class="alert-banner" style="display:none; margin-top:14px;">
+          ⚠️ ชั่วโมงเรียนคงเหลือใกล้หมด!
+        </div>
+
+        <div class="student-hours-summary">
+          <div id="studentDashSummary" class="hours-main-text">12 Classes | Used: 2 | Remaining: 10</div>
+          <div id="studentDashExpiry" class="expiry-text">(Expires: 02/02/2070)</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div class="history-header-row">
+            <span class="history-title">History (ประวัติการจอง)</span>
+          </div>
+          <div id="studentHistoryList">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:6px; text-align:center;">
+            (การจองหรือยกเลิกต้องทำล่วงหน้าอย่างน้อย 1 วัน)
+          </div>
+        </div>
+
+        <button id="btnOpenBookingCalendar" class="btn-primary" onclick="app.openBookingCalendar()" style="font-size:22px; text-decoration:underline;">
+          Book Class (จองคลาสเรียน)
+        </button>
+      </section>
+
+      <!-- ================= 6. BOOKING CALENDAR SCREEN ================= -->
+      <section id="screenBookingCalendar" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <div style="text-align:center; margin-bottom:14px;">
+          <h2 id="calStudentNickname" class="section-title" style="margin-bottom:4px;">-</h2>
+          <div style="font-size:14px; color:#64748b;">เลือกว่าที่และรอบเวลาที่ต้องการเข้าเรียน</div>
+        </div>
+
+        <div class="calendar-widget">
+          <div class="calendar-month-header">
+            <button class="menu-trigger-btn" onclick="app.changeCalendarMonth(-1)">◀</button>
+            <span id="calMonthYearLabel">July 2026</span>
+            <button class="menu-trigger-btn" onclick="app.changeCalendarMonth(1)">▶</button>
+          </div>
+
+          <div id="calendarDaysGrid" class="calendar-days-grid">
+            <!-- Calendar Days Rendered via JS -->
+          </div>
+        </div>
+
+        <div class="time-slot-selector">
+          <label class="form-label">ClassTime (เลือกรอบเวลาเรียน):</label>
+          <div id="timeSlotsList">
+            <!-- Time slots rendered dynamically -->
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="app.handleConfirmBooking()">
+          Book Class (ยืนยันการจอง)
+        </button>
+      </section>
+
+      <!-- ================= 7. PRICING & COURSES SCREEN ================= -->
+      <section id="screenPricing" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title">ORCA CLASSES & PRICING</h2>
+
+        <div class="pricing-card">
+          <div class="pricing-card-header">
+            <div>
+              <div class="pricing-card-title">Orca Cubs</div>
+              <div style="font-size:13px; opacity:0.9;">สำหรับน้องๆ อายุ 4-10 ปี</div>
+            </div>
+            <span style="font-size:12px; background:white; color:var(--primary-navy); padding:4px 8px; border-radius:10px; font-weight:700;">1.5 hrs/time</span>
+          </div>
+
+          <table class="pricing-table">
+            <thead>
+              <tr>
+                <th>Times</th>
+                <th>Course Fees</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>700 THB</td><td>-</td></tr>
+              <tr><td>6</td><td>4,100 THB (683)</td><td>2 Months</td></tr>
+              <tr><td>12</td><td>7,800 THB (650)</td><td>4 Months</td></tr>
+              <tr><td>24</td><td>14,400 THB (600) <span style="color:red; font-weight:700;">free 2</span></td><td>6 Months</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pricing-card">
+          <div class="pricing-card-header" style="background: linear-gradient(135deg, #4338ca, #3b82f6);">
+            <div>
+              <div class="pricing-card-title">Mega Orca</div>
+              <div style="font-size:13px; opacity:0.9;">สำหรับนักกีฬา เลเวล 1 ขึ้นไป (อายุ 5-15 ปี)</div>
+            </div>
+            <span style="font-size:12px; background:white; color:#4338ca; padding:4px 8px; border-radius:10px; font-weight:700;">2 hrs/time</span>
+          </div>
+
+          <table class="pricing-table">
+            <thead>
+              <tr>
+                <th>Times</th>
+                <th>Course Fees</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>800 THB</td><td>-</td></tr>
+              <tr><td>6</td><td>4,300 THB (716)</td><td>2 Months</td></tr>
+              <tr><td>12</td><td>8,400 THB (700)</td><td>4 Months</td></tr>
+              <tr><td>24</td><td>15,600 THB (650) <span style="color:red; font-weight:700;">free 2</span></td><td>6 Months</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= 8. SCHEDULE INFO SCREEN ================= -->
+      <section id="screenScheduleInfo" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title">SCHEDULE</h2>
+
+        <div class="schedule-grid-container">
+          <table class="schedule-matrix">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>10:30-12:00</th>
+                <th>12:00-13:00</th>
+                <th>14:30-16:00</th>
+                <th>16:00-17:30</th>
+                <th>17:30-19:30</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="day-col day-mon">MON</td><td>-</td><td rowspan="7" style="background:#f1f5f9; writing-mode:vertical-rl;">BREAK</td><td>-</td><td>-</td><td>-</td></tr>
+              <tr><td class="day-col day-tue">TUE</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+              <tr><td class="day-col day-wed">WED</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+              <tr><td class="day-col day-thu">THU</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+              <tr><td class="day-col day-fri">FRI</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+              <tr><td class="day-col day-sat">SAT</td><td class="slot-cell-active">Cubs/Mega</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+              <tr><td class="day-col day-sun">SUN</td><td class="slot-cell-active">Cubs/Mega</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Cubs</td><td class="slot-cell-active">Mega</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= 9. ABOUT US SCREEN ================= -->
+      <section id="screenAbout" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title">ABOUT US</h2>
+        <div style="text-align:center; padding:10px;">
+          <img src="images/orca_logo.png" class="orca-logo-main" style="width:160px; height:auto; margin-bottom:14px;" alt="ORCA GYMNASTICS" />
+          <h3 style="color:var(--primary-navy); font-size:20px; font-weight:700;">Orca Gymnastics Academy</h3>
+          <p style="font-size:14px; color:#475569; margin-top:10px; line-height:1.6;">
+            สถาบันยิมนาสติกสำหรับเด็กเพื่อเสริมสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นเพื่อพร้อมต่อยอดในระดับที่สูงขึ้นได้อย่างมั่นใจ
+          </p>
+          <div style="margin-top:20px; font-size:14px; font-weight:600; color:var(--primary-navy);">
+            📞 โทรศัพท์: 081-234-5678<br>
+            📍 สถานที่: Orca Gymnastics Center
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 9.1 TERMS & REGULATIONS SCREEN ================= -->
+      <section id="screenTerms" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title">ข้อตกลงและเงื่อนไข</h2>
+        <div style="background:white; border:2px solid #e2e8f0; border-radius:20px; padding:20px; font-size:14px; color:#334155; line-height:1.6;">
+          <h3 style="color:#001a3a; font-weight:700; margin-bottom:10px;">📌 1. การสมัครเรียนและเงื่อนไขการใช้ชั่วโมง</h3>
+          <p style="margin-bottom:12px;">ชั่วโมงเรียนมีอายุตามแพ็กเกจที่ผู้ปกครองสมัคร การจองคลาสเรียนล่วงหน้าต้องทำล่วงหน้าอย่างน้อย 1 วัน</p>
+
+          <h3 style="color:#001a3a; font-weight:700; margin-bottom:10px;">🛡️ 2. มาตรการความปลอดภัยและวินัย</h3>
+          <p style="margin-bottom:12px;">นักเรียนต้องแต่งกายชุดยิมนาสติกหรือชุดกีฬาที่ไม่มีกระดุม/ซิปโลหะ และปฏิบัติตามคำสั่งโค้ชอย่างเคร่งครัด</p>
+
+          <h3 style="color:#001a3a; font-weight:700; margin-bottom:10px;">📅 3. การยกเลิกและเปลี่ยนรอบเรียน</h3>
+          <p style="margin-bottom:12px;">กรุณาแจ้งยกเลิกล่วงหน้าอย่างน้อย 24 ชั่วโมง หากยกเลิกน้อยกว่า 24 ชม. ระบบจะตัดชั่วโมงเรียนตามปกติ</p>
+        </div>
+      </section>
+
+      <!-- ================= 9.2 COACHING TEAM SCREEN ================= -->
+      <section id="screenCoaches" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+        </div>
+
+        <h2 class="section-title">OUR COACHING TEAM (ทีมโค้ช)</h2>
+
+        <!-- Orca Cubs Coaches -->
+        <div style="margin-bottom:24px;">
+          <h3 style="font-size:16px; font-weight:700; color:#001a3a; border-bottom:2px solid #38bdf8; padding-bottom:6px; margin-bottom:12px;">
+            🧸 ทีมโค้ชคลาส Orca Cubs (อายุ 4-10 ปี)
+          </h3>
+          <div style="display:grid; grid-template-columns:1fr; gap:12px;">
+            <div style="background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;">
+              <div style="width:54px; height:54px; border-radius:12px; background:#e0f2fe; display:flex; align-items:center; justify-content:center; font-size:28px;">👨🏻‍กล้าม</div>
+              <div>
+                <span style="font-size:11px; background:#e0f2fe; color:#0369a1; font-weight:700; padding:2px 8px; border-radius:8px;">Orca Cubs Head Coach</span>
+                <h4 style="font-size:15px; font-weight:700; color:#001a3a; margin-top:2px;">โค้ชกอล์ฟ (ผู้เชี่ยวชาญยิมเด็กเล็ก)</h4>
+                <div style="font-size:12px; color:#475569;">ประสบการณ์ 8 ปี (อดีตนักกีฬาทีมชาติ)</div>
+              </div>
+            </div>
+            <div style="background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;">
+              <div style="width:54px; height:54px; border-radius:12px; background:#fce7f3; display:flex; align-items:center; justify-content:center; font-size:28px;">👩🏻‍กล้าม</div>
+              <div>
+                <span style="font-size:11px; background:#fce7f3; color:#be185d; font-weight:700; padding:2px 8px; border-radius:8px;">Orca Cubs Specialist</span>
+                <h4 style="font-size:15px; font-weight:700; color:#001a3a; margin-top:2px;">โค้ชฟ้า (โค้ชกายกรรมจังหวะ)</h4>
+                <div style="font-size:12px; color:#475569;">ประสบการณ์ 6 ปี (วิทยาศาสตร์การกีฬา)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mega Orca Coaches -->
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:#001a3a; border-bottom:2px solid #818cf8; padding-bottom:6px; margin-bottom:12px;">
+            ⚡ ทีมโค้ชคลาส Mega Orca (อายุ 5-15 ปี / Level 1+)
+          </h3>
+          <div style="display:grid; grid-template-columns:1fr; gap:12px;">
+            <div style="background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;">
+              <div style="width:54px; height:54px; border-radius:12px; background:#e0e7ff; display:flex; align-items:center; justify-content:center; font-size:28px;">🧔🏻‍♂️</div>
+              <div>
+                <span style="font-size:11px; background:#e0e7ff; color:#4338ca; font-weight:700; padding:2px 8px; border-radius:8px;">Mega Orca Head Coach</span>
+                <h4 style="font-size:15px; font-weight:700; color:#001a3a; margin-top:2px;">โค้ชแม็กซ์ (หัวหน้าผู้ฝึกสอนแข่ง)</h4>
+                <div style="font-size:12px; color:#475569;">ประสบการณ์ 12 ปี (ผู้ตัดสินยิมสากล)</div>
+              </div>
+            </div>
+            <div style="background:white; border:1.5px solid #e2e8f0; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;">
+              <div style="width:54px; height:54px; border-radius:12px; background:#f3e8ff; display:flex; align-items:center; justify-content:center; font-size:28px;">👩🏼‍กล้าม</div>
+              <div>
+                <span style="font-size:11px; background:#f3e8ff; color:#6b21a8; font-weight:700; padding:2px 8px; border-radius:8px;">Mega Orca Coach</span>
+                <h4 style="font-size:15px; font-weight:700; color:#001a3a; margin-top:2px;">โค้ชแป้ง (โค้ชคานทรงตัว)</h4>
+                <div style="font-size:12px; color:#475569;">ประสบการณ์ 9 ปี (เหรียญทองกีฬาแห่งชาติ)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 10. ADMIN SIGN IN SCREEN ================= -->
+      <section id="screenAdminSignIn" class="screen">
+        <div class="auth-container">
+          <div class="admin-badge-title" style="color:var(--accent-coral); font-weight:700; margin-bottom:12px;">ของแอดมิน ADMIN</div>
+          
+          <div class="auth-logo-box">
+            <img src="images/orca_logo.png" class="orca-logo-main" alt="ORCA GYMNASTICS" />
+          </div>
+
+          <form id="adminLoginForm" style="width:100%; max-width:320px;">
+            <div class="form-group">
+              <label class="form-label" for="adminUsername">Admin Username</label>
+              <input type="text" id="adminUsername" class="form-control" value="admin" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="adminPassword">Admin Password</label>
+              <input type="password" id="adminPassword" class="form-control" value="123" required>
+            </div>
+
+            <button type="submit" class="btn-primary" style="background:var(--primary-navy-dark);">
+              Sign in (Admin)
+            </button>
+          </form>
+
+          <div class="auth-links">
+            <p><a onclick="app.showScreen('screenSignIn')">⬅️ กลับหน้า Sign In ผู้ปกครอง</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 11. ADMIN DASHBOARD SCREEN ================= -->
+      <section id="screenAdminDashboard" class="screen">
+        <div class="screen-top-bar">
+          <button type="button" class="btn-back-link" onclick="app.goBack()">◀ Back</button>
+          <div class="admin-badge-title" style="font-size:20px; color:var(--accent-coral);">ADMIN DASHBOARD</div>
+        </div>
+
+        <div id="adminLowHoursAlertBanner" class="alert-banner alert-banner-admin" style="display:none;">
+          ⚠️ มีนักเรียนที่ชั่วโมงใกล้หมด!
+        </div>
+
+        <div class="admin-tab-nav">
+          <button class="admin-tab-btn active" onclick="document.querySelectorAll('.admin-tab-content').forEach(c=>c.style.display='none'); document.getElementById('tabMembers').style.display='block'; document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+            👥 ทุกคน (Members)
+          </button>
+          <button class="admin-tab-btn" onclick="document.querySelectorAll('.admin-tab-content').forEach(c=>c.style.display='none'); document.getElementById('tabDailyAudit').style.display='block'; document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+            📊 สรุปเติมชั่วโมงประจำวัน (Audit Log)
+          </button>
+          <button class="admin-tab-btn" onclick="document.querySelectorAll('.admin-tab-content').forEach(c=>c.style.display='none'); document.getElementById('tabAdminSchedule').style.display='block'; document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+            📅 ตารางเรียนประจำวัน
+          </button>
+          <button class="admin-tab-btn" onclick="document.querySelectorAll('.admin-tab-content').forEach(c=>c.style.display='none'); document.getElementById('tabAdminQuota').style.display='block'; document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+            ⚙️ ตั้งค่า Quota
+          </button>
+          <button class="admin-tab-btn" onclick="document.querySelectorAll('.admin-tab-content').forEach(c=>c.style.display='none'); document.getElementById('tabGoogleSync').style.display='block'; document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+            📊 Google Sheets & Drive
+          </button>
+        </div>
+
+        <!-- TAB 1: Members -->
+        <div id="tabMembers" class="admin-tab-content">
+          <div style="font-size:15px; font-weight:700; color:var(--primary-navy); margin-bottom:12px;">
+            ข้อมูลเด็กทุกคนที่ลงทะเบียน (เรียงตามลำดับ)
+          </div>
+          <div id="adminMembersList">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 2: Daily Audit Summary Log -->
+        <div id="tabDailyAudit" class="admin-tab-content" style="display:none;">
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:18px; padding:16px; margin-bottom:16px; text-align:center;">
+            <div style="font-size:15px; font-weight:700; color:var(--primary-navy);">
+              📊 สรุปประวัติการเติมชั่วโมงของแอดมิน (ป้องกันการทุจริต)
+            </div>
+            <div id="auditLogDateLabel" style="font-size:13px; color:#64748b; margin-top:2px;">ประจำวันที่ -</div>
+            <div style="font-size:22px; font-weight:800; color:var(--accent-green); margin-top:6px;">
+              รวมเติมวันนี้: <span id="auditTotalHoursToday">0 ชั่วโมง</span>
+            </div>
+          </div>
+
+          <div id="auditLogRecordsList">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 3: Admin Daily Schedule Grid -->
+        <div id="tabAdminSchedule" class="admin-tab-content" style="display:none;">
+          <div style="margin-bottom:14px;">
+            <label class="form-label">เลือกวันที่ต้องการดูตารางเรียน:</label>
+            <input type="date" id="adminScheduleDatePicker" class="form-control" value="2026-07-30" onchange="window.app.selectCalendarDate(this.value); window.app.renderAdminScheduleGrid();">
+          </div>
+
+          <div id="adminScheduleDateLabel" style="font-weight:700; color:var(--primary-navy); margin-bottom:10px;">
+            ตารางเรียนวันนี้มีใครจองมาบ้าง
+          </div>
+
+          <div id="adminScheduleAttendeesList">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 4: Admin Quota Management -->
+        <div id="tabAdminQuota" class="admin-tab-content" style="display:none;">
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:18px; padding:16px; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:700; color:var(--primary-navy); margin-bottom:10px;">⚙️ ปรับแต่ง Quota ที่นั่งต่อรอบ (Default: 10 คน)</h3>
+            <p style="font-size:13px; color:#64748b; margin-bottom:14px;">
+              เมื่อมีผู้ปกครองจองคลาสครบตาม Quota ระบบจะทำการ Lock ไม่ให้กดจองเพิ่มโดยอัตโนมัติ
+            </p>
+
+            <div class="form-group">
+              <label class="form-label">รอบเวลาที่ต้องการปรับ:</label>
+              <select id="adminQuotaSlotSelect" class="form-control">
+                <option value="10:00-12:00">10:00-12:00</option>
+                <option value="10:30-12:00">10:30-12:00</option>
+                <option value="14:30-16:00">14:30-16:00</option>
+                <option value="16:00-17:30">16:00-17:30</option>
+                <option value="17:30-19:30">17:30-19:30</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">จำนวน Quota สูงสุด (คน/ห้อง):</label>
+              <input type="number" id="adminQuotaNumberInput" class="form-control" value="10" min="1" max="50">
+            </div>
+
+            <button type="button" class="btn-primary" onclick="app.handleUpdateSlotQuota()">บันทึกการตั้งค่า Quota</button>
+          </div>
+        </div>
+
+        <!-- TAB 5: Google Sheets & Drive Setup -->
+        <div id="tabGoogleSync" class="admin-tab-content" style="display:none;">
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:18px; padding:16px; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:700; color:var(--primary-navy); margin-bottom:10px;">📊 การตั้งค่า Google Sheets & Google Drive</h3>
+            
+            <div style="font-size:13px; color:#475569; margin-bottom:12px;">
+              📌 <strong>Google Sheet ID:</strong> <code>13pzfV9iHXjySYL5g4spa7wwuf3VRUZqtGgvZs4oT2Sw</code><br>
+              📁 <strong>Google Drive Folder:</strong> <a href="https://drive.google.com/drive/folders/16pDp_FOgn4w8RMiZc-wJbEONuMRhDjNT" target="_blank" style="color:#0284c7; font-weight:700;">เปิดโฟลเดอร์รูปภาพนักเรียน</a>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Google Apps Script Web App URL (หลังกด Deploy):</label>
+              <input type="text" id="gasWebAppUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+
+            <button type="button" class="btn-primary" onclick="app.handleSaveGasUrl()">บันทึก & Sync ข้อมูลจาก Google Sheet</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Admin Top-Up Modal -->
+  <div class="modal-overlay" id="adminTopUpModal">
+    <div class="modal-box">
+      <h3 class="modal-title">ADMin Student Information</h3>
+      <div style="font-size:14px; font-weight:700; color:var(--primary-navy); margin-bottom:14px;" id="modalTopUpChildName">
+        -
+      </div>
+
+      <form id="adminTopUpForm">
+        <input type="hidden" id="modalTopUpChildId">
+
+        <div class="form-group">
+          <label class="form-label">Class (คลาสเรียน):</label>
+          <select id="modalTopUpCourse" class="form-control" required>
+            <option value="Orca Cubs">Orca Cubs (อายุ 4-10 ปี)</option>
+            <option value="Mega Orca">Mega Orca (อายุ 5-15 ปี)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Course / จำนวนชั่วโมงที่ซื้อ (กดเพิ่มคอร์ดที่ผปค.ซื้อ):</label>
+          <select id="modalTopUpHours" class="form-control" required>
+            <option value="1">1 ครั้ง / 1.5-2 ชม.</option>
+            <option value="6">6 ครั้ง (แพ็กเกจ 2 เดือน)</option>
+            <option value="12" selected>12 ครั้ง (แพ็กเกจ 4 เดือน)</option>
+            <option value="24">24 ครั้ง (แถม 2 ครั้ง)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">บันทึกเพิ่มเติม (สำหรับ Audit Log):</label>
+          <input type="text" id="modalTopUpNote" class="form-control" placeholder="เช่น ชำระผ่านโอนเงิน วันที่ 30/07">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary close-modal-btn">ยกเลิก</button>
+          <button type="submit" class="btn-primary" style="flex:1;">Approve & เติมชั่วโมง</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message -->
+  <div class="toast-msg" id="toastMsg"></div>
+
+  <!-- Scripts -->
+  <script src="js/gas-api.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/booking.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
