@@ -82,7 +82,7 @@ export default function SchedulePage() {
   const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [parents, setParents] = useState<UserProfile[]>([]);
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
   const loadData = async () => {
@@ -150,6 +150,15 @@ export default function SchedulePage() {
     diffWeeks === 1 ? 'สัปดาห์หน้า' :
     diffWeeks < 0 ? `${Math.abs(diffWeeks)} สัปดาห์ที่แล้ว` :
     `${diffWeeks} สัปดาห์ข้างหน้า`;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+        <div className="w-12 h-12 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[#001a3a] font-bold">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
 
   if (isAdmin) {
     return (

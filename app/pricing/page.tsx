@@ -118,7 +118,7 @@ function getThemeStyles(themeColor?: string, displayTitle?: string): ThemeStyleR
 export default function PricingPage() {
   const [courses, setCourses] = useState<CourseConfig[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Edit / Create Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -451,6 +451,15 @@ export default function PricingPage() {
   });
 
   
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+        <div className="w-12 h-12 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[#001a3a] font-bold">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="font-['Anuphan',sans-serif]">
