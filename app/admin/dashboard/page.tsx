@@ -389,8 +389,8 @@ function AdminDashboardContent() {
     const parentName = p.name;
     const parentChildren = children.filter(c => isChildOfParent(c, p));
     const lowHoursInfo = parentChildren
-      .filter(c => c.status === 'approved' && (remaining) <= 2)
-      .map(c => `${c.nickname} (เหลือ ${remaining} ชม.)`)
+      .filter(c => c.status === 'approved' && (c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length) <= 2)
+      .map(c => `${c.nickname} (เหลือ ${c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length} ชม.)`)
       .join(', ');
 
     if (lowHoursInfo) {
