@@ -48,11 +48,11 @@ export default function SignInPage() {
         router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/home');
       } else {
         showToast('❌ รหัสผ่านไม่ถูกต้อง หรือไม่พบข้อมูลผู้ใช้งาน');
+        setIsSubmitting(false);
       }
     } catch (err) {
       console.error('Sign in error:', err);
       showToast('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
-    } finally {
       setIsSubmitting(false);
     }
   };
