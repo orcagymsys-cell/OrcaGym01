@@ -73,7 +73,7 @@ export default function StudentDashboardPage() {
         }
         setChild(c);
 
-        const u = store.getCurrentUser();
+        const u = store.getCurrentUser();\n        if (u) { store.getUsers().then(users => { const fresh = users.find(x => x.id === u.id); if (fresh && JSON.stringify(fresh) !== JSON.stringify(u)) { store.setCurrentUser(fresh); setParentPurchased(fresh.purchased_hours || 6); } }); }
         const purchased = u?.purchased_hours || 6;
         setParentPurchased(purchased);
 
