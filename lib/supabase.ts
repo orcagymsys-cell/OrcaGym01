@@ -614,6 +614,10 @@ export const store = {
         if (!error && data && data.length > 0) {
           setLocal(STORAGE_KEYS.COURSES, data);
           return data as CourseConfig[];
+        } else if (!error && data && data.length === 0) {
+          if (courses && courses.length > 0) {
+            await supabase.from('course_configs').upsert(courses);
+          }
         }
       } catch (e) {}
     }
