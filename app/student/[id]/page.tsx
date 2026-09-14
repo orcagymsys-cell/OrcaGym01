@@ -172,6 +172,7 @@ export default function StudentDashboardPage() {
   );
   }
 
+  const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
   const remaining = child.total_hours - activeBookings.length;
   const isCourseApproved = child.status === 'approved';
   const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
@@ -185,7 +186,6 @@ export default function StudentDashboardPage() {
   const isQuotaLow = totalFamilyRemaining <= 2 && isCourseApproved;
 
   // Active bookings calculation
-  const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
   let isWithin5DaysOfLastClass = false;
 
   if (activeBookings.length > 0) {
