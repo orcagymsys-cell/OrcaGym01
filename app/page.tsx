@@ -45,7 +45,8 @@ export default function SignInPage() {
       if (data.success && data.user) {
         store.setCurrentUser(data.user);
         showToast(`ยินดีต้อนรับ ${data.user.name}`);
-        router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/home');
+        // Force a hard navigation to bypass Next.js RSC caching and cookie stripping issues on some browsers
+        window.location.href = data.user.role === 'admin' ? '/admin/dashboard' : '/home';
       } else {
         showToast('❌ รหัสผ่านไม่ถูกต้อง หรือไม่พบข้อมูลผู้ใช้งาน');
         setIsSubmitting(false);
