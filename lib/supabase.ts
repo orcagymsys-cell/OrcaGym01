@@ -257,7 +257,7 @@ export const store = {
 
     if (isSupabaseConfigured && supabase) {
       const dbUser = { ...user };
-      delete (dbUser as any).payment_history;
+      // delete (dbUser as any).payment_history;
       const { error } = await supabase.from('profiles').upsert([dbUser]);
       if (error) console.error('Failed to save profile', error);
     }
