@@ -334,7 +334,7 @@ export const store = {
       if (!error && data) {
         setLocal('CHILDREN_CACHE', data);
       }
-    }).catch(err => console.error(err));
+    }).then(undefined, err => console.error(err));
 
     let returnData = cached;
     if (cached.length === 0) {
@@ -406,7 +406,7 @@ export const store = {
         });
         setLocal('BOOKINGS_CACHE', mapped);
       }
-    }).catch(err => console.error(err));
+    }).then(undefined, err => console.error(err));
 
     let returnData = cached;
     if (cached.length === 0 || (childId && !cached.some((b: any) => b.child_id === childId))) {
