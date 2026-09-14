@@ -700,13 +700,29 @@ function AdminDashboardContent() {
     await store.saveUser(updatedParent);
 
     const adminUser = store.getCurrentUser();
+    let noteMsg = 'แก้ไขข้อมูลผู้ปกครอง/ตะกร้าครอบครัว';
+    let addedHrs = 0;
+    let payAmt = undefined;
+    if (hasPaymentFieldsFilled && isNewPaymentProof) {
+        noteMsg = 'แก้ไขข้อมูลแพ็กเกจ/ยอดเงิน (อัปเดตประวัติล่าสุด)';
+        addedHrs = editPurchasedHours !== '' ? Number(editPurchasedHours) : 0;
+        payAmt = editPaymentAmount !== '' ? Number(editPaymentAmount) : undefined;
+    }
+
     const newLog: AuditLog = {
       id: 'audit_' + Date.now(),
       admin_name: adminUser?.name || 'แอดมิน Orca',
+      action_type: hasPaymentFieldsFilled && isNewPaymentProof ? 'topup_hours' : 'edit_parent',
       parent_name: updatedParent.name,
       child_name: `ตะกร้าครอบครัว: ${updatedParent.name}`,
-      hours_added: 0,
-      note: 'แก้ไขข้อมูลผู้ปกครอง/ตะกร้าครอบครัว'
+      hours_added: addedHrs,
+      total_hours: addedHrs,
+      amount: payAmt,
+      slip_ref: editPaymentRefNo.trim() || undefined,
+      slip_url: editPaymentSlipFile || undefined,
+      bank_name: selectedBank || undefined,
+      payer_name: editPaymentPayerName.trim() || undefined,
+      note: noteMsg
     };
     await store.saveAuditLog(newLog);
 
