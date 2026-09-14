@@ -1962,6 +1962,14 @@ function AdminDashboardContent() {
                                  <div className="flex items-center justify-center gap-1.5">
                                    <button
                                      type="button"
+                                     title="ประวัติการเงิน"
+                                     onClick={() => setViewPaymentHistoryParent(p)}
+                                     className="group w-9 h-9 flex items-center justify-center bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded-2xl transition-all shadow-2xs cursor-pointer"
+                                   >
+                                     <span className="inline-block transition-transform duration-200 group-hover:scale-130 text-base">🔍</span>
+                                   </button>
+                                   <button
+                                     type="button"
                                      title="แก้ไข"
                                      onClick={() => handleStartEditParent(p)}
                                      className="group w-9 h-9 flex items-center justify-center bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-2xl transition-all shadow-2xs cursor-pointer"
