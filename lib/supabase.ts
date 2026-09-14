@@ -599,13 +599,24 @@ export const store = {
     // Auto-fix corrupted courses
     let modified = false;
     courses.forEach(c => {
-      if (c.description && c.description.includes('เน€เธโฌ')) {
-        if (c.id === 'c_cubs') c.description = 'เน€เธเธดเธ”เธเธฃเธฐเธ•เธนเธชเธนเนเธเธฒเธฃเน€เธฃเธตเธขเธเธฃเธนเนเธเธฑเธเธเธฅเธฒเธช ORCA Cubs (เธชเธณเธซเธฃเธฑเธเธเนเธญเธเน เธญเธฒเธขเธธ 6-10 เธเธต) เธเธฅเธฒเธชเน€เธฃเธตเธขเธเธเธทเนเธเธเธฒเธเน€เธเธทเนเธญเธเธ•เนเธเธชเธณเธซเธฃเธฑเธเน€เธ”เนเธเน เธ—เธตเนเธ”เธตเนเธเธเนเธกเธฒเน€เธเธทเนเธญเน€เธชเธฃเธดเธกเธชเธฃเนเธฒเธเธ—เธฑเธเธฉเธฐเธ—เธฒเธเธฃเนเธฒเธเธเธฒเธขเนเธฅเธฐเธเธฒเธฃเน€เธเธฅเธทเนเธญเธเนเธซเธงเธญเธขเนเธฒเธเธ–เธนเธเธงเธดเธเธต เธชเธเธธเธเธชเธเธฒเธ เธชเธกเธงเธฑเธข เธเธนเธเธทเนเธเธเธฒเธเนเธเนเธเน€เธเธทเนเธญเนเธซเนเธเธฃเนเธญเธกเธ•เนเธญเธขเธญเธ”เนเธเธฃเธฐเธ”เธฑเธเธ—เธตเนเธชเธนเธเธเธถเนเธเนเธ”เนเธญเธขเนเธฒเธเธกเธฑเนเธเนเธ';
+      if (c.description && c.description.includes('เน€เธ™โ‚ฌ')) {
+        if (c.id === 'c_cubs') c.description = 'เปิดประตูสู่การเรียนรู้กับคลาส ORCA Cubs (สำหรับน้องๆ อายุ 6-10 ปี) คลาสเรียนพื้นฐานเบื้องต้นสำหรับเด็กๆ ที่ดีไซน์มาเพื่อเสริมสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นเพื่อให้พร้อมต่อยอดในระดับที่สูงขึ้นได้อย่างมั่นใจ';
         if (c.id === 'c_mega') c.description = 'ต่อยอดทักษะสู่ความเป็นเลิศกับคลาส Mega ORCA (สำหรับเด็กอายุ 7-15 ปี) เหมาะสำหรับผู้ที่มีพื้นฐานยิมนาสติกมาแล้ว หรือต้องการพัฒนาทักษะแบบก้าวกระโดด เน้นความแข็งแรง ความยืดหยุ่นขั้นสูง และความอดทน พร้อมปูทางสู่การแข่งขันในอนาคต';
         modified = true;
       }
     });
     if (modified) setLocal(STORAGE_KEYS.COURSES, courses);
+
+    // Fetch from Supabase if configured
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('course_configs').select('*');
+        if (!error && data && data.length > 0) {
+          setLocal(STORAGE_KEYS.COURSES, data);
+          return data as CourseConfig[];
+        }
+      } catch (e) {}
+    }
 
     if (!courses || courses.length === 0) {
       courses = [
@@ -648,7 +659,6 @@ export const store = {
     }
     return courses;
   },
-
   async saveCourse(course: CourseConfig): Promise<void> {
     const courses = getLocal<CourseConfig[]>(STORAGE_KEYS.COURSES, []);
     const idx = courses.findIndex(c => c.id === course.id);
