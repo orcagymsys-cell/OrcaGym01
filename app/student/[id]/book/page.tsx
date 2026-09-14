@@ -31,7 +31,7 @@ function getMinParentBookingDate(): string {
   return target.toISOString().split('T')[0];
 }
 
-export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function BookingCalendarPage() {
   const params = useParams();

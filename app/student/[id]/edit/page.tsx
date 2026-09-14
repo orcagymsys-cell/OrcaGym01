@@ -6,7 +6,7 @@ import { store } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { Child } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function EditChildPage() {
   const params = useParams();
