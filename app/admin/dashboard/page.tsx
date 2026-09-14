@@ -129,6 +129,7 @@ function AdminDashboardContent() {
   const [paymentDateTime, setPaymentDateTime] = useState('');
   const [paymentSlipFile, setPaymentSlipFile] = useState<string | null>(null);
   const [selectedSlipPreview, setSelectedSlipPreview] = useState<string | null>(null);
+  const [viewPaymentHistoryParent, setViewPaymentHistoryParent] = useState<UserProfile | null>(null);
   const [editingParent, setEditingParent] = useState<UserProfile | null>(null);
   const [editUserId, setEditUserId] = useState('');
   const [editName, setEditName] = useState('');
@@ -2934,6 +2935,98 @@ function AdminDashboardContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      
+      {/* Payment History Modal */}
+      {viewPaymentHistoryParent && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-2xl w-full rounded-3xl p-6 shadow-2xl relative flex flex-col">
+            <div className="flex justify-between items-center w-full mb-4 border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-[#001a3a] flex items-center gap-2">
+                <span>💰</span> ประวัติการทำรายการทางการเงิน
+              </h3>
+              <button
+                type="button"
+                onClick={() => setViewPaymentHistoryParent(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold border-none bg-transparent cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-slate-600">ผู้ปกครอง: <strong className="text-slate-800">{viewPaymentHistoryParent.name}</strong></p>
+              <p className="text-sm text-slate-600">Username: <strong className="text-slate-800">{viewPaymentHistoryParent.user_id}</strong></p>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm max-h-[50vh] overflow-y-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 sticky top-0 shadow-sm">
+                  <tr>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200">ครั้งที่</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200">วัน/เวลาโอน</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">โควต้าที่ได้</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-right">ยอดเงิน (บาท)</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">สลิป</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(() => {
+                    let hList = viewPaymentHistoryParent.payment_history || [];
+                    if (hList.length === 0 && (viewPaymentHistoryParent.payment_amount || viewPaymentHistoryParent.payment_slip || viewPaymentHistoryParent.purchased_hours)) {
+                      hList = [{
+                        id: 'init',
+                        payment_amount: viewPaymentHistoryParent.payment_amount,
+                        payment_ref_no: viewPaymentHistoryParent.payment_ref_no,
+                        payment_payer_name: viewPaymentHistoryParent.payment_payer_name,
+                        payment_bank: viewPaymentHistoryParent.payment_bank,
+                        payment_datetime: viewPaymentHistoryParent.payment_datetime,
+                        payment_slip: viewPaymentHistoryParent.payment_slip,
+                        purchased_hours: viewPaymentHistoryParent.purchased_hours || 6,
+                        created_at: viewPaymentHistoryParent.payment_datetime || viewPaymentHistoryParent.created_at
+                      }];
+                    }
+                    if (hList.length === 0) return (
+                      <tr><td colSpan={5} className="py-4 text-center text-sm text-slate-500">ไม่มีประวัติการทำรายการ</td></tr>
+                    );
+                    return hList.map((h, i) => (
+                      <tr key={h.id || i} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-2.5 px-4 text-xs font-medium text-slate-700">{i + 1}</td>
+                        <td className="py-2.5 px-4 text-xs text-slate-600">{h.payment_datetime ? h.payment_datetime.replace('T', ' ') + ' น.' : '-'}</td>
+                        <td className="py-2.5 px-4 text-xs font-bold text-emerald-700 text-center">{h.purchased_hours || 0} ครั้ง</td>
+                        <td className="py-2.5 px-4 text-xs font-bold text-blue-700 text-right">{h.payment_amount ? Number(h.payment_amount).toLocaleString() : '-'}</td>
+                        <td className="py-2.5 px-4 text-xs text-center">
+                          {h.payment_slip ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSlipPreview(h.payment_slip)}
+                              className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-md hover:bg-blue-100 cursor-pointer font-semibold"
+                            >
+                              ดูสลิป
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setViewPaymentHistoryParent(null)}
+                className="px-6 py-2.5 bg-[#001a3a] hover:bg-[#002244] text-white rounded-full text-xs font-bold cursor-pointer shadow-md transition-all"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
           </div>
         </div>
       )}
