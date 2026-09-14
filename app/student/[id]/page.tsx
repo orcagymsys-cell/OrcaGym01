@@ -146,7 +146,7 @@ export default function StudentDashboardPage() {
       showToast('⏳ คอร์สเรียนนี้กำลังรอ Admin อนุมัติการลงทะเบียน กรุณารอแอดมินอนุมัติก่อนจองคลาส');
       return;
     }
-    if (!child || (child.total_hours - child.used_hours) <= 0) {
+    if (!child || (child.total_hours - activeBookings.length) <= 0) {
       showToast('⚠️ จำนวนชั่วโมงเรียนหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
       return;
     }
@@ -172,7 +172,7 @@ export default function StudentDashboardPage() {
   );
   }
 
-  const remaining = child.total_hours - child.used_hours;
+  const remaining = child.total_hours - activeBookings.length;
   const isCourseApproved = child.status === 'approved';
   const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
 
@@ -429,7 +429,7 @@ export default function StudentDashboardPage() {
           </div>
           <div className="border-r border-slate-100 pr-1">
             <div className="text-xs text-slate-500 font-normal mb-0.5">ใช้ไปแล้ว</div>
-            <div className="text-rose-600 text-sm sm:text-base font-extrabold">{child.used_hours} ครั้ง</div>
+            <div className="text-rose-600 text-sm sm:text-base font-extrabold">{activeBookings.length} ครั้ง</div>
           </div>
           <div className="border-r border-slate-100 pr-1">
             <div className="text-xs text-slate-500 font-normal mb-0.5">แถมฟรี</div>

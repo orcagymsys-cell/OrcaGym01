@@ -190,7 +190,7 @@ function AdminDashboardContent() {
     e.preventDefault();
     if (!adminBookingChild) return;
 
-    const remaining = adminBookingChild.total_hours - adminBookingChild.used_hours;
+    const remaining = (adminBookingChild.total_hours - allBookings.filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length);
     if (remaining <= 0) {
       showToast('⚠️ เด็กคนนี้จำนวนชั่วโมงเรียนหมดแล้ว กรุณาเติมชั่วโมงก่อนทำรายการ');
       return;
@@ -389,8 +389,8 @@ function AdminDashboardContent() {
     const parentName = p.name;
     const parentChildren = children.filter(c => isChildOfParent(c, p));
     const lowHoursInfo = parentChildren
-      .filter(c => c.status === 'approved' && (c.total_hours - c.used_hours) <= 2)
-      .map(c => `${c.nickname} (เหลือ ${c.total_hours - c.used_hours} ชม.)`)
+      .filter(c => c.status === 'approved' && (remaining) <= 2)
+      .map(c => `${c.nickname} (เหลือ ${remaining} ชม.)`)
       .join(', ');
 
     if (lowHoursInfo) {
@@ -941,7 +941,8 @@ function AdminDashboardContent() {
   const totalParentsCount = parents.length;
   const newMembersThisMonth = children.filter(c => !c.created_at || c.created_at.startsWith(currentMonthStr)).length;
   const expiringStudentsList = children.filter(c => {
-    const remaining = c.total_hours - c.used_hours;
+    const cActive = allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+  const remaining = c.total_hours - cActive.length;
     if (remaining <= 0) return false;
     if (!c.expiry_date) return false;
     const parts = c.expiry_date.split('/');
@@ -2306,7 +2307,8 @@ function AdminDashboardContent() {
                       );
                     })
                     .map((c) => {
-                      const remaining = c.total_hours - c.used_hours;
+                      const cActive = allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+  const remaining = c.total_hours - cActive.length;
                       const parent = parents.find((p) => isChildOfParent(c, p));
                       const ageText = calculateAge(c.dob);
                       return (
@@ -3421,7 +3423,7 @@ function AdminDashboardContent() {
                 น้อง {adminBookingChild.nickname} ({adminBookingChild.full_name})
               </div>
               <div className="text-slate-600 font-normal">
-                คลาส: <strong>{adminBookingChild.course_name}</strong> | ชั่วโมงคงเหลือ: <strong className="text-blue-700">{adminBookingChild.total_hours - adminBookingChild.used_hours} ชม.</strong>
+                คลาส: <strong>{adminBookingChild.course_name}</strong> | ชั่วโมงคงเหลือ: <strong className="text-blue-700">{(adminBookingChild.total_hours - allBookings.filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length)} ชม.</strong>
               </div>
               <div className="text-[11px] text-amber-800 font-bold mt-1">
                 ⚡ สิทธิ์ Admin: สามารถจองวันใดก็ได้ (รวมถึงวันนี้/วันพรุ่งนี้) โดยระบบจะตัด 1 ชม. จากตระกร้าครอบครัวอัตโนมัติ
