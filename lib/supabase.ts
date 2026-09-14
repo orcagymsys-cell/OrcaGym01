@@ -206,7 +206,7 @@ export const store = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data } = await supabase.from('profiles').select('*');
+        const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
         if (data && data.length > 0) {
           // Combine all users
           const allList = [...localUsers, ...data];
@@ -330,7 +330,7 @@ export const store = {
     // SWR Pattern
     const cached = getLocal('CHILDREN_CACHE', []);
     
-    supabase.from('children').select('*').then(({ data, error }) => {
+    supabase.from('children').select('*').order('id').then(({ data, error }) => {
       if (!error && data) {
         setLocal('CHILDREN_CACHE', data);
       }
@@ -339,7 +339,7 @@ export const store = {
     let returnData = cached;
     if (cached.length === 0) {
       try {
-        let query = supabase.from('children').select('*');
+        let query = supabase.from('children').select('*').order('id');
         if (parentId) query = query.eq('parent_id', parentId);
         const { data, error } = await query;
         if (!error && data) {
@@ -388,7 +388,7 @@ export const store = {
     const cached = getLocal('BOOKINGS_CACHE', []);
     
     // Background fetch (fetch all to keep global cache in sync, then filter later)
-    let qFetch = supabase.from('bookings').select('*');
+    let qFetch = supabase.from('bookings').select('*').order('id');
     
     qFetch.then(async ({ data, error }) => {
       if (!error && data) {
@@ -411,7 +411,7 @@ export const store = {
     let returnData = cached;
     if (cached.length === 0 || (childId && !cached.some((b: any) => b.child_id === childId))) {
       try {
-        let q = supabase.from('bookings').select('*');
+        let q = supabase.from('bookings').select('*').order('id');
         if (childId) q = q.eq('child_id', childId);
         if (date) q = q.eq('booking_date', date);
         const { data, error } = await q;
@@ -539,7 +539,7 @@ export const store = {
 
   async getAuditLogs(): Promise<AuditLog[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('audit_logs').select('*').order('id').order('created_at', { ascending: false });
       if (data && data.length > 0) return data;
     }
     initLocalSeed();

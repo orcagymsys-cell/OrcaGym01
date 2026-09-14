@@ -333,8 +333,8 @@ function AdminDashboardContent() {
 
     // Auto refresh data in real time via storage events, custom event, broadcast channel
     const handleStoreUpdate = () => loadData();
-    window.addEventListener('storage', handleStoreUpdate);
-    window.addEventListener('orca_store_updated', handleStoreUpdate);
+    // window.addEventListener('storage', handleStoreUpdate);
+    // window.addEventListener('orca_store_updated', handleStoreUpdate); // Disabled to prevent infinite loops
 
     let syncChannel: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -346,8 +346,8 @@ function AdminDashboardContent() {
     const interval = setInterval(loadData, 30000);
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStoreUpdate);
-      window.removeEventListener('orca_store_updated', handleStoreUpdate);
+      // window.removeEventListener('storage', handleStoreUpdate);
+      // window.removeEventListener('orca_store_updated', handleStoreUpdate);
       if (syncChannel) syncChannel.close();
     };
   }, [router, selectedDate]);
