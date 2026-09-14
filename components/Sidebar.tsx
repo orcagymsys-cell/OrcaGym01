@@ -21,7 +21,8 @@ export default function Sidebar() {
   const handleLogout = () => {
     store.setCurrentUser(null);
     showToast('ลงชื่อออกจากระบบเรียบร้อย');
-    router.push('/');
+    fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+    window.location.replace('/');
   };
 
   // Hide sidebar on auth pages
@@ -102,13 +103,18 @@ export default function Sidebar() {
             </Link>
 
             <Link href="/pricing" className={navItemClass('/pricing')}>
-              <span className="text-xl">📦</span>
-              <span>CLASSES</span>
+              <span className="text-xl">🏷️</span>
+              <span>Orca Classes & Pricing</span>
             </Link>
 
             <Link href="/schedule" className={navItemClass('/schedule')}>
               <span className="text-xl">📅</span>
               <span>SCHEDULE</span>
+            </Link>
+
+            <Link href="/gallery" className={navItemClass('/gallery')}>
+              <span className="text-xl">📸</span>
+              <span>Gallery</span>
             </Link>
 
             <Link href="/audit" className={navItemClass('/audit')}>
@@ -176,6 +182,11 @@ export default function Sidebar() {
             <Link href="/about" className={navItemClass('/about')}>
               <span className="text-xl">ℹ️</span>
               <span>About Us</span>
+            </Link>
+
+            <Link href="/gallery" className={navItemClass('/gallery')}>
+              <span className="text-xl">📸</span>
+              <span>Gallery</span>
             </Link>
 
             <button

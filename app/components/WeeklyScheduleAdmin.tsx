@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { store } from '@/lib/supabase';
 import { Booking } from '@/lib/types';
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
@@ -77,8 +78,14 @@ function getChildColor(str: string) {
 }
 
 export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Booking[] }) {
+  const [quotas, setQuotas] = useState<Record<string, number>>({});
+  
+  useEffect(() => {
+    store.getSlotQuotas().then(setQuotas);
+  }, []);
+
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
-  const [selectedSlot, setSelectedSlot] = useState<{ date: Date; course: string; time: string; bookings: Booking[] } | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ date: Date; course: string; time: string; bookings: Booking[]; maxQuota: number } | null>(null);
 
   const handlePrevWeek = () => {
     const newDate = new Date(currentWeekStart);
@@ -164,26 +171,39 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                               ) : (
                                 slotCourses.map((c, idx) => {
                                   const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && b.time_slot === c.time);
+                                  
+                                  const dateStr = currentDate.toISOString().split('T')[0];
+                                  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                  const dayName = dayNames[currentDate.getDay()];
+                                  const maxQuota = quotas[`${dateStr}_${c.course}_${c.time}`] ??
+                                                   quotas[`${dayName}_${c.course}_${c.time}`] ??
+                                                   quotas[`${dayName}_${c.time}`] ??
+                                                   quotas[`Everyday_${c.course}_${c.time}`] ??
+                                                   quotas[`Everyday_${c.time}`] ??
+                                                   quotas[`${c.course}_${c.time}`] ??
+                                                   quotas[`${dateStr}_${c.time}`] ??
+                                                   10;
+                                  
                                   const isBooked = bookedForThisSlot.length > 0;
+                                  const isFull = bookedForThisSlot.length >= maxQuota;
                                   
                                   return (
                                     <div 
                                       key={`${c.course}-${c.time}-${idx}`}
-                                      onClick={() => setSelectedSlot({ date: currentDate, course: c.course, time: c.time, bookings: bookedForThisSlot })}
+                                      onClick={() => setSelectedSlot({ date: currentDate, course: c.course, time: c.time, bookings: bookedForThisSlot, maxQuota })}
                                       className={`border-[3px] rounded-2xl p-2.5 flex flex-col items-center text-center w-full cursor-pointer transition-all ${
-                                        isBooked 
-                                          ? 'bg-blue-50 border-blue-300 shadow-sm hover:bg-blue-100 hover:border-blue-400' 
-                                          : 'bg-white border-slate-200 opacity-80 hover:opacity-100 hover:border-slate-300'
+                                        isFull
+                                          ? 'bg-rose-50 border-rose-300 shadow-sm hover:bg-rose-100 hover:border-rose-400'
+                                          : isBooked 
+                                            ? 'bg-blue-50 border-blue-300 shadow-sm hover:bg-blue-100 hover:border-blue-400' 
+                                            : 'bg-white border-slate-200 opacity-80 hover:opacity-100 hover:border-slate-300'
                                       }`}
                                     >
-                                      <div className={`font-black text-[14px] leading-tight ${isBooked ? 'text-blue-900' : 'text-slate-600'}`}>{c.course}</div>
-                                      <div className={`text-[10px] font-bold mt-1 ${isBooked ? 'text-blue-700' : 'text-slate-400'}`}>{c.time}</div>
-                                      
-                                      {isBooked && (
-                                        <div className="mt-2.5 bg-blue-600 text-white text-[11px] px-3 py-0.5 rounded-full font-bold shadow-sm">
-                                          👨‍🎓 {bookedForThisSlot.length} คน
-                                        </div>
-                                      )}
+                                      <div className={`font-black text-[14px] leading-tight ${isFull ? 'text-rose-900' : isBooked ? 'text-blue-900' : 'text-slate-600'}`}>{c.course}</div>
+                                      <div className={`text-[10px] font-bold mt-1 ${isFull ? 'text-rose-700' : isBooked ? 'text-blue-700' : 'text-slate-400'}`}>{c.time}</div>
+                                      <div className={`mt-2.5 text-white text-[11px] px-3 py-0.5 rounded-full font-bold shadow-sm ${isFull ? 'bg-rose-500' : isBooked ? 'bg-blue-600' : 'bg-slate-400'}`}>
+                                        👨‍🎓 {bookedForThisSlot.length}/{maxQuota} คน
+                                      </div>
                                     </div>
                                   );
                                 })
@@ -210,7 +230,8 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                 <h3 className="font-black text-xl flex items-center gap-2"><span>📋</span> รายชื่อนักเรียน</h3>
                 <p className="text-[13px] font-bold opacity-90 mt-1">
                   {selectedSlot.course} ({selectedSlot.time})<br/>
-                  วันที่ {selectedSlot.date.getDate()} {THAI_MONTHS[selectedSlot.date.getMonth()]} {selectedSlot.date.getFullYear() + 543}
+                  วันที่ {selectedSlot.date.getDate()} {THAI_MONTHS[selectedSlot.date.getMonth()]} {selectedSlot.date.getFullYear() + 543} <br/>
+                  ยอดจอง {selectedSlot.bookings.length} / {selectedSlot.maxQuota} ที่นั่ง
                 </p>
               </div>
               <button onClick={() => setSelectedSlot(null)} className="text-white hover:text-red-300 font-bold text-3xl px-2 cursor-pointer transition-colors">&times;</button>

@@ -118,7 +118,7 @@ function getThemeStyles(themeColor?: string, displayTitle?: string): ThemeStyleR
 export default function PricingPage() {
   const [courses, setCourses] = useState<CourseConfig[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Edit / Create Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -450,9 +450,7 @@ export default function PricingPage() {
     return true;
   });
 
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500 font-sans">กำลังโหลดข้อมูลคลาสและราคา...</div>;
-  }
+  
 
   return (
     <div className="font-['Anuphan',sans-serif]">

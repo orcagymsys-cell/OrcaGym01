@@ -9,7 +9,7 @@ import { AuditLog } from '@/lib/types';
 export default function AuditPage() {
   const router = useRouter();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');

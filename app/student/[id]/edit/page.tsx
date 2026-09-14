@@ -12,66 +12,63 @@ export default function EditChildPage() {
   const rawId = params?.id;
   const childId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
 
-  const [mounted, setMounted] = useState(false);
   const [child, setChild] = useState<Child | null>(null);
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
   const [dob, setDob] = useState('2020-05-05');
   const [gender, setGender] = useState('Girl');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [totalHours, setTotalHours] = useState<number>(2);
   const [parentPurchased, setParentPurchased] = useState<number>(6);
   const [familyChildren, setFamilyChildren] = useState<Child[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!childId) return;
 
-  useEffect(() => {
-    if (!mounted) return;
+    const fillForm = (c: Child) => {
+      setChild(c);
+      setFullName(c.full_name || '');
+      setNickname(c.nickname || '');
+      setDob(c.dob || '2020-05-05');
+      setGender(c.gender || 'Girl');
+      setPhotoDataUrl(c.photo_url || null);
+      setTotalHours(c.total_hours || 2);
+    };
 
-    async function loadChild() {
+    // Step 1: Read instantly from localStorage cache → zero-wait display
+    if (typeof window !== 'undefined') {
       try {
-        const targetId = childId || 'c_demo_1';
-        let c = await store.getChildById(targetId);
-
-        if (!c) {
-          const allChildren = await store.getChildren();
-          if (allChildren.length > 0) {
-            c = allChildren[0];
-          } else {
-            c = {
-              id: targetId,
-              parent_id: 'u_parent',
-              full_name: 'สบายตา สบายใจ',
-              nickname: 'น้องเย็นสบาย',
-              dob: '2020-05-05',
-              gender: 'Girl',
-              avatar: 'girl',
-              status: 'approved',
-              course_name: 'Orca Cubs',
-              total_hours: 12,
-              used_hours: 2,
-              expiry_date: ''
-            };
+        const cached = localStorage.getItem('CHILDREN_CACHE');
+        if (cached) {
+          const arr: Child[] = JSON.parse(cached);
+          const found = arr.find(x => x.id === childId);
+          if (found) {
+            fillForm(found);
+            setLoading(false);
+            const u = store.getCurrentUser();
+            setParentPurchased(u?.purchased_hours || 6);
+            const famC = arr.filter(x => x.parent_id === found.parent_id);
+            setFamilyChildren(famC);
           }
         }
+      } catch (_) {}
+    }
 
-        setChild(c);
-        setFullName(c.full_name || '');
-        setNickname(c.nickname || '');
-        setDob(c.dob || '2020-05-05');
-        setGender(c.gender || 'Girl');
-        setPhotoDataUrl(c.photo_url || null);
-        setTotalHours(c.total_hours || 2);
-
+    // Step 2: Background fetch for fresh data (parallel)
+    async function loadChild() {
+      try {
         const u = store.getCurrentUser();
-        setParentPurchased(u?.purchased_hours || 6);
-
-        const famC = await store.getChildren(c.parent_id);
-        setFamilyChildren(famC || []);
+        const [c, famC] = await Promise.all([
+          store.getChildById(childId),
+          store.getChildren(u?.id)
+        ]);
+        if (c) {
+          fillForm(c);
+          setParentPurchased(u?.purchased_hours || 6);
+          setFamilyChildren(famC || []);
+        }
       } catch (err) {
         console.error('Error loading child for edit:', err);
       } finally {
@@ -79,7 +76,7 @@ export default function EditChildPage() {
       }
     }
     loadChild();
-  }, [mounted, childId]);
+  }, [childId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -114,7 +111,7 @@ export default function EditChildPage() {
 
     await store.updateChild(targetId, updates);
     showToast(`อัปเดตข้อมูล ${nickname} เรียบร้อยแล้ว`);
-    router.push(`/student/${targetId}`);
+    router.push('/home');
   };
 
   const handleDelete = async () => {
@@ -126,9 +123,7 @@ export default function EditChildPage() {
     }
   };
 
-  if (!mounted || loading) {
-    return <div className="p-8 text-center text-slate-500 font-sans">กำลังโหลดข้อมูลสำหรับแก้ไข...</div>;
-  }
+  
 
   const previewSrc = photoDataUrl || (gender === 'Boy' ? '🧒🏼' : '👧🏻');
 

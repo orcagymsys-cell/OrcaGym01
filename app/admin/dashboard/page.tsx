@@ -103,6 +103,7 @@ function AdminDashboardContent() {
       setActiveTab('overview');
     }
   }, [tabParam]);
+  const [isAuthorized, setIsAuthorized] = useState(() => typeof window !== 'undefined' ? store.getCurrentUser()?.role === 'admin' : false);
   const [children, setChildren] = useState<Child[]>([]);
   const [parents, setParents] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -111,6 +112,7 @@ function AdminDashboardContent() {
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [showCreateParentModal, setShowCreateParentModal] = useState(false);
   const [dismissPendingToast, setDismissPendingToast] = useState(false);
+  const [viewDetailsChild, setViewDetailsChild] = useState<Child | null>(null);
 
   // Create Parent Form State
   const [newParentName, setNewParentName] = useState('');
@@ -304,9 +306,11 @@ function AdminDashboardContent() {
       const user = store.getCurrentUser();
       if (!user || user.role !== 'admin') {
         showToast('กรุณาเข้าสู่ระบบแอดมินก่อนใช้งาน');
-        router.push('/');
+        fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+        window.location.replace('/');
         return;
       }
+      setIsAuthorized(true);
 
       const [uList, cList, logs, b, bAll, q] = await Promise.all([
         store.getUsers(),
@@ -993,6 +997,10 @@ function AdminDashboardContent() {
     };
   }).filter(item => item.isExpiringSoon);
 
+  if (!isAuthorized) {
+    return <div className="p-8 text-center text-[#001a3a] font-bold text-lg h-screen flex items-center justify-center">กำลังตรวจสอบสิทธิ์ Admin...</div>;
+  }
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto w-full pb-24 font-['Anuphan',sans-serif]">
       
@@ -1522,10 +1530,14 @@ function AdminDashboardContent() {
                 <div>
                   <label className="block text-xs font-bold text-[#001a3a] mb-1.5">อีเมลผู้ปกครอง (สำหรับออก Username/Reset):</label>
                   <input
-                    type="email"
+                    type="text"
                     value={newParentEmail}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
+                    placeholder="example@hotmail.com"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                   />
                 </div>
@@ -2344,15 +2356,15 @@ function AdminDashboardContent() {
                           <td className="py-4 px-4 align-middle text-center">
                             <div className="flex items-center justify-center gap-1.5 flex-nowrap">
                               {/* 1. ดูรายละเอียด */}
-                              <Link
-                                href={`/student/${c.id}`}
-                                target="_blank"
+                              <button
+                                type="button"
+                                onClick={() => setViewDetailsChild(c)}
                                 title="ดูรายละเอียดนักเรียน"
                                 className="h-8 px-2.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 shrink-0 cursor-pointer"
                               >
                                 <span>🔍</span>
                                 <span>ดูรายละเอียด</span>
-                              </Link>
+                              </button>
 
                               {/* 2. อนุมัติคลาสเรียน */}
                               {c.status === 'pending' ? (
@@ -3163,6 +3175,111 @@ function AdminDashboardContent() {
           </div>
         </div>
       )}
+
+      {/* View Details Modal */}
+      {viewDetailsChild && (() => {
+        const c = viewDetailsChild;
+        const p = parents.find(parent => isChildOfParent(c, parent));
+        const cBookings = allBookings.filter(b => b.child_id === c.id && b.status !== 'Cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+        
+        let purchaseDateStr = '-';
+        let expiryDateStr = '-';
+        
+        if (p) {
+          const pkgStartDateStr = p.payment_datetime || p.created_at || '';
+          const pkgStartDate = pkgStartDateStr ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T')) : new Date();
+          const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+          
+          purchaseDateStr = formatThaiShortDate(validPkgStartDate, false);
+          
+          const hoursNum = p.purchased_hours || 6;
+          let months = 2;
+          if (hoursNum === 12) months = 4;
+          else if (hoursNum === 24) months = 6;
+          else if (hoursNum === 48) months = 12;
+
+          const expiryDate = new Date(validPkgStartDate);
+          expiryDate.setMonth(expiryDate.getMonth() + months);
+          expiryDateStr = formatThaiShortDate(expiryDate, false);
+        }
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl font-['Anuphan',sans-serif] max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 shrink-0">
+                <h3 className="text-lg font-bold text-[#001a3a] flex items-center gap-2">
+                  <span>🔍</span>
+                  <span>รายละเอียดนักเรียน</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setViewDetailsChild(null)}
+                  className="text-slate-400 hover:text-slate-600 text-lg font-bold border-none bg-transparent cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="overflow-y-auto pr-2 space-y-4 text-sm" style={{ scrollbarWidth: 'thin' }}>
+                {/* ข้อมูลเด็ก */}
+                <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100">
+                   <div className="font-extrabold text-[#001a3a] text-base mb-1">
+                     น้อง {c.nickname} ({c.full_name})
+                   </div>
+                   <div className="text-slate-600">
+                     อายุ: <strong>{calculateAge(c.dob)}</strong>
+                   </div>
+                </div>
+                
+                {/* ข้อมูลผู้ปกครอง */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                   <div className="font-bold text-[#001a3a] mb-2 flex items-center gap-2">
+                     <span>👨‍👩‍👧</span> ข้อมูลครอบครัว
+                   </div>
+                   {p ? (
+                     <div className="space-y-1 text-slate-700">
+                       <div>ชื่อผู้ปกครอง: <strong>{p.name}</strong></div>
+                       <div>เบอร์โทร: <strong>{p.phone}</strong></div>
+                       <div className="pt-2 mt-2 border-t border-slate-200">
+                         <div>วันที่ซื้อแพ็กเกจ: <strong className="text-emerald-600">{purchaseDateStr}</strong></div>
+                         <div>วันที่หมดอายุ: <strong className="text-rose-600">{expiryDateStr}</strong></div>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="text-slate-500 italic">ไม่พบข้อมูลผู้ปกครอง</div>
+                   )}
+                </div>
+                
+                {/* ตารางเรียน */}
+                <div>
+                  <div className="font-bold text-[#001a3a] mb-2 flex items-center gap-2">
+                    <span>📅</span> ตารางเรียนที่จองไว้ ({cBookings.length} ครั้ง)
+                  </div>
+                  {cBookings.length > 0 ? (
+                    <div className="space-y-2">
+                      {cBookings.map((b, idx) => (
+                        <div key={b.id} className="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center shadow-xs">
+                          <div>
+                            <div className="font-bold text-[#001a3a]">{formatThaiShortDate(b.booking_date, false)}</div>
+                            <div className="text-xs text-slate-500">{b.course_name}</div>
+                          </div>
+                          <div className="bg-blue-50 text-blue-800 font-bold px-3 py-1 rounded-lg text-xs whitespace-nowrap">
+                            {b.time_slot}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-slate-500 text-xs">
+                      ยังไม่มีการจองคลาสเรียน
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Admin Booking Override Modal */}
       {adminBookingChild && (

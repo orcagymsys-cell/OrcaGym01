@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { Anuphan } from 'next/font/google';
 import './globals.css';
 import AppLayoutWrapper from '@/components/AppLayoutWrapper';
+
+const anuphan = Anuphan({
+  subsets: ['thai', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-anuphan',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Orca Gymnastics - ระบบจองคลาสเรียนยิมสำหรับเด็ก',
@@ -20,15 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Comic+Neue:ital,wght@0,400;0,700;1,700&family=Kanit:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="th" className={anuphan.variable}>
       <body className="bg-slate-200 min-h-[100dvh] font-sans">
         <AppLayoutWrapper>{children}</AppLayoutWrapper>
       </body>

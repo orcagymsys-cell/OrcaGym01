@@ -16,7 +16,7 @@ export default function StudentDashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [child, setChild] = useState<Child | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [parentPurchased, setParentPurchased] = useState<number>(6);
   const [familyChildren, setFamilyChildren] = useState<Child[]>([]);
   const [showTopUpModal, setShowTopUpModal] = useState<boolean>(false);
@@ -89,13 +89,16 @@ export default function StudentDashboardPage() {
     loadData();
 
     // Auto refresh child status in real-time every 2s or when store changes
-    const interval = setInterval(loadData, 2000);
-    const handleStoreChange = () => loadData();
+    // removed polling
+    const handleStoreChange = (e: any) => {
+      if (e && e.detail && e.detail.key === 'orca_current_user') return;
+      loadData();
+    };
     window.addEventListener('storage', handleStoreChange);
     window.addEventListener('orca_store_updated', handleStoreChange);
 
     return () => {
-      clearInterval(interval);
+      // removed polling
       window.removeEventListener('storage', handleStoreChange);
       window.removeEventListener('orca_store_updated', handleStoreChange);
     };
@@ -157,7 +160,13 @@ export default function StudentDashboardPage() {
   };
 
   if (!mounted || loading || !child) {
-    return <div className="p-8 text-center text-slate-500 font-sans">กำลังโหลดข้อมูลนักเรียน...</div>;
+    return (
+    <div className="font-sans animate-pulse p-4 max-w-[1200px] mx-auto space-y-6">
+      <div className="bg-slate-200 h-12 w-64 rounded-xl"></div>
+      <div className="bg-slate-200 h-48 w-full rounded-3xl"></div>
+      <div className="bg-slate-200 h-[400px] w-full rounded-3xl"></div>
+    </div>
+  );
   }
 
   const remaining = child.total_hours - child.used_hours;

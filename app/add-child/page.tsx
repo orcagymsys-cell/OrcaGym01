@@ -84,7 +84,6 @@ export default function AddChildPage() {
       return null;
     }
 
-    const hoursToSet = selectedHours !== '' ? Number(selectedHours) : 6;
     const validDob = dob || '2020-05-05';
 
     // ตรวจสอบโควต้าตะกร้าครอบครัว: โควต้าที่ยังเหลืออยู่ในตะกร้า
@@ -92,6 +91,9 @@ export default function AddChildPage() {
     const latestUsed = latestChildren.reduce((sum, c) => sum + (c.total_hours || 0), 0);
     const purchased = user.purchased_hours || 6;
     const basketRemaining = purchased - latestUsed;
+    
+    // Default to remaining basket hours if not explicitly set
+    const hoursToSet = selectedHours !== '' ? Number(selectedHours) : Math.max(0, basketRemaining);
 
     if (hoursToSet > basketRemaining) {
       showToast(`⚠️ ไม่สามารถเพิ่มได้! โควต้าที่เหลือในตะกร้าครอบครัวมีเพียง ${basketRemaining} ครั้ง แต่ต้องการกำหนด ${hoursToSet} ครั้ง กรุณาแก้ไขจำนวนหรือติดต่อแอดมินเพื่อเติมโควต้า`);
@@ -117,7 +119,7 @@ export default function AddChildPage() {
       dob: validDob,
       gender,
       avatar: gender.toLowerCase() === 'boy' ? 'boy' : 'girl',
-      photo_url: photoDataUrl || undefined,
+      photo_url: photoDataUrl || null,
       status: 'approved',
       course_name: 'Orca Cubs',
       total_hours: hoursToSet,
@@ -148,24 +150,34 @@ export default function AddChildPage() {
       return;
     }
 
-    const saved = await saveChild();
-    if (saved) {
-      showToast(`เพิ่มข้อมูล ${saved.nickname} เรียบร้อยแล้ว (เปิดใช้งานคอร์สเรียนเรียบร้อย)`);
-      setFullName('');
-      setNickname('');
-      setSelectedHours('');
-      setPhotoDataUrl(null);
-      setSelectedFile(null);
-      setChildrenCount(prev => prev + 1);
+    try {
+      const saved = await saveChild();
+      if (saved) {
+        showToast(`เพิ่มข้อมูล ${saved.nickname} เรียบร้อยแล้ว (เปิดใช้งานคอร์สเรียนเรียบร้อย)`);
+        setFullName('');
+        setNickname('');
+        setSelectedHours('');
+        setPhotoDataUrl(null);
+        setSelectedFile(null);
+        setChildrenCount(prev => prev + 1);
+      }
+    } catch (err: any) {
+      showToast('Error: ' + err.message);
+      console.error(err);
     }
   };
 
   const handleDone = async (e: React.FormEvent) => {
     e.preventDefault();
-    const saved = await saveChild();
-    if (saved) {
-      showToast(`บันทึกข้อมูล ${saved.nickname} เรียบร้อยแล้ว (เปิดใช้งานคอร์สเรียนเรียบร้อย)`);
-      router.push('/home');
+    try {
+      const saved = await saveChild();
+      if (saved) {
+        showToast(`บันทึกข้อมูล ${saved.nickname} เรียบร้อยแล้ว (เปิดใช้งานคอร์สเรียนเรียบร้อย)`);
+        router.push('/home');
+      }
+    } catch (err: any) {
+      showToast('Error: ' + err.message);
+      console.error(err);
     }
   };
 
@@ -287,10 +299,10 @@ export default function AddChildPage() {
 
         {/* Selected Course Hours Input */}
         <div className="mb-6 font-['Anuphan',sans-serif]">
-          <label className="block text-base font-bold text-[#001a3a] mb-1">
+          <label className="flex flex-wrap items-center gap-1 text-base font-bold text-[#001a3a] mb-1">
             จัดสรรจำนวนครั้ง/ชั่วโมงเรียนให้น้อง:
             {parentPurchased > 0 && (
-              <span className="ml-2 text-xs font-normal text-sky-700">
+              <span className="text-xs font-normal text-sky-700">
                 (เหลือในตะกร้า: <strong>{Math.max(0, parentPurchased - familyUsed)}</strong> ครั้ง)
               </span>
             )}

@@ -46,7 +46,7 @@ export default function BookingCalendarPage() {
   const [year, setYear] = useState<number>(new Date(minParentDate).getFullYear());
   const [dateBookings, setDateBookings] = useState<Booking[]>([]);
   const [quotas, setQuotas] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [alertModalText, setAlertModalText] = useState<string | null>(null);
 
   useEffect(() => {
@@ -148,7 +148,13 @@ export default function BookingCalendarPage() {
   };
 
   if (loading || !child) {
-    return <div className="p-8 text-center text-slate-500 font-sans">กำลังโหลดตารางจองคลาส...</div>;
+    return (
+    <div className="font-sans animate-pulse p-4 max-w-[1200px] mx-auto space-y-6">
+      <div className="bg-slate-200 h-12 w-64 rounded-xl"></div>
+      <div className="bg-slate-200 h-48 w-full rounded-3xl"></div>
+      <div className="bg-slate-200 h-[400px] w-full rounded-3xl"></div>
+    </div>
+  );
   }
 
   // Determine Available Slots for selected course & day

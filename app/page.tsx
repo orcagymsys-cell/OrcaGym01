@@ -35,40 +35,20 @@ export default function SignInPage() {
     setIsSubmitting(true);
 
     try {
-      // Find user in Store / Supabase
-      const allUsers = await store.getUsers();
-      const lowerInput = cleanUsername.toLowerCase();
-      const lowerPrefix = lowerInput.includes('@') ? lowerInput.split('@')[0] : lowerInput;
-      const digitsInput = lowerInput.replace(/[^0-9]/g, '');
-
-      const foundUser = allUsers.find(u => {
-        const uUserId = u.user_id ? u.user_id.toLowerCase() : '';
-        const uEmail = u.email ? u.email.toLowerCase() : '';
-        const uPhoneDigits = u.phone ? u.phone.replace(/[^0-9]/g, '') : '';
-        const uName = u.name ? u.name.toLowerCase() : '';
-
-        return (
-          (uUserId && (uUserId === lowerInput || uUserId === lowerPrefix)) ||
-          (uEmail && (uEmail === lowerInput || uEmail.split('@')[0] === lowerPrefix)) ||
-          (digitsInput.length >= 7 && uPhoneDigits && (uPhoneDigits === digitsInput || uPhoneDigits.endsWith(digitsInput))) ||
-          (u.phone && u.phone === cleanUsername) ||
-          (uName && uName === lowerInput)
-        );
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: cleanUsername, password: cleanPassword })
       });
-
-      if (foundUser) {
-        if (foundUser.password && foundUser.password !== cleanPassword) {
-          showToast('❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
-          setIsSubmitting(false);
-          return;
-        }
-        store.setCurrentUser(foundUser);
-        showToast(`ยินดีต้อนรับ ${foundUser.name}`);
-        router.push(foundUser.role === 'admin' ? '/admin/dashboard' : '/home');
-        return;
+      const data = await res.json();
+      
+      if (data.success && data.user) {
+        store.setCurrentUser(data.user);
+        showToast(`ยินดีต้อนรับ ${data.user.name}`);
+        router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/home');
+      } else {
+        showToast('❌ รหัสผ่านไม่ถูกต้อง หรือไม่พบข้อมูลผู้ใช้งาน');
       }
-
-      showToast(`❌ ไม่พบข้อมูล "${cleanUsername}" ในระบบ`);
     } catch (err) {
       console.error('Sign in error:', err);
       showToast('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
@@ -110,9 +90,6 @@ export default function SignInPage() {
             className="object-contain"
           />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#000000] tracking-wider font-['Anuphan',sans-serif] mt-1">
-          ORCA GYMNASTICS
-        </h1>
       </div>
 
       {/* Member Login Card (Exact Pixel-Perfect Match) */}

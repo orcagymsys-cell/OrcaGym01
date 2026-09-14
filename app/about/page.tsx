@@ -27,14 +27,7 @@ export default function AboutPage() {
           สถาบันยิมนาสติกสำหรับเด็กเพื่อเสริมสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นเพื่อพร้อม <span className="inline-block">ต่อยอด</span> ในระดับที่สูงขึ้นได้อย่างมั่นใจ
         </p>
 
-        <div className="mt-8 text-base sm:text-lg font-bold text-[#001a3a] space-y-2 pt-4 border-t border-slate-100 max-w-md mx-auto">
-          <p className="flex items-center justify-center gap-2">
-            <span>📞</span> <span>โทรศัพท์: 081-234-5678</span>
-          </p>
-          <p className="flex items-center justify-center gap-2">
-            <span>📍</span> <span>สถานที่: Orca Gymnastics Center</span>
-          </p>
-        </div>
+
       </div>
     </div>
   );

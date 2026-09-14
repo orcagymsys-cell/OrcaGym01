@@ -12,7 +12,7 @@ import ServiceTermsModal from '@/components/ServiceTermsModal';
 export default function HomePage() {
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
@@ -20,14 +20,19 @@ export default function HomePage() {
       try {
         let currentUser = store.getCurrentUser();
         if (!currentUser) {
-          window.location.href = '/';
+          fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+          window.location.replace('/');
           return;
         }
 
-        // Fetch fresh user data from DB to ensure name/quotas are in sync with Admin changes
-        const allUsers = await store.getUsers();
+        // Fetch fresh user data and children in parallel to save time
+        const [allUsers, data, allBookingsSys] = await Promise.all([
+          store.getUsers(),
+          store.getChildren(currentUser.id),
+          store.getBookings()
+        ]);
         const freshUser = allUsers.find(u => u.phone === currentUser?.phone) || allUsers.find(u => u.id === currentUser?.id || u.user_id === currentUser?.user_id);
-        if (freshUser) {
+        if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
           currentUser = freshUser;
           store.setCurrentUser(freshUser);
         }
@@ -36,14 +41,12 @@ export default function HomePage() {
           window.location.href = '/admin/dashboard';
           return;
         }
-
-        const data = await store.getChildren(currentUser.id);
         setChildren(data || []);
 
         if (data && data.length > 0) {
-          const bookingPromises = data.map(c => store.getBookings(c.id));
-          const allBookingsArrays = await Promise.all(bookingPromises);
-          const allB = allBookingsArrays.flat();
+          // allBookingsSys already fetched in parallel
+          const myKidIds = data.map(k => k.id);
+          const allB = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
           setBookings(allB.filter(b => b.status !== 'Cancelled'));
         } else {
           setBookings([]);
@@ -57,13 +60,16 @@ export default function HomePage() {
     loadData();
 
     // Auto refresh child status in real-time every 2s or when store changes
-    const interval = setInterval(loadData, 2000);
-    const handleStoreChange = () => loadData();
+    // removed polling
+    const handleStoreChange = (e: any) => {
+      if (e && e.detail && e.detail.key === 'orca_current_user') return;
+      loadData();
+    };
     window.addEventListener('storage', handleStoreChange);
     window.addEventListener('orca_store_updated', handleStoreChange);
 
     return () => {
-      clearInterval(interval);
+      // removed polling
       window.removeEventListener('storage', handleStoreChange);
       window.removeEventListener('orca_store_updated', handleStoreChange);
     };
@@ -86,10 +92,6 @@ export default function HomePage() {
       }
     }
   };
-
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500 font-sans">กำลังโหลดข้อมูลสมาชิก...</div>;
-  }
 
   const currentUser = store.getCurrentUser();
   const basePurchased = (currentUser && currentUser.purchased_hours !== undefined && currentUser.purchased_hours > 0)
@@ -255,7 +257,7 @@ export default function HomePage() {
           </div>
           <div>
             <div className="text-[10px] text-slate-500 font-normal">จัดสรรแล้ว</div>
-            <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{totalUsed} ครั้ง</div>
+            <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{totalAllocated} ครั้ง</div>
           </div>
           <div>
             <div className="text-[10px] text-slate-500 font-normal">คงเหลือครอบครัว</div>
@@ -401,8 +403,10 @@ export default function HomePage() {
 
             let formattedDob = child.dob;
             if (child.dob && child.dob.includes('-')) {
+              const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
               const parts = child.dob.split('-');
-              formattedDob = `${parts[2]}/${parts[1]}/${parts[0]}`;
+              const monthIdx = parseInt(parts[1], 10) - 1;
+              formattedDob = `${parts[2]} ${monthNames[monthIdx]} ${parts[0]}`;
             }
 
             return (
@@ -431,6 +435,12 @@ export default function HomePage() {
                   </Link>
 
                   <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                    <Link
+                      href={`/student/${child.id}/book`}
+                      className="bg-[#2563eb] text-white border border-[#1d4ed8] px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1d4ed8] transition-all flex items-center gap-1 shadow-sm"
+                    >
+                      📅 Booking
+                    </Link>
                     <Link
                       href={`/student/${child.id}/edit`}
                       className="bg-slate-100 text-[#001a3a] border border-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all"
@@ -481,10 +491,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Red Underlined Annotation */}
-      <div className="text-center text-rose-600 font-bold text-xl underline mt-8 font-sans">
-        กดที่รูปเด็กเพื่อจองคลาส
-      </div>
+
     </div>
   );
 }

@@ -82,11 +82,12 @@ export default function SchedulePage() {
   const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [parents, setParents] = useState<UserProfile[]>([]);
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
   const loadData = async () => {
-    setLoading(true);
+    // Only show loading on initial mount, skip skeleton on background updates
+    // (loading is already initialized to true in useState)
     const user = store.getCurrentUser();
     if (!user) {
       setLoading(false);
@@ -105,11 +106,13 @@ export default function SchedulePage() {
       setAllChildren(kids);
     } else {
       setIsAdmin(false);
-      const kids = await store.getChildren(user.id);
+      const [kids, allBookingsSys] = await Promise.all([
+        store.getChildren(user.id),
+        store.getBookings() // Fetch all and filter in memory to save network roundtrips
+      ]);
       setChildren(kids);
-      const bookingPromises = kids.map(k => store.getBookings(k.id));
-      const bookingArrays = await Promise.all(bookingPromises);
-      const merged = bookingArrays.flat();
+      const myKidIds = kids.map(k => k.id);
+      const merged = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
       setAllBookings(merged);
     }
     setLoading(false);
@@ -133,17 +136,20 @@ export default function SchedulePage() {
     setCurrentWeekStart(getStartOfWeek(new Date()));
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin text-4xl">⏳</div>
-      </div>
-    );
-  }
-
   const endOfWeek = new Date(currentWeekStart);
   endOfWeek.setDate(endOfWeek.getDate() + 6);
   const weekLabel = `${currentWeekStart.getDate()} ${THAI_MONTHS[currentWeekStart.getMonth()]} - ${endOfWeek.getDate()} ${THAI_MONTHS[endOfWeek.getMonth()]} ${endOfWeek.getFullYear() + 543}`;
+
+  // Calculate how many weeks from today
+  const todayWeekStart = getStartOfWeek(new Date());
+  const diffMs = currentWeekStart.getTime() - todayWeekStart.getTime();
+  const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+  const weekDiffLabel =
+    diffWeeks === 0 ? 'สัปดาห์นี้' :
+    diffWeeks === -1 ? 'สัปดาห์ที่แล้ว' :
+    diffWeeks === 1 ? 'สัปดาห์หน้า' :
+    diffWeeks < 0 ? `${Math.abs(diffWeeks)} สัปดาห์ที่แล้ว` :
+    `${diffWeeks} สัปดาห์ข้างหน้า`;
 
   if (isAdmin) {
     return (
@@ -190,7 +196,12 @@ export default function SchedulePage() {
             <div className="font-bold text-lg">{weekLabel}</div>
             <div className="flex items-center gap-2">
               <button onClick={handlePrevWeek} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">◀</button>
-              <button onClick={handleToday} className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer">สัปดาห์นี้</button>
+              <button
+                onClick={handleToday}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${diffWeeks === 0 ? 'bg-white/20 hover:bg-white/30' : 'bg-yellow-400 hover:bg-yellow-300 text-[#001a3a]'}`}
+              >
+                {weekDiffLabel}
+              </button>
               <button onClick={handleNextWeek} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">▶</button>
             </div>
           </div>

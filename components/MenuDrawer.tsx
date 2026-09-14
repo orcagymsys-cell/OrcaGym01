@@ -64,8 +64,8 @@ export default function MenuDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
               </Link>
 
               <Link href="/pricing" onClick={onClose} className={itemClass}>
-                <span className="text-xl">📦</span>
-                <span>CLASSES</span>
+                <span className="text-xl">🏷️</span>
+                <span>Orca Classes & Pricing</span>
               </Link>
 
               <Link href="/schedule" onClick={onClose} className={itemClass}>

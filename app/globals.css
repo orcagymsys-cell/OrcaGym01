@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Anuphan', 'Kanit', sans-serif;
+  --font-sans: var(--font-anuphan), 'Anuphan', 'Sarabun', 'Noto Sans Thai', sans-serif;
 }
 
 * {
