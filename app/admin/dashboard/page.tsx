@@ -196,10 +196,10 @@ function AdminDashboardContent() {
       return;
     }
 
-    const allBookings = await store.getBookings(undefined, adminBookingDate);
+    const existingDayBookings = await store.getBookings(undefined, adminBookingDate);
     
     // Check double booking for the specific child
-    const childAlreadyBooked = allBookings.some(b => b.child_id === adminBookingChild.id && b.time_slot === adminBookingSlot && b.status !== 'Cancelled');
+    const childAlreadyBooked = existingDayBookings.some(b => b.child_id === adminBookingChild.id && b.time_slot === adminBookingSlot && b.status !== 'Cancelled');
     if (childAlreadyBooked) {
       showToast('⚠️ เด็กคนนี้ถูกจองในรอบเวลานี้ไปแล้ว ไม่สามารถจองซ้ำได้');
       return;
@@ -218,7 +218,7 @@ function AdminDashboardContent() {
       quotas[`${courseKeyName}_${adminBookingSlot}`] ??
       quotas[`${adminBookingDate}_${adminBookingSlot}`] ??
       10;
-    const currentBooked = allBookings.filter(b => b.time_slot === adminBookingSlot && b.status !== 'Cancelled').length;
+    const currentBooked = existingDayBookings.filter(b => b.time_slot === adminBookingSlot && b.status !== 'Cancelled').length;
 
     if (currentBooked >= maxQuota) {
       showToast(`🔒 รอบเวลา ${adminBookingSlot} ในวันที่ ${adminBookingDate} ที่นั่งเต็มแล้ว (${currentBooked}/${maxQuota})`);
