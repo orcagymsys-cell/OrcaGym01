@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { store } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { Child, Booking, UserProfile } from '@/lib/types';
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
@@ -86,40 +86,55 @@ export default function SchedulePage() {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
   const loadData = async () => {
-    // Only show loading on initial mount, skip skeleton on background updates
-    // (loading is already initialized to true in useState)
     const user = store.getCurrentUser();
     if (!user) {
       setLoading(false);
       return;
     }
 
+    // --- SWR Pattern: Instant Load from Cache ---
     if (user.role === 'admin') {
       setIsAdmin(true);
+      setAllBookings(store.getBookingsSync());
+      setParents(store.getUsersSync().filter(u => u.role === 'parent'));
+      setAllChildren(store.getChildrenSync());
+    } else {
+      setIsAdmin(false);
+      const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
+      setChildren(kidsCache);
+      const myKidIdsCache = kidsCache.map(k => k.id);
+      setAllBookings(store.getBookingsSync().filter(b => myKidIdsCache.includes(b.child_id)));
+    }
+    // Instantly hide loading since we have cache
+    setLoading(false);
+
+    // --- SWR Pattern: Background Fetch from Supabase ---
+    if (user.role === 'admin') {
       const [bookings, users, kids] = await Promise.all([
-        store.getBookings(),
-        store.getUsers(),
-        store.getChildren()
+        store.getBookings(), store.getUsers(), store.getChildren()
       ]);
       setAllBookings(bookings);
       setParents(users.filter(u => u.role === 'parent'));
       setAllChildren(kids);
     } else {
-      setIsAdmin(false);
       const [kids, allBookingsSys] = await Promise.all([
-        store.getChildren(user.id),
-        store.getBookings() // Fetch all and filter in memory to save network roundtrips
+        store.getChildren(user.id), store.getBookings()
       ]);
       setChildren(kids);
       const myKidIds = kids.map(k => k.id);
-      const merged = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
-      setAllBookings(merged);
+      setAllBookings(allBookingsSys.filter(b => myKidIds.includes(b.child_id)));
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     loadData();
+    // Setup Supabase Realtime for instant updates
+    const cleanupRealtime = setupRealtimeSubscriptions(() => {
+      loadData();
+    });
+    return () => {
+      if (cleanupRealtime) cleanupRealtime();
+    };
   }, []);
 
   const handlePrevWeek = () => {
