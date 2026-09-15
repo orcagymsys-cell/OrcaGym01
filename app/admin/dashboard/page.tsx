@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense, Fragment } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import { store, isSupabaseConfigured } from '@/lib/supabase';
+import { store, isSupabaseConfigured, setupRealtimeSubscriptions } from '@/lib/supabase';
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
 import { showToast } from '@/components/Toast';
@@ -313,6 +313,16 @@ function AdminDashboardContent() {
       }
       setIsAuthorized(true);
 
+      // --- SWR Pattern: Instant Load from Cache ---
+      const cachedUsers = store.getUsersSync();
+      setParents(cachedUsers.filter(u => u.role !== 'admin'));
+      setChildren(store.getChildrenSync());
+      setAuditLogs(store.getAuditLogsSync());
+      setDayBookings(store.getBookingsSync().filter(b => b.booking_date === selectedDate));
+      setAllBookings(store.getBookingsSync());
+      setQuotas(store.getSlotQuotasSync());
+
+      // --- SWR Pattern: Background Fetch from Supabase ---
       const [uList, cList, logs, b, bAll, q] = await Promise.all([
         store.getUsers(),
         store.getChildren(),
@@ -332,10 +342,21 @@ function AdminDashboardContent() {
     }
     loadData();
 
-    // Auto refresh data in real time via storage events, custom event, broadcast channel
-    const handleStoreUpdate = () => loadData();
-    // window.addEventListener('storage', handleStoreUpdate);
-    // window.addEventListener('orca_store_updated', handleStoreUpdate); // Disabled to prevent infinite loops
+    // Setup Supabase Realtime for instant updates
+    const cleanupRealtime = setupRealtimeSubscriptions(() => {
+      // Fetch fresh data in background without flickering
+      Promise.all([
+        store.getUsers(), store.getChildren(), store.getAuditLogs(),
+        store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
+      ]).then(([uList, cList, logs, b, bAll, q]) => {
+        setParents(uList.filter(u => u.role !== 'admin'));
+        setChildren(cList);
+        setAuditLogs(logs);
+        setDayBookings(b);
+        setAllBookings(bAll);
+        setQuotas(q);
+      });
+    });
 
     let syncChannel: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -343,12 +364,11 @@ function AdminDashboardContent() {
       syncChannel.onmessage = () => loadData();
     }
 
-    // Increased polling interval to 30s to prevent render thrashing
+    // Backup polling every 30s
     const interval = setInterval(loadData, 30000);
     return () => {
       clearInterval(interval);
-      // window.removeEventListener('storage', handleStoreUpdate);
-      // window.removeEventListener('orca_store_updated', handleStoreUpdate);
+      if (cleanupRealtime) cleanupRealtime();
       if (syncChannel) syncChannel.close();
     };
   }, [router, selectedDate]);

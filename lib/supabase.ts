@@ -185,6 +185,12 @@ export const store = {
     }
   },
 
+  getUsersSync(): UserProfile[] { return getLocal(STORAGE_KEYS.USERS, []); },
+  getChildrenSync(): Child[] { return getLocal('CHILDREN_CACHE', []); },
+  getBookingsSync(): Booking[] { return getLocal('BOOKINGS_CACHE', []); },
+  getAuditLogsSync(): AuditLog[] { return getLocal(STORAGE_KEYS.AUDIT_LOGS, []); },
+  getSlotQuotasSync(): Record<string, any> { return getLocal(STORAGE_KEYS.QUOTAS, {}); },
+
   async getUsers(): Promise<UserProfile[]> {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -622,3 +628,18 @@ export const store = {
     setLocal(STORAGE_KEYS.COURSES, courses);
   }
 };
+
+let realtimeChannel: any = null;
+export function setupRealtimeSubscriptions(onUpdate: () => void) {
+  if (!isSupabaseConfigured || !supabase || typeof window === 'undefined') return () => {};
+  if (realtimeChannel) realtimeChannel.unsubscribe();
+  realtimeChannel = supabase.channel('global-db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, onUpdate)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'children' }, onUpdate)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, onUpdate)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, onUpdate)
+    .subscribe();
+  return () => {
+    if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }
+  };
+}
