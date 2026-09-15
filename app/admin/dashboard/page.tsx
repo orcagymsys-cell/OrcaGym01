@@ -481,6 +481,11 @@ function AdminDashboardContent() {
       showToast('กรุณากรอกข้อมูล: ชื่อ-นามสกุล, อีเมล และเบอร์โทรศัพท์ผู้ปกครองให้ครบถ้วน');
       return;
     }
+    const phoneLen = newParentPhone.replace(/\D/g, '').length;
+    if (phoneLen < 10 || phoneLen > 12) {
+      showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10-12 หลัก)');
+      return;
+    }
     if (!hoursToAdd) {
       showToast('กรุณาเลือก คลาส & โควต้าที่ซื้อ');
       return;
