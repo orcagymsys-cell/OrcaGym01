@@ -11,6 +11,12 @@ import ServiceTermsModal from '@/components/ServiceTermsModal';
 
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const requestRef = useRef(0);
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -169,6 +175,15 @@ export default function HomePage() {
   // Persistent Alert Banner: Stays shown as long as package is near expiry AND classes remain unbooked!
   const showUnbookedNearExpiryBanner = isPkgExpiringSoon && hasUnbookedClasses;
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
+        <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-600 font-bold">กำลังเตรียมหน้าข้อมูลของคุณ...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="font-['Anuphan',sans-serif]">
