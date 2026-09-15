@@ -1292,7 +1292,7 @@ function AdminDashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">ยอดค้างชำระ / ต้องติดตาม</span>
-                    <span className="text-xs font-extrabold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full animate-pulse">
+                    <span className="text-xs font-extrabold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full ">
                       {pendingPaymentsCount} รายการ
                     </span>
                   </div>
@@ -1528,7 +1528,7 @@ function AdminDashboardContent() {
                           </div>
 
                           <span className={`text-xs font-black px-3 py-1 rounded-xl shrink-0 shadow-2xs ${
-                            isZero ? 'bg-rose-600 text-white animate-pulse' : 'bg-amber-500 text-white'
+                            isZero ? 'bg-rose-600 text-white ' : 'bg-amber-500 text-white'
                           }`}>
                             {isZero ? 'หมดแล้ว (0 ชม.)' : `เหลือ ${remaining} ชม.`}
                           </span>
@@ -1937,7 +1937,7 @@ function AdminDashboardContent() {
                                 <div className="font-bold text-[#001a3a] text-sm flex flex-wrap items-center gap-2">
                                   <span>{p.name}</span>
                                   {isPkgExpiringSoon && (
-                                    <span className="bg-amber-100 text-amber-900 border border-amber-300 font-extrabold px-2 py-0.5 rounded-full text-[10px] animate-pulse" title={`เริ่มแจ้งเตือนล่วงหน้า 5 วัน ตั้งแต่วันที่ ${alertStartStr}`}>
+                                    <span className="bg-amber-100 text-amber-900 border border-amber-300 font-extrabold px-2 py-0.5 rounded-full text-[10px] " title={`เริ่มแจ้งเตือนล่วงหน้า 5 วัน ตั้งแต่วันที่ ${alertStartStr}`}>
                                       ⏰ หมดอายุใน {daysUntilPkgExpiry <= 0 ? '0' : daysUntilPkgExpiry} วัน ({formattedExpiryDate} | แจ้งเตือนตั้งแต่ {alertStartStr})
                                     </span>
                                   )}
@@ -2395,7 +2395,7 @@ function AdminDashboardContent() {
                                   <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-extrabold border shrink-0 ${
                                     c.status === 'approved' 
                                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                                      : 'bg-amber-50 text-amber-900 border-amber-300 animate-pulse'
+                                      : 'bg-amber-50 text-amber-900 border-amber-300 '
                                   }`}>
                                     {c.status === 'approved' ? '✅ อนุมัติแล้ว' : '⏳ รออนุมัติ'}
                                   </span>
@@ -2462,7 +2462,7 @@ function AdminDashboardContent() {
                                   type="button"
                                   onClick={() => handleApproveCourse(c)}
                                   title="กดอนุมัติคอร์สเรียนนี้"
-                                  className="h-8 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer animate-pulse"
+                                  className="h-8 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer "
                                 >
                                   <span>⚡</span>
                                   <span>อนุมัติคลาส</span>
@@ -3556,7 +3556,7 @@ function AdminDashboardContent() {
         <div className="fixed bottom-6 right-6 z-50 max-w-md w-full sm:w-96 bg-white/95 backdrop-blur-md border-2 border-amber-400 rounded-3xl p-4 shadow-2xl transition-all duration-300 animate-bounce-short font-['Anuphan',sans-serif]">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0 animate-pulse">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0 ">
                 🔔
               </div>
               <div>
