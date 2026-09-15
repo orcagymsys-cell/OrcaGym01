@@ -186,58 +186,17 @@ export const store = {
   },
 
   async getUsers(): Promise<UserProfile[]> {
-    initLocalSeed();
-    let localUsers = getLocal<UserProfile[]>(STORAGE_KEYS.USERS, []);
-    // Ensure admin exists
-    // Fix any corrupted names stored in localStorage from the previous bug, AND completely purge the old mock u_napaporn!
-    let modified = false;
-    
-    // No more napaporn purge needed
-
-    // 2. Fix admin name if needed
-    localUsers.forEach(u => {
-      if (u.name && u.name.includes('เน€เธโฌ')) {
-        if (u.user_id === 'admin') u.name = 'เนเธญเธ”เธกเธดเธ Orca';
-        modified = true;
-      }
-    });
-    
-    if (modified) setLocal(STORAGE_KEYS.USERS, localUsers);
-
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: true });
-        if (data && data.length > 0) {
-          // Combine all users
-          const allList = [...localUsers, ...data];
-          
-          // Sort by created_at ascending, so newest is added last and overwrites older in Map
-          allList.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-          
-          const userMap = new Map<string, UserProfile>();
-          allList.forEach(u => {
-            const key = u.user_id || u.id;
-            const existing = userMap.get(key);
-            if (existing) {
-              // Preserve local-only fields if they are missing in Supabase data
-              if (!u.payment_history && existing.payment_history) {
-                u.payment_history = existing.payment_history;
-              }
-              if (!u.payment_slip && existing.payment_slip) {
-                u.payment_slip = existing.payment_slip;
-              }
-            }
-            userMap.set(key, u);
-          });
-          
-          const merged = Array.from(userMap.values());
-          // Final sort descending for UI lists
-          merged.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-          return merged;
+        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (!error && data) {
+          setLocal(STORAGE_KEYS.USERS, data);
+          return data;
         }
-      } catch (err) {}
+      } catch (e) {}
     }
-    return localUsers;
+    initLocalSeed();
+    return getLocal<UserProfile[]>(STORAGE_KEYS.USERS, []);
   },
 
   async saveUser(user: UserProfile) {
@@ -376,7 +335,6 @@ export const store = {
         if (date) query = query.eq('booking_date', date);
         const { data, error } = await query;
         if (!error && data) {
-          // fetch children for names
           const children = await this.getChildren();
           const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
           const mapped = data.map(b => {
