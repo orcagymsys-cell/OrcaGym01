@@ -481,6 +481,11 @@ function AdminDashboardContent() {
       showToast('กรุณากรอกข้อมูล: ชื่อ-นามสกุล, อีเมล และเบอร์โทรศัพท์ผู้ปกครองให้ครบถ้วน');
       return;
     }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(newParentEmail.trim())) {
+      showToast('กรุณากรอกอีเมลให้ถูกต้องตามรูปแบบสากล (ต้องมี @ และใช้ภาษาอังกฤษเท่านั้น)');
+      return;
+    }
     const phoneLen = newParentPhone.replace(/\D/g, '').length;
     if (phoneLen < 10 || phoneLen > 12) {
       showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10-12 หลัก)');
