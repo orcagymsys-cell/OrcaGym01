@@ -17,6 +17,12 @@ export default function ServiceTermsModal() {
     const checkPDPA = async () => {
       const currentUser = store.getCurrentUser();
       
+      // If there is no user (e.g. during logout), do not show
+      if (!currentUser) {
+        setIsOpen(false);
+        return;
+      }
+      
       // If user has already accepted PDPA in cache, do not show
       if (currentUser && currentUser.pdpa_accepted) {
         setIsOpen(false);
