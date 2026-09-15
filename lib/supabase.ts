@@ -187,16 +187,20 @@ export const store = {
 
   async getUsers(): Promise<UserProfile[]> {
     if (isSupabaseConfigured && supabase) {
-      // Clear stale local cache BEFORE fetching — ensures deleted records never reappear
-      if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEYS.USERS);
       try {
         const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        if (!error && data) {
-          setLocal(STORAGE_KEYS.USERS, data);
-          return data;
+        if (!error) {
+          // Always use Supabase data (even empty array) and overwrite local cache
+          // This handles deletions without causing flicker
+          const freshData = data || [];
+          setLocal(STORAGE_KEYS.USERS, freshData);
+          return freshData;
         }
-      } catch (e) {}
-      return []; // Supabase failed → return empty, don't fall back to stale local data
+      } catch (e) {
+        // Network error only: clear stale cache so ghost data doesn't appear
+        if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEYS.USERS);
+        return [];
+      }
     }
     initLocalSeed();
     return getLocal<UserProfile[]>(STORAGE_KEYS.USERS, []);
@@ -288,18 +292,19 @@ export const store = {
 
   async getChildren(parentId?: string): Promise<Child[]> {
     if (isSupabaseConfigured && supabase) {
-      // Clear stale local cache BEFORE fetching — prevents deleted children from reappearing
-      if (typeof window !== 'undefined') localStorage.removeItem('CHILDREN_CACHE');
       try {
         let query = supabase.from('children').select('*').order('id');
         if (parentId) query = query.eq('parent_id', parentId);
         const { data, error } = await query;
-        if (!error && data) {
-          setLocal('CHILDREN_CACHE', data);
-          return data;
+        if (!error) {
+          const freshData = data || [];
+          if (!parentId) setLocal('CHILDREN_CACHE', freshData);
+          return parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
         }
-      } catch (e) {}
-      return []; // Supabase failed → return empty
+      } catch (e) {
+        if (typeof window !== 'undefined') localStorage.removeItem('CHILDREN_CACHE');
+        return [];
+      }
     }
     const cached = getLocal<Child[]>('CHILDREN_CACHE', []);
     if (parentId && cached.length > 0) return cached.filter(c => c.parent_id === parentId);
@@ -335,17 +340,16 @@ export const store = {
 
   async getBookings(childId?: string, date?: string): Promise<Booking[]> {
     if (isSupabaseConfigured && supabase) {
-      // Clear stale cache before fetching
-      if (typeof window !== 'undefined' && !childId && !date) localStorage.removeItem('BOOKINGS_CACHE');
       try {
         let query = supabase.from('bookings').select('*').order('id');
         if (childId) query = query.eq('child_id', childId);
         if (date) query = query.eq('booking_date', date);
         const { data, error } = await query;
-        if (!error && data) {
+        if (!error) {
+          const freshData = data || [];
           const children = await this.getChildren();
           const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
-          const mapped = data.map(b => {
+          const mapped = freshData.map(b => {
             const c = childrenMap.get(b.child_id);
             return {
               ...b,
@@ -357,8 +361,10 @@ export const store = {
           if (!childId && !date) setLocal('BOOKINGS_CACHE', mapped);
           return mapped;
         }
-      } catch(e) {}
-      return []; // Supabase failed → return empty
+      } catch (e) {
+        if (typeof window !== 'undefined' && !childId && !date) localStorage.removeItem('BOOKINGS_CACHE');
+        return [];
+      }
     }
     let cached = getLocal<Booking[]>('BOOKINGS_CACHE', []);
     if (childId) cached = cached.filter(b => b.child_id === childId);
