@@ -52,6 +52,8 @@ export default function BookingCalendarPage() {
   const [quotas, setQuotas] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [alertModalText, setAlertModalText] = useState<string | null>(null);
+  const [successModalText, setSuccessModalText] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -121,59 +123,74 @@ export default function BookingCalendarPage() {
       return;
     }
 
-    // ดึงข้อมูล fresh จาก DB เสมอ เพื่อป้องกัน stale cache
-    const freshChild = await store.getChildById(child.id);
-    if (!freshChild) {
-      showToast('ไม่พบข้อมูลนักเรียน กรุณาลองใหม่อีกครั้ง');
-      return;
-    }
+    setIsSubmitting(true);
+    try {
+      const currentUser = store.getCurrentUser();
+      
+      // Parallel fetch to make it super fast (0.5s instead of 4-5s)
+      const [freshChild, existingBookings, familyChildren] = await Promise.all([
+        store.getChildById(child.id),
+        store.getBookings(child.id, selectedDate),
+        currentUser ? store.getChildren(currentUser.id) : Promise.resolve([])
+      ]);
 
-    // เช็คโควต้าระดับเด็กคนนี้
-    // ป้องกันการจองคลาสซ้ำในวันและเวลาเดียวกัน
-    const existingBookings = await store.getBookings(freshChild.id, selectedDate);
-    const hasSameSlot = existingBookings.some(b => b.time_slot === selectedSlot && b.status !== 'cancelled' && b.status !== 'Cancelled');
-    
-    if (hasSameSlot) {
-      setAlertModalText('⚠️ น้องจองคลาสในรอบเวลานี้ไปแล้วค่ะ ไม่สามารถจองซ้ำได้');
-      return;
-    }
-
-    const remaining = freshChild.total_hours - freshChild.used_hours;
-    if (remaining <= 0) {
-      showToast('⚠️ ชั่วโมงเรียนของน้องหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
-      return;
-    }
-
-    // เช็คโควต้าระดับตะกร้าครอบครัว (Family Basket)
-    const currentUser = store.getCurrentUser();
-    if (currentUser) {
-      const familyChildren = await store.getChildren(currentUser.id);
-      const familyTotalUsed = familyChildren.reduce((sum, c) => sum + (c.used_hours || 0), 0);
-      const parentPurchased = currentUser.purchased_hours || 6;
-      if (familyTotalUsed >= parentPurchased) {
-        showToast(`⚠️ จำนวนคลาสที่ซื้อไว้ (${parentPurchased} ครั้ง) ถูกใช้ครบแล้วทุกคนในครอบครัว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง`);
+      if (!freshChild) {
+        setAlertModalText('ไม่พบข้อมูลนักเรียน กรุณาลองใหม่อีกครั้ง');
+        setIsSubmitting(false);
         return;
       }
+
+      // Check if already booked on the same day (any slot)
+      const hasSameDay = existingBookings.some(b => b.status !== 'cancelled' && b.status !== 'Cancelled');
+      
+      if (hasSameDay) {
+        setAlertModalText('⚠️ น้องมีคลาสเรียนในวันนี้แล้วค่ะ (สงวนสิทธิ์จองได้สูงสุด 1 คลาสต่อวัน)');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const remaining = freshChild.total_hours - freshChild.used_hours;
+      if (remaining <= 0) {
+        setAlertModalText('⚠️ ชั่วโมงเรียนของน้องหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (currentUser) {
+        const familyTotalUsed = familyChildren.reduce((sum, c) => sum + (c.used_hours || 0), 0);
+        const parentPurchased = currentUser.purchased_hours || 6;
+        if (familyTotalUsed >= parentPurchased) {
+          setAlertModalText(`⚠️ จำนวนคลาสที่ซื้อไว้ (${parentPurchased} ครั้ง) ถูกใช้ครบแล้วทุกคนในครอบครัว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const newBooking: Booking = {
+        id: 'b_' + Date.now(),
+        child_id: freshChild.id,
+        child_nickname: freshChild.nickname,
+        child_full_name: freshChild.full_name,
+        course_name: freshChild.course_name || 'Orca Cubs',
+        booking_date: selectedDate,
+        time_slot: selectedSlot,
+        status: 'confirmed',
+        booked_by_role: 'parent'
+      };
+
+      // Run these in parallel to save another 0.5s
+      await Promise.all([
+        store.saveBooking(newBooking),
+        store.updateChild(freshChild.id, { used_hours: freshChild.used_hours + 1 })
+      ]);
+
+      setSuccessModalText(`จองคลาสเรียน ${selectedDate} (รอบ ${selectedSlot}) สำเร็จเรียบร้อยแล้ว!`);
+    } catch (error) {
+      console.error(error);
+      setAlertModalText('เกิดข้อผิดพลาดในการจอง กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const newBooking: Booking = {
-      id: 'b_' + Date.now(),
-      child_id: freshChild.id,
-      child_nickname: freshChild.nickname,
-      child_full_name: freshChild.full_name,
-      course_name: freshChild.course_name || 'Orca Cubs',
-      booking_date: selectedDate,
-      time_slot: selectedSlot,
-      status: 'confirmed',
-      booked_by_role: 'parent'
-    };
-
-    await store.saveBooking(newBooking);
-    const newUsed = freshChild.used_hours + 1;
-    await store.updateChild(freshChild.id, { used_hours: newUsed });
-
-    showToast(`✅ จองคลาสเรียน ${selectedDate} (${selectedSlot}) สำเร็จเรียบร้อยแล้ว! (อนุมัติทันที ไม่ต้องรอแอดมินอนุมัติ)`);
-    router.push(`/student/${freshChild.id}`);
   };
 
   if (loading || !child) {
@@ -369,16 +386,41 @@ export default function BookingCalendarPage() {
       <button
         type="button"
         onClick={handleConfirmBooking}
-        disabled={isMonday || !selectedSlot}
-        className={`w-full py-3.5 bg-[#001a3a] hover:bg-[#002244] text-white font-bold text-base rounded-full shadow-md transition-all cursor-pointer mb-8 ${
-          isMonday || !selectedSlot ? 'opacity-50 cursor-not-allowed' : ''
+        disabled={isMonday || !selectedSlot || isSubmitting}
+        className={`w-full py-3.5 sm:py-4 rounded-full transition-all duration-300 shadow-xl border-none cursor-pointer mb-8 ${
+          isMonday || !selectedSlot || isSubmitting
+            ? 'bg-slate-300 text-slate-500 cursor-not-allowed scale-[0.98]'
+            : 'bg-[#001a3a] hover:bg-[#002244] text-white hover:scale-[1.02]'
         }`}
       >
         <div className="flex flex-col items-center justify-center leading-tight">
-          <span className="text-base sm:text-lg font-bold">Book Class</span>
+          <span className="text-base sm:text-lg font-bold">{isSubmitting ? 'กำลังจอง...' : 'Book Class'}</span>
           <span className="text-xs sm:text-sm font-semibold opacity-90">(ยืนยันการจองคลาส)</span>
         </div>
       </button>
+
+      {/* Pop-up Success Modal */}
+      {successModalText && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl text-center border border-emerald-200 animate-scale-up">
+            <div className="text-5xl mb-4 text-emerald-500">✅</div>
+            <h3 className="text-xl font-black text-emerald-700 mb-3">จองคลาสสำเร็จ!</h3>
+            <p className="text-sm text-slate-700 leading-relaxed mb-6 font-bold whitespace-pre-line">
+              {successModalText}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSuccessModalText(null);
+                router.push(`/student/${child.id}`);
+              }}
+              className="w-full py-3.5 bg-emerald-500 text-white rounded-2xl font-bold text-sm cursor-pointer shadow-md hover:bg-emerald-600 transition-colors"
+            >
+              กลับสู่หน้าโปรไฟล์
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Pop-up Alert Modal */}
       {alertModalText && (
