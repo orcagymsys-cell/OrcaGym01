@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import { store } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { Child, Booking } from '@/lib/types';
 
@@ -15,6 +15,7 @@ export default function StudentDashboardPage() {
   const rawId = params?.id;
   const childId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
 
+  const requestRef = useRef(0);
   const [mounted, setMounted] = useState(false);
   const [child, setChild] = useState<Child | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -46,65 +47,76 @@ export default function StudentDashboardPage() {
     if (!mounted) return;
 
     async function loadData() {
+      const reqId = ++requestRef.current;
       try {
         const targetId = childId || 'c_demo_1';
-        let c = await store.getChildById(targetId);
+        
+        // 1. Synchronous Cache Load (SWR)
+        const allChildrenSync = store.getChildrenSync();
+        let cSync = allChildrenSync.find(x => x.id === targetId);
+        if (!cSync && allChildrenSync.length > 0) cSync = allChildrenSync[0];
+        if (cSync) setChild(cSync);
+        
+        const u = store.getCurrentUser();
+        if (u) setParentPurchased(u.purchased_hours || 6);
+        
+        if (cSync) {
+          setFamilyChildren(allChildrenSync.filter(x => x.parent_id === cSync.parent_id));
+        }
+        
+        setBookings(store.getBookingsSync(targetId) || []);
+        
+        // Disable loading state instantly
+        setLoading(false);
 
+        // 2. Background fetch
+        const [allC, bList, uList] = await Promise.all([
+          store.getChildren(),
+          store.getBookings(targetId),
+          store.getUsers()
+        ]);
+        
+        if (reqId !== requestRef.current) return;
+
+        let c = allC.find(x => x.id === targetId);
+        if (!c && allC.length > 0) c = allC[0];
         if (!c) {
-          const allChildren = await store.getChildren();
-          if (allChildren.length > 0) {
-            c = allChildren[0];
-          } else {
-            c = {
-              id: targetId,
-              parent_id: 'u_parent',
-              full_name: 'สบายตา สบายใจ',
-              nickname: 'น้องเย็นสบาย',
-              dob: '2020-05-05',
-              gender: 'Girl',
-              avatar: 'girl',
-              status: 'approved',
-              course_name: 'Orca Cubs',
-              total_hours: 12,
-              used_hours: 2,
-              expiry_date: '02/02/2070'
-            };
-          }
+          c = {
+            id: targetId,
+            parent_id: 'u_parent',
+            full_name: 'สบายตา สบายใจ',
+            nickname: 'น้องเย็นสบาย',
+            dob: '2020-05-05',
+            gender: 'Girl',
+            avatar: 'girl',
+            status: 'approved',
+            course_name: 'Orca Cubs',
+            total_hours: 12,
+            used_hours: 2,
+            expiry_date: '02/02/2070'
+          };
         }
         setChild(c);
+        
+        if (u) {
+          const fresh = uList.find(x => x.id === u.id); 
+          if (fresh && JSON.stringify(fresh) !== JSON.stringify(u)) { 
+            store.setCurrentUser(fresh); 
+            setParentPurchased(fresh.purchased_hours || 6); 
+          }
+        }
+        
+        setFamilyChildren(allC.filter(x => x.parent_id === c.parent_id));
+        setBookings(bList || []);
 
-        const u = store.getCurrentUser();
-        if (u) { store.getUsers().then(users => { const fresh = users.find(x => x.id === u.id); if (fresh && JSON.stringify(fresh) !== JSON.stringify(u)) { store.setCurrentUser(fresh); setParentPurchased(fresh.purchased_hours || 6); } }); }
-        const purchased = u?.purchased_hours || 6;
-        setParentPurchased(purchased);
-
-        const famC = await store.getChildren(c.parent_id);
-        setFamilyChildren(famC || []);
-
-        const b = await store.getBookings(targetId);
-        setBookings(b || []);
       } catch (err) {
         console.error('Error loading student dashboard:', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();
 
-    // Auto refresh child status in real-time every 2s or when store changes
-    // removed polling
-    const handleStoreChange = (e: any) => {
-      if (e && e.detail && e.detail.key === 'orca_current_user') return;
-      loadData();
-    };
-    window.addEventListener('storage', handleStoreChange);
-    window.addEventListener('orca_store_updated', handleStoreChange);
-
-    return () => {
-      // removed polling
-      window.removeEventListener('storage', handleStoreChange);
-      window.removeEventListener('orca_store_updated', handleStoreChange);
-    };
+    const cleanupRealtime = setupRealtimeSubscriptions(() => loadData());
+    return () => { if (cleanupRealtime) cleanupRealtime(); };
   }, [mounted, childId]);
 
   const handleCancelBooking = async (bookingId: string) => {

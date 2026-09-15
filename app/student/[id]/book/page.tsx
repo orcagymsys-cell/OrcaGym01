@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
-import { store } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { Child, Booking } from '@/lib/types';
 
@@ -36,8 +36,10 @@ export const runtime = 'edge';
 export default function BookingCalendarPage() {
   const params = useParams();
   const router = useRouter();
-  const childId = params?.id as string;
+  const rawId = params?.id;
+  const childId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
 
+  const requestRef = useRef(0);
   const minParentDate = getMinParentBookingDate();
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -52,24 +54,49 @@ export default function BookingCalendarPage() {
   const [alertModalText, setAlertModalText] = useState<string | null>(null);
 
   useEffect(() => {
-    async function init() {
+    async function loadData() {
       if (!childId) return;
-      const c = await store.getChildById(childId);
-      if (!c || (c.total_hours - c.used_hours) <= 0) {
-        showToast('⚠️ จำนวนชั่วโมงเรียนหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
-        router.push(`/student/${childId}`);
-        return;
+      const reqId = ++requestRef.current;
+      
+      // 1. SWR Instant Load
+      const allChildrenSync = store.getChildrenSync();
+      let cSync = allChildrenSync.find(x => x.id === childId);
+      if (cSync) {
+        if ((cSync.total_hours - cSync.used_hours) <= 0) {
+          showToast('⚠️ จำนวนชั่วโมงเรียนหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
+          router.push(`/student/${childId}`);
+          return;
+        }
+        setChild(cSync);
       }
-      setChild(c);
-
-      const b = await store.getBookings(undefined, selectedDate);
-      setDateBookings(b);
-
-      const q = await store.getSlotQuotas();
-      setQuotas(q);
+      setDateBookings(store.getBookingsSync(undefined, selectedDate));
+      setQuotas(store.getSlotQuotasSync());
       setLoading(false);
+
+      // 2. Background Fetch
+      const [allC, b, q] = await Promise.all([
+        store.getChildren(),
+        store.getBookings(undefined, selectedDate),
+        store.getSlotQuotas()
+      ]);
+      
+      if (reqId !== requestRef.current) return;
+      
+      let c = allC.find(x => x.id === childId);
+      if (c) {
+        if ((c.total_hours - c.used_hours) <= 0) {
+          router.push(`/student/${childId}`);
+          return;
+        }
+        setChild(c);
+      }
+      setDateBookings(b);
+      setQuotas(q);
     }
-    init();
+    loadData();
+
+    const cleanupRealtime = setupRealtimeSubscriptions(() => loadData());
+    return () => { if (cleanupRealtime) cleanupRealtime(); };
   }, [childId, selectedDate, router]);
 
   const changeMonth = (delta: number) => {
