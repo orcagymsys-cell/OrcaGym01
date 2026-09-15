@@ -12,10 +12,12 @@ export default function ServiceTermsModal() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    const checkPDPA = async () => {
       const currentUser = store.getCurrentUser();
       
-      // If user has already accepted PDPA, do not show
+      // If user has already accepted PDPA in cache, do not show
       if (currentUser && currentUser.pdpa_accepted) {
         setIsOpen(false);
         return;
@@ -27,9 +29,24 @@ export default function ServiceTermsModal() {
         return;
       }
 
-      // Otherwise, show the modal
+      // If not in cache, double check with the database to prevent flickering
+      // for users who actually accepted it but have a stale cache
+      if (currentUser && !currentUser.pdpa_accepted) {
+        const users = await store.getUsers();
+        const freshUser = users.find(u => u.id === currentUser.id);
+        if (freshUser && freshUser.pdpa_accepted) {
+          // They already accepted it, update cache and remain hidden
+          store.setCurrentUser(freshUser);
+          setIsOpen(false);
+          return;
+        }
+      }
+
+      // Still false in database? Show the modal!
       setIsOpen(true);
-    }
+    };
+
+    checkPDPA();
   }, []);
 
   const handleScroll = () => {
