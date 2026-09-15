@@ -7,7 +7,7 @@ import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { Child, Booking } from '@/lib/types';
 import { showToast } from '@/components/Toast';
 
-import ServiceTermsModal from '@/components/ServiceTermsModal';
+
 
 export default function HomePage() {
   const requestRef = useRef(0);
@@ -171,7 +171,6 @@ export default function HomePage() {
 
   return (
     <div className="font-['Anuphan',sans-serif]">
-      <ServiceTermsModal />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
         {/* Parent Profile Info */}
         <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col gap-1.5">
