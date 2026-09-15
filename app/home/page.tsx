@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import BackButton from '@/components/BackButton';
@@ -10,6 +10,7 @@ import { showToast } from '@/components/Toast';
 import ServiceTermsModal from '@/components/ServiceTermsModal';
 
 export default function HomePage() {
+  const requestRef = useRef(0);
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,7 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadData() {
+      const reqId = ++requestRef.current;
       try {
         let currentUser = store.getCurrentUser();
         if (!currentUser) {
@@ -46,6 +48,9 @@ export default function HomePage() {
           store.getChildren(currentUser.id),
           store.getBookings()
         ]);
+        
+        if (reqId !== requestRef.current) return; // Prevent Race Condition
+        
         const freshUser = allUsers.find(u => u.phone === currentUser?.phone) || allUsers.find(u => u.id === currentUser?.id || u.user_id === currentUser?.user_id);
         if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
           currentUser = freshUser;

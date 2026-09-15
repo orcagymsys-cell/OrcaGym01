@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense, Fragment } from 'react';
+import { useState, useEffect, useRef, Suspense, Fragment } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
@@ -89,6 +89,7 @@ const DAY_NAMES_THAI: Record<string, string> = {
 };
 
 function AdminDashboardContent() {
+  const requestRef = useRef(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
@@ -304,6 +305,7 @@ function AdminDashboardContent() {
 
   useEffect(() => {
     async function loadData() {
+      const reqId = ++requestRef.current;
       const user = store.getCurrentUser();
       if (!user || user.role !== 'admin') {
         showToast('กรุณาเข้าสู่ระบบแอดมินก่อนใช้งาน');
@@ -331,6 +333,8 @@ function AdminDashboardContent() {
         store.getBookings(),
         store.getSlotQuotas()
       ]);
+
+      if (reqId !== requestRef.current) return; // Prevent Race Condition
 
       const parentUsers = uList.filter(u => u.role !== 'admin');
       setParents(parentUsers);

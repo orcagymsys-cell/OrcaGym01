@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { Child, Booking, UserProfile } from '@/lib/types';
@@ -77,6 +77,7 @@ function getChildColor(index: number) {
 }
 
 export default function SchedulePage() {
+  const requestRef = useRef(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [allChildren, setAllChildren] = useState<Child[]>([]);
@@ -86,6 +87,7 @@ export default function SchedulePage() {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
   const loadData = async () => {
+    const reqId = ++requestRef.current;
     const user = store.getCurrentUser();
     if (!user) {
       setLoading(false);
@@ -113,6 +115,7 @@ export default function SchedulePage() {
       const [bookings, users, kids] = await Promise.all([
         store.getBookings(), store.getUsers(), store.getChildren()
       ]);
+      if (reqId !== requestRef.current) return;
       setAllBookings(bookings);
       setParents(users.filter(u => u.role === 'parent'));
       setAllChildren(kids);
@@ -120,6 +123,7 @@ export default function SchedulePage() {
       const [kids, allBookingsSys] = await Promise.all([
         store.getChildren(user.id), store.getBookings()
       ]);
+      if (reqId !== requestRef.current) return;
       setChildren(kids);
       const myKidIds = kids.map(k => k.id);
       setAllBookings(allBookingsSys.filter(b => myKidIds.includes(b.child_id)));
