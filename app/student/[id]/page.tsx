@@ -64,7 +64,7 @@ export default function StudentDashboardPage() {
           setFamilyChildren(allChildrenSync.filter(x => x.parent_id === cSync.parent_id));
         }
         
-        setBookings(store.getBookingsSync(targetId) || []);
+        setBookings(store.getBookingsSync().filter(b => b.child_id === targetId));
         
         // Disable loading state instantly
         setLoading(false);

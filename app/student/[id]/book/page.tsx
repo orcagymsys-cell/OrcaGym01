@@ -69,7 +69,7 @@ export default function BookingCalendarPage() {
         }
         setChild(cSync);
       }
-      setDateBookings(store.getBookingsSync(undefined, selectedDate));
+      setDateBookings(store.getBookingsSync().filter(b => b.booking_date === selectedDate));
       setQuotas(store.getSlotQuotasSync());
       setLoading(false);
 
