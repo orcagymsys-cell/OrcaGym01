@@ -14,7 +14,7 @@ export default function ServiceTermsModal() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const checkPDPA = async () => {
+    const checkPDPA = () => {
       const currentUser = store.getCurrentUser();
       
       // If there is no user (e.g. during logout), do not show
@@ -24,31 +24,19 @@ export default function ServiceTermsModal() {
       }
       
       // If user has already accepted PDPA in cache, do not show
-      if (currentUser && currentUser.pdpa_accepted) {
+      if (currentUser.pdpa_accepted) {
         setIsOpen(false);
         return;
       }
 
       // If user is admin, don't show it
-      if (currentUser && currentUser.role === 'admin') {
+      if (currentUser.role === 'admin') {
         setIsOpen(false);
         return;
       }
 
-      // If not in cache, double check with the database to prevent flickering
-      // for users who actually accepted it but have a stale cache
-      if (currentUser && !currentUser.pdpa_accepted) {
-        const users = await store.getUsers();
-        const freshUser = users.find(u => u.id === currentUser.id);
-        if (freshUser && freshUser.pdpa_accepted) {
-          // They already accepted it, update cache and remain hidden
-          store.setCurrentUser(freshUser);
-          setIsOpen(false);
-          return;
-        }
-      }
-
-      // Still false in database? Show the modal!
+      // If we reach here, it means they are a parent and haven't accepted it.
+      // Show it INSTANTLY without waiting for database to prevent delayed popups.
       setIsOpen(true);
     };
 
