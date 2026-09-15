@@ -37,7 +37,7 @@ export default function AuditPage() {
     const interval = setInterval(async () => {
       const logs = await store.getAuditLogs();
       setAuditLogs(logs || []);
-    }, 3000);
+    }, 60000);
 
     const handleStoreChange = async () => {
       const logs = await store.getAuditLogs();

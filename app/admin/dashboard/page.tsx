@@ -368,10 +368,7 @@ function AdminDashboardContent() {
       syncChannel.onmessage = () => loadData();
     }
 
-    // Backup polling every 30s
-    const interval = setInterval(loadData, 30000);
     return () => {
-      clearInterval(interval);
       if (cleanupRealtime) cleanupRealtime();
       if (syncChannel) syncChannel.close();
     };
