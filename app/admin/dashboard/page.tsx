@@ -477,12 +477,16 @@ function AdminDashboardContent() {
 
   const handleCreateParent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newParentName || !newParentEmail) {
-      showToast('กรุณากรอกชื่อและอีเมลผู้ปกครอง');
+    if (!newParentName || !newParentEmail || !newParentPhone) {
+      showToast('กรุณากรอกข้อมูล: ชื่อ-นามสกุล, อีเมล และเบอร์โทรศัพท์ผู้ปกครองให้ครบถ้วน');
       return;
     }
     if (!hoursToAdd) {
-      showToast('กรุณาเลือกจำนวนโควต้า/คลาสที่ซื้อ');
+      showToast('กรุณาเลือก คลาส & โควต้าที่ซื้อ');
+      return;
+    }
+    if (!paymentAmount || !paymentPayerName || !paymentBank) {
+      showToast('กรุณากรอกข้อมูลหลักฐานการชำระเงินให้ครบถ้วน (จำนวนเงินที่โอน, ชื่อบัญชีผู้โอน, ธนาคารต้นทาง)');
       return;
     }
 

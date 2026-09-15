@@ -325,34 +325,20 @@ export const store = {
   },
 
   async getChildren(parentId?: string): Promise<Child[]> {
-    if (!isSupabaseConfigured || !supabase) return [];
-    
-    // SWR Pattern
-    const cached = getLocal('CHILDREN_CACHE', []);
-    
-    supabase.from('children').select('*').order('id').then(({ data, error }) => {
-      if (!error && data) {
-        setLocal('CHILDREN_CACHE', data);
-      }
-    }).then(undefined, err => console.error(err));
-
-    let returnData = cached;
-    if (cached.length === 0) {
+    if (isSupabaseConfigured && supabase) {
       try {
         let query = supabase.from('children').select('*').order('id');
         if (parentId) query = query.eq('parent_id', parentId);
         const { data, error } = await query;
         if (!error && data) {
           setLocal('CHILDREN_CACHE', data);
-          returnData = data;
+          return data;
         }
       } catch (e) {}
     }
-
-    if (parentId && returnData.length > 0) {
-      return returnData.filter(c => c.parent_id === parentId);
-    }
-    return returnData;
+    const cached = getLocal<Child[]>('CHILDREN_CACHE', []);
+    if (parentId && cached.length > 0) return cached.filter(c => c.parent_id === parentId);
+    return cached;
   },
 
   async getChildById(id: string): Promise<Child | null> {
@@ -383,63 +369,34 @@ export const store = {
   },
 
   async getBookings(childId?: string, date?: string): Promise<Booking[]> {
-    if (!isSupabaseConfigured || !supabase) return [];
-    
-    const cached = getLocal('BOOKINGS_CACHE', []);
-    
-    // Background fetch (fetch all to keep global cache in sync, then filter later)
-    let qFetch = supabase.from('bookings').select('*').order('id');
-    
-    qFetch.then(async ({ data, error }) => {
-      if (!error && data) {
-        const children = await this.getChildren();
-        const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
-        const mapped = data.map(b => {
-          const c = childrenMap.get(b.child_id);
-          return {
-            ...b,
-            child_nickname: c?.nickname,
-            child_full_name: c?.full_name,
-            course_name: c?.course_name || 'Orca Cubs',
-            booked_by_role: 'parent'
-          };
-        });
-        setLocal('BOOKINGS_CACHE', mapped);
-      }
-    }).then(undefined, err => console.error(err));
-
-    let returnData = cached;
-    if (cached.length === 0 || (childId && !cached.some((b: any) => b.child_id === childId))) {
+    if (isSupabaseConfigured && supabase) {
       try {
-        let q = supabase.from('bookings').select('*').order('id');
-        if (childId) q = q.eq('child_id', childId);
-        if (date) q = q.eq('booking_date', date);
-        const { data, error } = await q;
+        let query = supabase.from('bookings').select('*').order('id');
+        if (childId) query = query.eq('child_id', childId);
+        if (date) query = query.eq('booking_date', date);
+        const { data, error } = await query;
         if (!error && data) {
+          // fetch children for names
           const children = await this.getChildren();
           const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
-          returnData = data.map(b => {
+          const mapped = data.map(b => {
             const c = childrenMap.get(b.child_id);
             return {
               ...b,
               child_nickname: c?.nickname,
               child_full_name: c?.full_name,
-              course_name: c?.course_name || 'Orca Cubs',
-              booked_by_role: 'parent'
+              course_name: c?.course_name || 'Orca Cubs'
             };
           });
-          setLocal('BOOKINGS_CACHE', returnData);
+          if (!childId && !date) setLocal('BOOKINGS_CACHE', mapped);
+          return mapped;
         }
-      } catch (e) {}
+      } catch(e) {}
     }
-
-    if (childId && returnData.length > 0) {
-      returnData = returnData.filter((b: any) => b.child_id === childId);
-    }
-    if (date && returnData.length > 0) {
-      returnData = returnData.filter((b: any) => b.booking_date === date);
-    }
-    return returnData;
+    let cached = getLocal<Booking[]>('BOOKINGS_CACHE', []);
+    if (childId) cached = cached.filter(b => b.child_id === childId);
+    if (date) cached = cached.filter(b => b.booking_date === date);
+    return cached;
   },
 
   async saveBooking(booking: Booking): Promise<void> {
@@ -540,7 +497,10 @@ export const store = {
   async getAuditLogs(): Promise<AuditLog[]> {
     if (isSupabaseConfigured && supabase) {
       const { data } = await supabase.from('audit_logs').select('*').order('id').order('created_at', { ascending: false });
-      if (data && data.length > 0) return data;
+      if (data) {
+        setLocal(STORAGE_KEYS.AUDIT_LOGS, data);
+        return data;
+      }
     }
     initLocalSeed();
     return getLocal<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
