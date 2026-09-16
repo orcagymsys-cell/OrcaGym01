@@ -1,9 +1,17 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Toast from '@/components/Toast';
+
+// Keys that are safe to clear — old cache format, diagnostic keys, oversized data
+const STALE_KEYS = [
+  'CHILDREN_CACHE', 'BOOKINGS_CACHE', 'USERS_CACHE',
+  'ORCA_KIDS_ERR', 'ORCA_KIDS_DATA_LEN', 'ORCA_KIDS_DUMP',
+  'ORCA_FILTER_DEBUG', 'CHILDREN_ERROR',
+];
+const CLEANUP_VERSION = 'orca_cleanup_v3';
 
 export default function AppLayoutWrapper({
   children,
@@ -11,6 +19,28 @@ export default function AppLayoutWrapper({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    // Run cleanup only once per browser (version key prevents repeat)
+    if (localStorage.getItem(CLEANUP_VERSION)) return;
+    try {
+      // Remove stale cache keys that bloat localStorage
+      STALE_KEYS.forEach(k => localStorage.removeItem(k));
+      // Remove stale Supabase auth tokens
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k);
+      });
+      // Strip base64 payment slips from users cache (major space hog)
+      const usersRaw = localStorage.getItem('ORCA_USERS');
+      if (usersRaw) {
+        const users = JSON.parse(usersRaw);
+        const cleaned = users.map((u: any) => { const {payment_slip, ...rest} = u; return rest; });
+        localStorage.setItem('ORCA_USERS', JSON.stringify(cleaned));
+      }
+      localStorage.setItem(CLEANUP_VERSION, '1');
+    } catch (_) {}
+  }, []);
+
   const isAuthPage = pathname === '/' || pathname === '/register' || pathname === '/reset-password';
 
   if (isAuthPage) {
