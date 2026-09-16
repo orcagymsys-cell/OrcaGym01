@@ -95,12 +95,6 @@ export default function HomePage() {
 
         const resolvedUserId = ((freshUser || currentUser)?.id || (freshUser || currentUser)?.user_id || parentUserId)?.trim();
         const kidsToSave = allKids.filter(k => k.parent_id?.trim() === resolvedUserId);
-        
-        // Debug: save filter result
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('ORCA_FILTER_DEBUG', `all:${allKids.length}, filtered:${kidsToSave.length}, uid:[${resolvedUserId}], firstPid:[${allKids[0]?.parent_id}]`);
-        }
-        
         setChildren(kidsToSave);
         store.setLocal('ORCA_MY_KIDS', kidsToSave);
         
@@ -224,26 +218,10 @@ export default function HomePage() {
   }
 
   if (loading) {
-    let debugText = "กำลังโหลดข้อมูล...";
-    if (typeof window !== 'undefined') {
-      const cache = localStorage.getItem('CHILDREN_CACHE');
-      if (!cache) debugText = "กำลังโหลดข้อมูล... (Cache Empty)";
-      else {
-        const user = store.getCurrentUser();
-        if (user) {
-          const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
-          const filterDebug = localStorage.getItem('ORCA_FILTER_DEBUG') || 'not run yet';
-          debugText = `${filterDebug}`;
-        } else {
-          debugText = "กำลังโหลดข้อมูล... (No User)";
-        }
-      }
-    }
-
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
         <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-600 font-bold">{debugText}</p>
+        <p className="text-slate-600 font-bold">กำลังโหลดข้อมูล...</p>
       </div>
     );
   }

@@ -317,19 +317,9 @@ export const store = {
         let query = supabase.from('children').select('*').order('id');
         // ALWAYS fetch all children and filter locally to avoid weird RLS/eq bugs
         const { data, error } = await query;
-        if (typeof window !== 'undefined') {
-          if (error) localStorage.setItem('ORCA_KIDS_ERR', JSON.stringify(error));
-          else {
-             localStorage.setItem('ORCA_KIDS_DATA_LEN', String(data?.length || 0));
-             localStorage.removeItem('ORCA_KIDS_ERR');
-          }
-        }
         if (!error) {
           const freshData = data || [];
           const filtered = parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
-          if (typeof window !== 'undefined') {
-             localStorage.setItem('ORCA_KIDS_DUMP', `pid:${parentId}, flen:${filtered.length}, yihwa:${freshData.find(c => c.nickname === 'ยี่หวา')?.parent_id}`);
-          }
           if (parentId) {
             // Merge parent's children into the existing cache
             const existingCache = getLocal<Child[]>('CHILDREN_CACHE', []);
