@@ -518,9 +518,11 @@ function AdminDashboardContent() {
       showToast('กรุณาเลือก คลาส & โควต้าที่ซื้อ');
       return;
     }
-    if (!paymentAmount || !paymentPayerName || !paymentBank) {
-      showToast('กรุณากรอกข้อมูลหลักฐานการชำระเงินให้ครบถ้วน (จำนวนเงินที่โอน, ชื่อบัญชีผู้โอน, ธนาคารต้นทาง)');
-      return;
+    if (hoursToAdd !== 2) {
+      if (!paymentAmount || !paymentPayerName || !paymentBank) {
+        showToast('กรุณากรอกข้อมูลหลักฐานการชำระเงินให้ครบถ้วน (จำนวนเงินที่โอน, ชื่อบัญชีผู้โอน, ธนาคารต้นทาง)');
+        return;
+      }
     }
 
     // Warn if payment amount is below standard price
@@ -1642,6 +1644,7 @@ function AdminDashboardContent() {
                       className="flex-1 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
                       <option value="Orca Cubs">Orca Cubs (4-10 ปี)</option>
+                      <option value="Orca Flip">Orca Flip (6-15+ ปี)</option>
                       <option value="Mega Orca">Mega Orca (5-15 ปี)</option>
                     </select>
                     <select
@@ -1650,6 +1653,7 @@ function AdminDashboardContent() {
                       className="w-28 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
                       <option value="">-</option>
+                      <option value={2}>2 ครั้ง (ฟรี)</option>
                       <option value={1}>1 ครั้ง</option>
                       <option value={6}>6 ครั้ง</option>
                       <option value={12}>12 ครั้ง</option>
@@ -2855,6 +2859,7 @@ function AdminDashboardContent() {
                     className="w-full h-11 px-3 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
                   >
                     <option value="Orca Cubs">Orca Cubs (อายุ 4-10 ปี)</option>
+                    <option value="Orca Flip">Orca Flip (อายุ 6-15+ ปี)</option>
                     <option value="Mega Orca">Mega Orca (อายุ 5-15 ปี)</option>
                   </select>
                 </div>
@@ -2867,6 +2872,7 @@ function AdminDashboardContent() {
                     className="w-full h-11 px-3 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
                   >
                     <option value="">-- เลือกจำนวนครั้ง --</option>
+                    <option value={2}>2 ครั้ง (ทดลองเรียนฟรี)</option>
                     <option value={1}>1 ครั้ง</option>
                     <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
                     <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
