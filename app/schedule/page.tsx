@@ -78,50 +78,40 @@ function getChildColor(index: number) {
 
 export default function SchedulePage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
   
   const requestRef = useRef(0);
-  const [isAdmin, setIsAdmin] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const user = store.getCurrentUser();
-    return user?.role === 'admin';
-  });
-  const [children, setChildren] = useState<Child[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (!user || user.role === 'admin') return [];
-    return store.getChildrenSync().filter(k => k.parent_id === user.id);
-  });
-  const [allChildren, setAllChildren] = useState<Child[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (user?.role === 'admin') return store.getChildrenSync();
-    return [];
-  });
-  const [parents, setParents] = useState<UserProfile[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (user?.role === 'admin') return store.getUsersSync().filter(u => u.role === 'parent');
-    return [];
-  });
-  const [allBookings, setAllBookings] = useState<Booking[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (!user) return [];
-    if (user.role === 'admin') return store.getBookingsSync();
-    const kids = store.getChildrenSync().filter(k => k.parent_id === user.id);
-    const kidIds = kids.map(k => k.id);
-    return store.getBookingsSync().filter(b => kidIds.includes(b.child_id));
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const user = store.getCurrentUser();
-    if (!user) return true;
-    if (user.role === 'admin') return store.getBookingsSync().length === 0;
-    const kids = store.getChildrenSync().filter(k => k.parent_id === user.id);
-    return kids.length === 0;
-  });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [allChildren, setAllChildren] = useState<Child[]>([]);
+  const [parents, setParents] = useState<UserProfile[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
+
+  useEffect(() => {
+    const user = store.getCurrentUser();
+    if (user) {
+      if (user.role === 'admin') {
+        setIsAdmin(true);
+        const bCache = store.getBookingsSync();
+        if (bCache.length > 0) {
+          setAllBookings(bCache);
+          setParents(store.getUsersSync().filter(u => u.role === 'parent'));
+          setAllChildren(store.getChildrenSync());
+          setLoading(false);
+        }
+      } else {
+        const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
+        if (kidsCache.length > 0) {
+          setChildren(kidsCache);
+          const myKidIds = kidsCache.map(k => k.id);
+          setAllBookings(store.getBookingsSync().filter(b => myKidIds.includes(b.child_id)));
+          setLoading(false);
+        }
+      }
+    }
+    setMounted(true);
+  }, []);
 
   const loadData = async () => {
     const reqId = ++requestRef.current;

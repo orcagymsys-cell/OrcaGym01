@@ -117,32 +117,27 @@ function getThemeStyles(themeColor?: string, displayTitle?: string): ThemeStyleR
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-  
-  const [isAdmin, setIsAdmin] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const user = store.getCurrentUser();
-    return user?.role === 'admin';
-  });
-  const [courses, setCourses] = useState<CourseConfig[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const cached = localStorage.getItem('COURSES_CACHE');
-      if (cached) return JSON.parse(cached);
-    } catch(e) {}
-    return [];
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
+  const [courses, setCourses] = useState<CourseConfig[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     try {
       const cached = localStorage.getItem('COURSES_CACHE');
       if (cached) {
         const data = JSON.parse(cached);
-        if (data && data.length > 0) return false;
+        if (data && data.length > 0) {
+          setCourses(data);
+          setLoading(false);
+        }
       }
     } catch(e) {}
-    return true;
-  });
+    
+    const user = store.getCurrentUser();
+    if (user?.role === 'admin') setIsAdmin(true);
+    
+    setMounted(true);
+  }, []);
 
   // Edit / Create Modal State
   const [showEditModal, setShowEditModal] = useState(false);
