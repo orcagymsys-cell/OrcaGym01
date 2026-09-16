@@ -210,7 +210,7 @@ export default function HomePage() {
         if (user) {
           const err = localStorage.getItem('ORCA_KIDS_ERR') || 'None';
           const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
-          debugText = `isConfigured: ${isSupabaseConfigured}, key: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 5)}`;
+          debugText = `isConf:${isSupabaseConfigured} | len:${dlen} | err:${err.substring(0, 40)}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
