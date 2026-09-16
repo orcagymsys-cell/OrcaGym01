@@ -1864,6 +1864,19 @@ function AdminDashboardContent() {
                       .map((p) => {
                         const pChildren = children.filter((c) => isChildOfParent(c, p));
                         const pChildrenCount = pChildren.length;
+                        
+                        // Map internal course_name to requested format
+                        const formatCourseName = (cName) => {
+                          if (!cName) return 'ORCA CUBS AGE 6-10';
+                          const upper = cName.toUpperCase();
+                          if (upper.includes('FLIP')) return 'ORCA FLIP AGE 6-15+';
+                          if (upper.includes('MEGA')) return 'MEGA ORCA AGE 5-15';
+                          return 'ORCA CUBS AGE 6-10';
+                        };
+                        
+                        const parentCourseNames = Array.from(new Set(pChildren.map(c => formatCourseName(c.course_name))));
+                        const displayCourseName = parentCourseNames.length > 0 ? parentCourseNames.join(', ') : 'ORCA CUBS AGE 6-10';
+
                         const pBookingsCount = allBookings.filter(
                           (b) =>
                             b.status === 'confirmed' &&
@@ -1978,7 +1991,7 @@ function AdminDashboardContent() {
                               <td className="py-3.5 px-4 whitespace-nowrap">
                                 <div className="flex flex-col gap-1">
                                   <span className="inline-flex items-center gap-1 bg-cyan-50 text-cyan-800 border border-cyan-200 font-semibold px-2 py-0.5 rounded-full text-xs">
-                                    <span>Orca Cubs</span>
+                                    <span>{displayCourseName}</span>
                                     <span className="text-slate-300">|</span>
                                     <span className="font-bold text-blue-700">
                                       {pBookingsCount}/{purchasedHoursNum} ครั้ง ({pkgDurationMonths} เดือน)
@@ -2061,7 +2074,7 @@ function AdminDashboardContent() {
                                            (p.payment_datetime ? `• วัน-เวลาโอน: ${p.payment_datetime.replace('T', ' ')} น.\n` : '') +
                                            (p.payment_ref_no ? `• เลขอ้างอิงสลิป: ${p.payment_ref_no}\n` : '');
                                        }
-                                       const msg = `🐳 บัญชีใช้งานระบบ ORCA GYMNASTICS\n---------------------------------\nUsername: ${p.user_id}\nPassword: ${p.password || '123'}\nผู้ปกครอง: ${p.name}\nคลาส & โควต้าที่ซื้อ:\n• Orca Cubs: ${purchasedHoursNum} ครั้ง\n${payInfo}---------------------------------\nกรุณานำ Username และ Password\nไปเข้าสู่ระบบเพื่อลงทะเบียนข้อมูลบุตรหลาน (Add Family Member)`;
+                                       const msg = `🐳 บัญชีใช้งานระบบ ORCA GYMNASTICS\n---------------------------------\nUsername: ${p.user_id}\nPassword: ${p.password || '123'}\nผู้ปกครอง: ${p.name}\nคลาส & โควต้าที่ซื้อ:\n• ${displayCourseName}: ${purchasedHoursNum} ครั้ง\n${payInfo}---------------------------------\nกรุณานำ Username และ Password\nไปเข้าสู่ระบบเพื่อลงทะเบียนข้อมูลบุตรหลาน (Add Family Member)`;
                                        setCopyMessage(msg);
                                      }}
                                      className="group w-9 h-9 flex items-center justify-center bg-sky-100 hover:bg-sky-200 border border-sky-300 rounded-2xl transition-all shadow-2xs cursor-pointer"
