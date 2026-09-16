@@ -225,12 +225,12 @@ export const store = {
   getChildrenSync(): Child[] { 
     const myKids = getLocal<Child[]>('ORCA_MY_KIDS', []);
     if (myKids.length > 0) return myKids;
-    return getLocal<Child[]>('CHILDREN_CACHE', []); 
+    return getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []); 
   },
   getBookingsSync(): Booking[] { 
     const myBookings = getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
     if (myBookings.length > 0) return myBookings;
-    return getLocal<Booking[]>('BOOKINGS_CACHE', []); 
+    return getLocal<Booking[]>(STORAGE_KEYS.BOOKINGS, []); 
   },
   getAuditLogsSync(): AuditLog[] { return getLocal(STORAGE_KEYS.AUDIT_LOGS, []); },
   getSlotQuotasSync(): Record<string, any> { return getLocal(STORAGE_KEYS.QUOTAS, {}); },
@@ -346,6 +346,7 @@ export const store = {
         const { data, error } = await supabase.from('children').select('*').order('id');
         if (!error) {
           const freshData = data || [];
+          setLocal(STORAGE_KEYS.CHILDREN, freshData);
           
           // Auto-update ORCA_MY_KIDS cache for parents so navigation is instantly fast
           if (typeof window !== 'undefined') {
@@ -362,13 +363,16 @@ export const store = {
           return parentId ? freshData.filter(c => c.parent_id?.trim() === parentId?.trim()) : freshData;
         }
       } catch (e) {
+        if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEYS.CHILDREN);
         return [];
       }
     }
-    // Fallback: return from ORCA_MY_KIDS if available
-    const myKids = getLocal<Child[]>('ORCA_MY_KIDS', []);
-    if (parentId) return myKids.filter(c => c.parent_id?.trim() === parentId?.trim());
-    return myKids;
+    initLocalSeed();
+    let children = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+    if (parentId) {
+      children = children.filter(c => c.parent_id?.trim() === parentId?.trim());
+    }
+    return children;
   },
 
   async getChildById(id: string): Promise<Child | null> {
@@ -419,7 +423,7 @@ export const store = {
             };
           });
           
-          if (!childId && !date) setLocal('BOOKINGS_CACHE', mapped);
+          if (!childId && !date) setLocal(STORAGE_KEYS.BOOKINGS, mapped);
           
           // Auto-update ORCA_MY_BOOKINGS cache for parents
           if (typeof window !== 'undefined') {
