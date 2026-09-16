@@ -210,7 +210,7 @@ export default function HomePage() {
         if (user) {
           const parsed = JSON.parse(cache);
           const firstKid = parsed[0];
-          debugText = `Vercel Supabase: ${isSupabaseConfigured ? 'ON' : 'OFF'} | user: ${user?.id} | kid: ${firstKid?.parent_id}`;
+          debugText = `DB: ${process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(8, 20)} | user: ${user?.id} | kid: ${firstKid?.parent_id}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
