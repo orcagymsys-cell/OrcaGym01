@@ -326,6 +326,13 @@ export const store = {
         let query = supabase.from('children').select('*').order('id');
         if (parentId) query = query.eq('parent_id', parentId);
         const { data, error } = await query;
+        if (typeof window !== 'undefined') {
+          if (error) localStorage.setItem('ORCA_KIDS_ERR', JSON.stringify(error));
+          else {
+             localStorage.setItem('ORCA_KIDS_DATA_LEN', String(data?.length || 0));
+             localStorage.removeItem('ORCA_KIDS_ERR');
+          }
+        }
         if (!error) {
           const freshData = data || [];
           if (parentId) {

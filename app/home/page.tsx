@@ -208,9 +208,9 @@ export default function HomePage() {
       else {
         const user = store.getCurrentUser();
         if (user) {
-          const parsed = JSON.parse(cache);
-          const firstKid = parsed[0];
-          debugText = `DB: ${process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(8, 20)} | user: ${user?.id} | kid: ${firstKid?.parent_id}`;
+          const err = localStorage.getItem('ORCA_KIDS_ERR') || 'None';
+          const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
+          debugText = `Supabase: len=${dlen}, err=${err.substring(0, 50)}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
