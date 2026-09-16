@@ -204,14 +204,13 @@ export default function HomePage() {
     let debugText = "กำลังโหลดข้อมูล...";
     if (typeof window !== 'undefined') {
       const cache = localStorage.getItem('CHILDREN_CACHE');
-      const uCache = localStorage.getItem('orca_current_user');
       if (!cache) debugText = "กำลังโหลดข้อมูล... (Cache Empty)";
       else {
         const user = store.getCurrentUser();
         if (user) {
           const parsed = JSON.parse(cache);
           const kids = parsed.filter((k: any) => k.parent_id === user.id);
-          debugText = \`กำลังโหลดข้อมูล... (Cache: \${parsed.length}, Kids: \${kids.length})\`;
+          debugText = `กำลังโหลดข้อมูล... (Cache: ${parsed.length}, Kids: ${kids.length})`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
