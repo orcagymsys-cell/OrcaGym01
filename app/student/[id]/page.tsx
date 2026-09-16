@@ -719,40 +719,24 @@ function MyCourseWeeklyMatrix({
   onClose?: () => void;
   onCancelBooking?: (id: string) => void;
 }) {
-  const days = [
-    { key: 1, nameEn: 'Mon', nameTh: 'จันทร์' },
-    { key: 2, nameEn: 'Tue', nameTh: 'อังคาร' },
-    { key: 3, nameEn: 'Wed', nameTh: 'พุธ' },
-    { key: 4, nameEn: 'Thu', nameTh: 'พฤหัส' },
-    { key: 5, nameEn: 'Fri', nameTh: 'ศุกร์' },
-    { key: 6, nameEn: 'Sat', nameTh: 'เสาร์' },
-    { key: 0, nameEn: 'Sun', nameTh: 'อาทิตย์' },
-  ];
-
-  const timeSlots = [
-    { label: '09:00\n10:30', slots: ['09:00-10:30', '09:00 10:30'] },
-    { label: '10:30\n12:00', slots: ['10:30-12:00', '10:30 12:00'] },
-    { label: '12:00\n13:30', slots: ['12:00-13:30', '12:00 13:00', '12:00 13:30'] },
-    { label: '13:00\n14:30', slots: ['13:00-14:30', '13:00 14:30'] },
-    { label: '14:30\n16:00', slots: ['14:30-16:00', '14:30 16:00'] },
-    { label: '16:00\n17:00', slots: ['16:00-17:30', '16:00-17:00', '16:00 17:00'] },
-    { label: '17:30\n19:30', slots: ['17:30-19:30', '17:30 19:30'] },
-  ];
-
   const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
   const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
 
-  const formatDateLabel = (dateStr: string) => {
+  // Sort bookings chronologically
+  const sortedBookings = [...activeBookings].sort((a, b) => {
+    const dateA = new Date(a.booking_date).getTime();
+    const dateB = new Date(b.booking_date).getTime();
+    if (dateA !== dateB) return dateA - dateB;
+    return (a.time_slot || '').localeCompare(b.time_slot || '');
+  });
+
+  const formatThaiDate = (dateStr: string) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const daysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayName = daysEn[d.getDay()];
-    const dayNum = String(d.getDate()).padStart(2, '0');
-    const monthName = months[d.getMonth()];
-    const year = d.getFullYear();
-    return `${dayName}-${dayNum}-${monthName}-${year}`;
+    const daysTh = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const monthsTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return `${daysTh[d.getDay()]} ${d.getDate()} ${monthsTh[d.getMonth()]} ${d.getFullYear()}`;
   };
 
   return (
@@ -805,83 +789,70 @@ function MyCourseWeeklyMatrix({
         </div>
       </div>
 
-      {/* Weekly Schedule Matrix Table */}
-      <div className="bg-white border-2 border-[#001a3a] rounded-3xl overflow-hidden shadow-md">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[750px] text-xs text-center border-collapse">
-            <thead>
-              <tr className="bg-[#001a3a] text-white font-extrabold text-xs tracking-wide">
-                <th className="p-3 border-b border-r border-[#002b55] w-28 bg-[#001a3a] text-center">
-                  Day / Time
-                </th>
-                {timeSlots.map((col, idx) => (
-                  <th key={idx} className="p-3 border-b border-r border-[#002b55] text-center whitespace-pre-line font-black">
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {days.map((d) => (
-                <tr key={d.key} className="border-b border-[#001a3a]/30 hover:bg-sky-50/30 transition-colors">
-                  {/* Day Label Column */}
-                  <td className="p-3 border-r border-[#001a3a]/30 font-extrabold text-[#001a3a] bg-slate-50 text-center whitespace-nowrap">
-                    {d.nameEn} ({d.nameTh})
-                  </td>
+      {/* List View Container */}
+      <div className="bg-slate-50 p-4 sm:p-6 rounded-3xl border border-slate-200">
+        <div className="mb-4">
+          <h2 className="text-lg font-black text-[#001a3a] flex items-center gap-2">
+            <span>📅</span> ตารางเรียนของน้อง (My Schedule)
+          </h2>
+          <p className="text-slate-500 text-xs font-bold mt-1">เรียงตามลำดับวันที่จอง (Chronological Order)</p>
+        </div>
 
-                  {/* Time Slot Columns */}
-                  {timeSlots.map((col, idx) => {
-                    const cellBookings = activeBookings.filter((b) => {
-                      if (!b.booking_date) return false;
-                      const dateObj = new Date(b.booking_date);
-                      if (isNaN(dateObj.getTime())) return false;
-                      if (dateObj.getDay() !== d.key) return false;
+        <div className="space-y-3">
+          {sortedBookings.length === 0 ? (
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center">
+              <span className="text-4xl block mb-2 opacity-50">📅</span>
+              <p className="text-slate-500 font-bold">ยังไม่มีการจองคลาสเรียน</p>
+            </div>
+          ) : (
+            sortedBookings.map((b, idx) => {
+              const bookingDate = new Date(b.booking_date);
+              const isPast = bookingDate < new Date(new Date().setHours(0,0,0,0));
+              
+              const colors = [
+                { bg: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800' },
+                { bg: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-800' },
+                { bg: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800' },
+                { bg: 'bg-purple-500', badge: 'bg-purple-100 text-purple-800' }
+              ];
+              const color = isPast ? { bg: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600' } : colors[idx % colors.length];
 
-                      const slotClean = (b.time_slot || '').replace(/\s+/g, '');
-                      return col.slots.some(s => slotClean.includes(s.replace(/\s+/g, '')) || s.replace(/\s+/g, '').includes(slotClean));
-                    });
-
-                    return (
-                      <td key={idx} className="p-2 border-r border-[#001a3a]/30 align-middle min-w-[95px] max-w-[125px] h-16">
-                        {cellBookings.length === 0 ? (
-                          <span className="text-slate-300 font-normal text-xs">-</span>
-                        ) : (
-                          <div className="space-y-1">
-                            {cellBookings.map((b) => (
-                              <div
-                                key={b.id}
-                                className="bg-sky-100/90 border border-sky-300 rounded-xl p-1.5 text-center text-xs relative shadow-2xs hover:shadow-xs transition-all"
-                              >
-                                <div className="flex items-center justify-between font-extrabold text-[#001a3a] text-[11px] leading-tight">
-                                  <span className="truncate pr-1">{b.course_name || child.course_name}</span>
-                                  {onCancelBooking && (
-                                    <button
-                                      type="button"
-                                      onClick={() => onCancelBooking(b.id)}
-                                      title="ยกเลิกการจอง"
-                                      className="text-rose-600 hover:text-rose-800 font-black text-[11px] border-none bg-transparent cursor-pointer shrink-0 leading-none px-0.5"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-600 font-bold mt-1 flex items-center justify-center gap-0.5">
-                                  <span>🗓️</span>
-                                  <span className="truncate">{formatDateLabel(b.booking_date)}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              return (
+                <div key={b.id} className={`bg-white border ${isPast ? 'border-slate-200 opacity-70' : 'border-[#001a3a]/10'} rounded-2xl p-4 sm:p-5 shadow-sm relative overflow-hidden flex justify-between items-center transition-all hover:shadow-md`}>
+                  <div className={`absolute top-0 left-0 w-2 h-full ${color.bg}`}></div>
+                  <div className="pl-2">
+                    <div className={`font-bold text-sm mb-0.5 ${isPast ? 'text-slate-500' : 'text-slate-800'}`}>
+                      {formatThaiDate(b.booking_date)}
+                      {isPast && <span className="ml-2 text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-black">เรียนแล้ว</span>}
+                    </div>
+                    <div className={`font-black text-lg sm:text-xl mb-1.5 ${isPast ? 'text-slate-600' : 'text-[#001a3a]'}`}>
+                      {b.time_slot}
+                    </div>
+                    <div className={`inline-block ${color.badge} text-xs px-2 py-0.5 rounded-md font-bold`}>
+                      คลาส: {b.course_name || child.course_name}
+                    </div>
+                  </div>
+                  
+                  {onCancelBooking && !isPast && (
+                    <button
+                      type="button"
+                      onClick={() => onCancelBooking(b.id)}
+                      title="ยกเลิกการจอง"
+                      className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2 sm:p-2.5 rounded-full transition-colors cursor-pointer shrink-0 ml-4 border border-rose-100"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+
