@@ -16,15 +16,6 @@ export const supabase = isSupabaseConfigured
         persistSession: false,
         autoRefreshToken: false,
         detectSessionInUrl: false
-      },
-      global: {
-        fetch: (url, options) => {
-          // 3-second timeout to prevent UI freezing on bad DNS
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000);
-          return fetch(url, { ...options, signal: controller.signal })
-            .finally(() => clearTimeout(timeoutId));
-        }
       }
     })
   : null;
