@@ -17,14 +17,15 @@ export default function StudentDashboardPage() {
 
   const requestRef = useRef(0);
   const [mounted, setMounted] = useState(false);
+  const resolvedChildId = decodeURIComponent(childId || '').trim();
   const [child, setChild] = useState<Child | null>(() => {
     if (typeof window === 'undefined') return null;
     const all = store.getChildrenSync();
-    return all.find(c => c.id === childId) || null;
+    return all.find(c => c.id === resolvedChildId) || null;
   });
   const [bookings, setBookings] = useState<Booking[]>(() => {
     if (typeof window === 'undefined') return [];
-    return store.getBookingsSync().filter(b => b.child_id === childId);
+    return store.getBookingsSync().filter(b => b.child_id === resolvedChildId);
   });
   const [loading, setLoading] = useState(false);
   const [parentPurchased, setParentPurchased] = useState<number>(6);
@@ -61,7 +62,6 @@ export default function StudentDashboardPage() {
         // 1. Synchronous Cache Load (SWR)
         const allChildrenSync = store.getChildrenSync();
         let cSync = allChildrenSync.find(x => x.id === targetId);
-        if (!cSync && allChildrenSync.length > 0) cSync = allChildrenSync[0];
         if (cSync) setChild(cSync);
         
         const u = store.getCurrentUser();
@@ -86,7 +86,6 @@ export default function StudentDashboardPage() {
         if (reqId !== requestRef.current) return;
 
         let c = allC.find(x => x.id === targetId);
-        if (!c && allC.length > 0) c = allC[0];
         if (!c) {
           c = {
             id: targetId,

@@ -42,11 +42,12 @@ export default function BookingCalendarPage() {
   const requestRef = useRef(0);
   const minParentDate = getMinParentBookingDate();
   const todayStr = new Date().toISOString().split('T')[0];
+  const resolvedChildId = decodeURIComponent(childId || '').trim();
 
   const [child, setChild] = useState<Child | null>(() => {
     if (typeof window === 'undefined') return null;
     const all = store.getChildrenSync();
-    return all.find(c => c.id === childId) || null;
+    return all.find(c => c.id === resolvedChildId) || null;
   });
   const [selectedDate, setSelectedDate] = useState<string>(minParentDate);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -61,16 +62,16 @@ export default function BookingCalendarPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!childId) return;
+      if (!resolvedChildId) return;
       const reqId = ++requestRef.current;
       
       // 1. SWR Instant Load
       const allChildrenSync = store.getChildrenSync();
-      let cSync = allChildrenSync.find(x => x.id === childId);
+      let cSync = allChildrenSync.find(x => x.id === resolvedChildId);
       if (cSync) {
         if ((cSync.total_hours - cSync.used_hours) <= 0) {
           showToast('⚠️ จำนวนชั่วโมงเรียนหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
-          router.push(`/student/${childId}`);
+          router.push(`/student/${resolvedChildId}`);
           return;
         }
         setChild(cSync);
@@ -88,10 +89,11 @@ export default function BookingCalendarPage() {
       
       if (reqId !== requestRef.current) return;
       
-      let c = allC.find(x => x.id === childId);
+      let c = allC.find(x => x.id === resolvedChildId);
       if (c) {
         if ((c.total_hours - c.used_hours) <= 0) {
-          router.push(`/student/${childId}`);
+          showToast('⚠️ จำนวนชั่วโมงเรียนหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
+          router.push(`/student/${resolvedChildId}`);
           return;
         }
         setChild(c);
