@@ -326,6 +326,10 @@ export const store = {
         }
         if (!error) {
           const freshData = data || [];
+          const filtered = parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
+          if (typeof window !== 'undefined') {
+             localStorage.setItem('ORCA_KIDS_DUMP', `pid:${parentId}, flen:${filtered.length}, yihwa:${freshData.find(c => c.nickname === 'ยี่หวา')?.parent_id}`);
+          }
           if (parentId) {
             // Merge parent's children into the existing cache
             const existingCache = getLocal<Child[]>('CHILDREN_CACHE', []);

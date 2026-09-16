@@ -223,7 +223,8 @@ export default function HomePage() {
         if (user) {
           const err = localStorage.getItem('ORCA_KIDS_ERR') || 'None';
           const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
-          debugText = `isConf:${isSupabaseConfigured} | len:${dlen} | err:${err.substring(0, 40)}`;
+          const dump = localStorage.getItem('ORCA_KIDS_DUMP') || '';
+          debugText = `isConf:${isSupabaseConfigured} | len:${dlen} | dump:${dump.substring(0, 100)}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
@@ -567,7 +568,11 @@ export default function HomePage() {
           })
         )}
       </div>
-
+      
+      {/* DIAGNOSTIC */}
+      <div className="text-center text-xs text-gray-400 mt-8 mb-4">
+        {typeof window !== 'undefined' ? `MyKidsCache: ${store.getLocal('ORCA_MY_KIDS', []).length}, IsAdmin: ${store.getCurrentUser()?.role === 'admin'}` : 'SSR'}
+      </div>
 
     </div>
   );
