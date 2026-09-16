@@ -201,10 +201,27 @@ export default function HomePage() {
   }
 
   if (loading) {
+    let debugText = "กำลังโหลดข้อมูล...";
+    if (typeof window !== 'undefined') {
+      const cache = localStorage.getItem('CHILDREN_CACHE');
+      const uCache = localStorage.getItem('orca_current_user');
+      if (!cache) debugText = "กำลังโหลดข้อมูล... (Cache Empty)";
+      else {
+        const user = store.getCurrentUser();
+        if (user) {
+          const parsed = JSON.parse(cache);
+          const kids = parsed.filter((k: any) => k.parent_id === user.id);
+          debugText = \`กำลังโหลดข้อมูล... (Cache: \${parsed.length}, Kids: \${kids.length})\`;
+        } else {
+          debugText = "กำลังโหลดข้อมูล... (No User)";
+        }
+      }
+    }
+
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
         <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-600 font-bold">กำลังโหลดข้อมูล...</p>
+        <p className="text-slate-600 font-bold">{debugText}</p>
       </div>
     );
   }
