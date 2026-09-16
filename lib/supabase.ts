@@ -238,7 +238,7 @@ export const store = {
   async getUsers(): Promise<UserProfile[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('profiles').select('id,user_id,name,phone,email,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_slip,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at').order('created_at', { ascending: false });
         if (!error) {
           // Always use Supabase data (even empty array) and overwrite local cache
           // This handles deletions without causing flicker
@@ -343,7 +343,7 @@ export const store = {
   async getChildren(parentId?: string): Promise<Child[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('children').select('*').order('id');
+        const { data, error } = await supabase.from('children').select('id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at').order('id');
         if (!error) {
           const freshData = data || [];
           setLocal(STORAGE_KEYS.CHILDREN, freshData);
@@ -376,6 +376,12 @@ export const store = {
   },
 
   async getChildById(id: string): Promise<Child | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('children').select('*').eq('id', id).single();
+        if (!error && data) return data;
+      } catch(e) {}
+    }
     const children = await this.getChildren();
     return children.find(c => c.id === id) || null;
   },
