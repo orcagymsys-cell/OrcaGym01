@@ -116,9 +116,33 @@ function getThemeStyles(themeColor?: string, displayTitle?: string): ThemeStyleR
 }
 
 export default function PricingPage() {
-  const [courses, setCourses] = useState<CourseConfig[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const user = store.getCurrentUser();
+    return user?.role === 'admin';
+  });
+  const [courses, setCourses] = useState<CourseConfig[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cached = localStorage.getItem('COURSES_CACHE');
+      if (cached) return JSON.parse(cached);
+    } catch(e) {}
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const cached = localStorage.getItem('COURSES_CACHE');
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data && data.length > 0) return false;
+      }
+    } catch(e) {}
+    return true;
+  });
 
   // Edit / Create Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -452,11 +476,15 @@ export default function PricingPage() {
 
   
 
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#f8fafc]"></div>;
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
         <div className="w-12 h-12 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-[#001a3a] font-bold">กำลังโหลดข้อมูล...</p>
+        <p className="text-[#001a3a] font-bold">กำลังโหลดแพ็กเกจ...</p>
       </div>
     );
   }
