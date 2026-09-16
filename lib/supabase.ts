@@ -62,8 +62,29 @@ function setLocal(key: string, val: any) {
         syncChannel.postMessage({ key, value: val });
       } catch (err) {}
     }
-  } catch (e) {
-    console.error('LocalStorage write error:', e);
+  } catch (e: any) {
+    if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+      // localStorage full — clear stale diagnostic and cache keys, then retry
+      const staleKeys = [
+        'CHILDREN_CACHE', 'BOOKINGS_CACHE', 'USERS_CACHE',
+        'ORCA_KIDS_ERR', 'ORCA_KIDS_DATA_LEN', 'ORCA_KIDS_DUMP', 'ORCA_FILTER_DEBUG',
+        'CHILDREN_ERROR'
+      ];
+      staleKeys.forEach(k => { try { localStorage.removeItem(k); } catch(_) {} });
+      // Also clear any large base64 images stored in users
+      try {
+        const rawUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+        if (rawUsers) {
+          const users = JSON.parse(rawUsers);
+          const cleaned = users.map((u: any) => { const {payment_slip, ...rest} = u; return rest; });
+          localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(cleaned));
+        }
+      } catch(_) {}
+      // Retry write
+      try { localStorage.setItem(key, newVal); } catch(_) {}
+    } else {
+      console.error('LocalStorage write error:', e);
+    }
   }
 }
 
@@ -314,30 +335,21 @@ export const store = {
   async getChildren(parentId?: string): Promise<Child[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        let query = supabase.from('children').select('*').order('id');
-        // ALWAYS fetch all children and filter locally to avoid weird RLS/eq bugs
-        const { data, error } = await query;
+        const { data, error } = await supabase.from('children').select('*').order('id');
         if (!error) {
           const freshData = data || [];
-          const filtered = parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
-          if (parentId) {
-            // Merge parent's children into the existing cache
-            const existingCache = getLocal<Child[]>('CHILDREN_CACHE', []);
-            const otherKids = existingCache.filter(c => c.parent_id !== parentId);
-            setLocal('CHILDREN_CACHE', [...otherKids, ...freshData]);
-          } else {
-            setLocal('CHILDREN_CACHE', freshData);
-          }
-          return parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
+          // Don't write to CHILDREN_CACHE (too large, causes QuotaExceededError)
+          // Pages now use ORCA_MY_KIDS instead
+          return parentId ? freshData.filter(c => c.parent_id?.trim() === parentId?.trim()) : freshData;
         }
       } catch (e) {
-        if (typeof window !== 'undefined') localStorage.removeItem('CHILDREN_CACHE');
         return [];
       }
     }
-    const cached = getLocal<Child[]>('CHILDREN_CACHE', []);
-    if (parentId && cached.length > 0) return cached.filter(c => c.parent_id === parentId);
-    return cached;
+    // Fallback: return from ORCA_MY_KIDS if available
+    const myKids = getLocal<Child[]>('ORCA_MY_KIDS', []);
+    if (parentId) return myKids.filter(c => c.parent_id?.trim() === parentId?.trim());
+    return myKids;
   },
 
   async getChildById(id: string): Promise<Child | null> {
