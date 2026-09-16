@@ -225,10 +225,10 @@ export default function HomePage() {
       else {
         const user = store.getCurrentUser();
         if (user) {
-          const err = localStorage.getItem('ORCA_KIDS_ERR') || 'None';
           const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
-          const dump = localStorage.getItem('ORCA_KIDS_DUMP') || '';
-          debugText = `isConf:${isSupabaseConfigured} | len:${dlen} | dump:${dump.substring(0, 100)}`;
+          const myKids = store.getLocal('ORCA_MY_KIDS', []);
+          const resolvedId = user.id || (user as any).user_id;
+          debugText = `myKids:${myKids.length} | resolvedId:${resolvedId} | dbLen:${dlen}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
