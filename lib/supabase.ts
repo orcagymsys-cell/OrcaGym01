@@ -346,8 +346,19 @@ export const store = {
         const { data, error } = await supabase.from('children').select('*').order('id');
         if (!error) {
           const freshData = data || [];
-          // Don't write to CHILDREN_CACHE (too large, causes QuotaExceededError)
-          // Pages now use ORCA_MY_KIDS instead
+          
+          // Auto-update ORCA_MY_KIDS cache for parents so navigation is instantly fast
+          if (typeof window !== 'undefined') {
+            const currentUser = this.getCurrentUser();
+            if (currentUser && currentUser.role !== 'admin') {
+              const resolvedUserId = (currentUser.id || currentUser.user_id)?.trim();
+              if (resolvedUserId) {
+                const myKids = freshData.filter(c => c.parent_id?.trim() === resolvedUserId);
+                setLocal('ORCA_MY_KIDS', myKids);
+              }
+            }
+          }
+          
           return parentId ? freshData.filter(c => c.parent_id?.trim() === parentId?.trim()) : freshData;
         }
       } catch (e) {
@@ -407,7 +418,23 @@ export const store = {
               course_name: c?.course_name || 'Orca Cubs'
             };
           });
+          
           if (!childId && !date) setLocal('BOOKINGS_CACHE', mapped);
+          
+          // Auto-update ORCA_MY_BOOKINGS cache for parents
+          if (typeof window !== 'undefined') {
+            const currentUser = this.getCurrentUser();
+            if (currentUser && currentUser.role !== 'admin') {
+               const resolvedUserId = (currentUser.id || currentUser.user_id)?.trim();
+               if (resolvedUserId) {
+                 // Get parent's children IDs to filter bookings
+                 const myKidIds = new Set(children.filter(c => c.parent_id?.trim() === resolvedUserId).map(c => c.id));
+                 const myBookings = mapped.filter(b => myKidIds.has(b.child_id));
+                 setLocal('ORCA_MY_BOOKINGS', myBookings);
+               }
+            }
+          }
+          
           return mapped;
         }
       } catch (e) {
