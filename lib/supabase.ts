@@ -167,6 +167,25 @@ export function initLocalSeed() {
 
 // Data Store Helpers (Works with Supabase or Local Fallback)
 export const store = {
+  listeners: new Set<() => void>(),
+  
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  },
+  
+  notify() {
+    this.listeners.forEach(l => l());
+  },
+  
+  getLocal<T>(key: string, fallback: T): T {
+    return getLocal<T>(key, fallback);
+  },
+
+  setLocal(key: string, val: any) {
+    setLocal(key, val);
+  },
+
   getCurrentUser(): UserProfile | null {
     return getLocal<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null);
   },
