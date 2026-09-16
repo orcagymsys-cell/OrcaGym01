@@ -95,20 +95,27 @@ export default function SchedulePage() {
     }
 
     // --- SWR Pattern: Instant Load from Cache ---
+    let hasCache = false;
     if (user.role === 'admin') {
       setIsAdmin(true);
-      setAllBookings(store.getBookingsSync());
+      const bCache = store.getBookingsSync();
+      if (bCache.length > 0) hasCache = true;
+      setAllBookings(bCache);
       setParents(store.getUsersSync().filter(u => u.role === 'parent'));
       setAllChildren(store.getChildrenSync());
     } else {
       setIsAdmin(false);
       const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
+      if (kidsCache.length > 0) hasCache = true;
       setChildren(kidsCache);
       const myKidIdsCache = kidsCache.map(k => k.id);
       setAllBookings(store.getBookingsSync().filter(b => myKidIdsCache.includes(b.child_id)));
     }
-    // Instantly hide loading since we have cache
-    setLoading(false);
+    
+    // Instantly hide loading ONLY if we have cache to prevent empty state flash
+    if (hasCache) {
+      setLoading(false);
+    }
 
     // --- SWR Pattern: Background Fetch from Supabase ---
     if (user.role === 'admin') {
@@ -128,6 +135,9 @@ export default function SchedulePage() {
       const myKidIds = kids.map(k => k.id);
       setAllBookings(allBookingsSys.filter(b => myKidIds.includes(b.child_id)));
     }
+    
+    // Ensure loading is hidden after fetch completes
+    setLoading(false);
   };
 
   useEffect(() => {

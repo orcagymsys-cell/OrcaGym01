@@ -20,7 +20,7 @@ export default function HomePage() {
   const requestRef = useRef(0);
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
@@ -40,14 +40,18 @@ export default function HomePage() {
         }
 
         // --- SWR Pattern: Instant Cache Load ---
+        let hasCache = false;
         const kidsCache = store.getChildrenSync().filter(k => k.parent_id === currentUser.id);
+        if (kidsCache.length > 0) hasCache = true;
         setChildren(kidsCache);
         if (kidsCache.length > 0) {
           const myKidIdsCache = kidsCache.map(k => k.id);
           const allBCache = store.getBookingsSync().filter(b => myKidIdsCache.includes(b.child_id));
           setBookings(allBCache.filter(b => b.status !== 'Cancelled'));
         }
-        setLoading(false);
+        if (hasCache) {
+          setLoading(false);
+        }
 
         // --- SWR Pattern: Background Fetch ---
         const [allUsers, data, allBookingsSys] = await Promise.all([
@@ -72,6 +76,7 @@ export default function HomePage() {
         } else {
           setBookings([]);
         }
+        setLoading(false);
       } catch (err) {
         console.error('Error loading home page data:', err);
       } finally {
@@ -85,7 +90,16 @@ export default function HomePage() {
       loadData();
     });
 
-    return () => {
+    if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
+        <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-600 font-bold">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
+
+  return () => {
       if (cleanupRealtime) cleanupRealtime();
     };
   }, []);
