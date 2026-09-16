@@ -12,6 +12,11 @@ export const isSupabaseConfigured = Boolean(
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      },
       global: {
         fetch: (url, options) => {
           // 3-second timeout to prevent UI freezing on bad DNS

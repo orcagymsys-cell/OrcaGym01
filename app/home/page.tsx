@@ -20,6 +20,16 @@ export default function HomePage() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
+    // Clear any stale Supabase Auth sessions that cause JWT expired errors
+    if (typeof window !== 'undefined') {
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch(e) {}
+    }
     const user = store.getCurrentUser();
     if (user) {
       if (user.role === 'admin') {
