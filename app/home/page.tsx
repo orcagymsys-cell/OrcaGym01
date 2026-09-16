@@ -210,7 +210,8 @@ export default function HomePage() {
         if (user) {
           const parsed = JSON.parse(cache);
           const kids = parsed.filter((k: any) => k.parent_id === user.id);
-          debugText = `กำลังโหลดข้อมูล... (Cache: ${parsed.length}, Kids: ${kids.length})`;
+          const firstKid = parsed[0];
+          debugText = `Cache:1 Kids:0. user.id: ${user?.id} | child.parent: ${firstKid?.parent_id}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
