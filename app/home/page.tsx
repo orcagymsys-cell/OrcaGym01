@@ -20,7 +20,14 @@ export default function HomePage() {
   const requestRef = useRef(0);
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const user = store.getCurrentUser();
+    if (!user) return true;
+    if (user.role === 'admin') return false;
+    const kids = store.getChildrenSync().filter(k => k.parent_id === user.id);
+    return kids.length === 0; // Only load if cache is empty
+  });
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
@@ -182,12 +189,7 @@ export default function HomePage() {
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
 
   if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
-        <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-600 font-bold">กำลังเตรียมหน้าข้อมูลของคุณ...</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-[#f8fafc]"></div>;
   }
 
   if (loading) {
