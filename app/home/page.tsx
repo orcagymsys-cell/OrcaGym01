@@ -76,21 +76,25 @@ export default function HomePage() {
           return;
         }
 
-        const [allUsers, data, allBookingsSys] = await Promise.all([
+        const parentUserId = currentUser.id || currentUser.user_id;
+        
+        const [allUsers, allKids, allBookingsSys] = await Promise.all([
           store.getUsers(),
-          store.getChildren(currentUser.id),
+          store.getChildren(),   // fetch ALL, filter locally to avoid id-field mismatch
           store.getBookings()
         ]);
         
         if (reqId !== requestRef.current) return;
         
-        const freshUser = allUsers.find(u => u.phone === currentUser?.phone) || allUsers.find(u => u.id === currentUser?.id || u.user_id === currentUser?.user_id);
+        const freshUser = allUsers.find(u => u.phone === currentUser?.phone) 
+          || allUsers.find(u => u.id === parentUserId || u.user_id === currentUser?.user_id);
         if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
           currentUser = freshUser;
           store.setCurrentUser(freshUser);
         }
 
-        const kidsToSave = data || [];
+        const resolvedUserId = (freshUser || currentUser)?.id || (freshUser || currentUser)?.user_id || parentUserId;
+        const kidsToSave = allKids.filter(k => k.parent_id === resolvedUserId);
         setChildren(kidsToSave);
         store.setLocal('ORCA_MY_KIDS', kidsToSave);
         

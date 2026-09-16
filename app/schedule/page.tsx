@@ -161,11 +161,13 @@ export default function SchedulePage() {
       setParents(users.filter(u => u.role === 'parent'));
       setAllChildren(kids);
     } else {
-      const [kids, allBookingsSys] = await Promise.all([
-        store.getChildren(user.id), store.getBookings()
+      const parentUserId = user.id || user.user_id;
+      const [allKids, allBookingsSys] = await Promise.all([
+        store.getChildren(),  // fetch ALL, filter locally
+        store.getBookings()
       ]);
       if (reqId !== requestRef.current) return;
-      const kidsToSave = kids || [];
+      const kidsToSave = allKids.filter(k => k.parent_id === parentUserId);
       setChildren(kidsToSave);
       store.setLocal('ORCA_MY_KIDS', kidsToSave);
       
