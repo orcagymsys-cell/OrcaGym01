@@ -1836,15 +1836,15 @@ function AdminDashboardContent() {
 
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1050px]">
                   <thead>
                     <tr className="bg-[#001a3a] text-white font-bold text-xs">
-                      <th className="py-3.5 px-4 font-semibold">USERNAME</th>
-                      <th className="py-3.5 px-4 font-semibold">ชื่อผู้ปกครอง</th>
-                      <th className="py-3.5 px-4 font-semibold">เบอร์โทรศัพท์</th>
-                      <th className="py-3.5 px-4 font-semibold">คลาส & โควต้าที่ซื้อ</th>
-                      <th className="py-3.5 px-4 font-semibold text-center">การลงทะเบียนบุตรหลาน</th>
-                      <th className="py-3.5 px-4 font-semibold text-center">จัดการ</th>
+                      <th className="py-3.5 px-4 font-semibold w-[12%]">USERNAME</th>
+                      <th className="py-3.5 px-4 font-semibold w-[22%]">ชื่อผู้ปกครอง</th>
+                      <th className="py-3.5 px-4 font-semibold w-[12%]">เบอร์โทรศัพท์</th>
+                      <th className="py-3.5 px-4 font-semibold w-[18%]">คลาส & โควต้าที่ซื้อ</th>
+                      <th className="py-3.5 px-4 font-semibold text-center w-[16%]">การลงทะเบียนบุตรหลาน</th>
+                      <th className="py-3.5 px-4 font-semibold text-center w-[20%]">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -2328,28 +2328,28 @@ function AdminDashboardContent() {
           {/* Structured Data Table for Student Information */}
           <div className="bg-white border border-slate-200/90 rounded-3xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse font-['Anuphan',sans-serif]">
+              <table className="w-full text-left border-collapse font-['Anuphan',sans-serif] table-fixed min-w-[1100px]">
                 <thead>
                   <tr className="bg-[#001a3a] text-white text-xs font-bold tracking-wider">
-                    <th className="py-4 px-4 whitespace-nowrap">
+                    <th className="py-4 px-4 whitespace-nowrap w-[25%]">
                       ชื่อนักเรียน (ชื่อจริง & ชื่อเล่น) / อายุ
                     </th>
-                    <th className="py-4 px-4 whitespace-nowrap">
+                    <th className="py-4 px-4 whitespace-nowrap w-[20%]">
                       ชื่อผู้ปกครอง / เบอร์โทร
                     </th>
-                    <th className="py-4 px-4 whitespace-nowrap">
+                    <th className="py-4 px-4 whitespace-nowrap w-[15%]">
                       ชื่อ Course
                     </th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">
+                    <th className="py-4 px-4 text-center whitespace-nowrap w-[8%]">
                       จำนวนครั้ง
                     </th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">
+                    <th className="py-4 px-4 text-center whitespace-nowrap w-[6%]">
                       แถม
                     </th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">
+                    <th className="py-4 px-4 text-center whitespace-nowrap w-[8%]">
                       คงเหลือ
                     </th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">
+                    <th className="py-4 px-4 text-center whitespace-nowrap w-[18%]">
                       จัดการคลาสเรียน
                     </th>
                   </tr>
