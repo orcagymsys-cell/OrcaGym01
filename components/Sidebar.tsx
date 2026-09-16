@@ -20,6 +20,8 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     store.setCurrentUser(null);
+    localStorage.removeItem('ORCA_MY_KIDS');
+    localStorage.removeItem('ORCA_MY_BOOKINGS');
     showToast('ลงชื่อออกจากระบบเรียบร้อย');
     fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
     window.location.replace('/');

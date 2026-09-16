@@ -309,6 +309,8 @@ function AdminDashboardContent() {
       const user = store.getCurrentUser();
       if (!user || user.role !== 'admin') {
         showToast('กรุณาเข้าสู่ระบบแอดมินก่อนใช้งาน');
+        localStorage.removeItem('ORCA_MY_KIDS');
+        localStorage.removeItem('ORCA_MY_BOOKINGS');
         fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
         window.location.replace('/');
         return;

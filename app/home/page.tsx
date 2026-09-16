@@ -45,6 +45,8 @@ export default function HomePage() {
       try {
         let currentUser = store.getCurrentUser();
         if (!currentUser) {
+          localStorage.removeItem('ORCA_MY_KIDS');
+          localStorage.removeItem('ORCA_MY_BOOKINGS');
           fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
           window.location.replace('/');
           return;
