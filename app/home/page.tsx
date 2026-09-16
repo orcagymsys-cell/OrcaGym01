@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import BackButton from '@/components/BackButton';
-import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions, isSupabaseConfigured } from '@/lib/supabase';
 import { Child, Booking } from '@/lib/types';
 import { showToast } from '@/components/Toast';
 import ServiceTermsModal from '@/components/ServiceTermsModal';
@@ -209,9 +209,8 @@ export default function HomePage() {
         const user = store.getCurrentUser();
         if (user) {
           const parsed = JSON.parse(cache);
-          const kids = parsed.filter((k: any) => k.parent_id === user.id);
           const firstKid = parsed[0];
-          debugText = `Cache:1 Kids:0. user.id: ${user?.id} | child.parent: ${firstKid?.parent_id}`;
+          debugText = `Vercel Supabase: ${isSupabaseConfigured ? 'ON' : 'OFF'} | user: ${user?.id} | kid: ${firstKid?.parent_id}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
