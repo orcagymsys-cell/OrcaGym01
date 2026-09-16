@@ -9,6 +9,7 @@ import { Child } from '@/lib/types';
 export default function AddChildPage() {
   const router = useRouter();
   const [childrenCount, setChildrenCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
   const [dob, setDob] = useState('2020-05-05');
@@ -150,6 +151,7 @@ export default function AddChildPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const saved = await saveChild();
       if (saved) {
@@ -164,11 +166,14 @@ export default function AddChildPage() {
     } catch (err: any) {
       showToast('Error: ' + err.message);
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDone = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const saved = await saveChild();
       if (saved) {
@@ -178,6 +183,7 @@ export default function AddChildPage() {
     } catch (err: any) {
       showToast('Error: ' + err.message);
       console.error(err);
+      setIsSubmitting(false);
     }
   };
 
@@ -389,14 +395,19 @@ export default function AddChildPage() {
         <button
           type="button"
           onClick={handleAddAnother}
-          className="w-full max-w-[300px] bg-sky-600 text-white font-bold text-lg py-3 rounded-full border-b-[3.5px] border-sky-800 mx-auto block mb-3.5 hover:bg-sky-700 active:translate-y-0.5 transition-all cursor-pointer"
+          disabled={isSubmitting}
+          className="w-full max-w-[300px] bg-sky-600 text-white font-bold text-lg py-3 rounded-full border-b-[3.5px] border-sky-800 mx-auto block mb-3.5 hover:bg-sky-700 active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:border-b-0 disabled:translate-y-[3.5px]"
         >
-          + Add Another Child
+          {isSubmitting ? 'กำลังบันทึก...' : '+ Add Another Child'}
         </button>
 
         {/* Done Button */}
-        <button type="submit" className="btn-primary-orca">
-          Done
+        <button 
+          type="submit" 
+          className="btn-primary-orca disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'กำลังบันทึก...' : 'Done'}
         </button>
       </form>
     </div>
