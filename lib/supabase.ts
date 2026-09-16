@@ -681,6 +681,9 @@ export const store = {
       courses.push(course);
     }
     setLocal(STORAGE_KEYS.COURSES, courses);
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('course_configs').upsert([course]);
+    }
   },
 
   async updateCourse(id: string, updates: Partial<CourseConfig>): Promise<void> {
@@ -689,6 +692,9 @@ export const store = {
     if (idx !== -1) {
       courses[idx] = { ...courses[idx], ...updates };
       setLocal(STORAGE_KEYS.COURSES, courses);
+      if (isSupabaseConfigured && supabase) {
+        await supabase.from('course_configs').update(updates).eq('id', id);
+      }
     }
   },
 
@@ -696,6 +702,9 @@ export const store = {
     let courses = getLocal<CourseConfig[]>(STORAGE_KEYS.COURSES, []);
     courses = courses.filter(c => c.id !== id);
     setLocal(STORAGE_KEYS.COURSES, courses);
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('course_configs').delete().eq('id', id);
+    }
   }
 };
 
