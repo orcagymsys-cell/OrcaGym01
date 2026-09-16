@@ -120,7 +120,7 @@ export default function PricingPage() {
   const [courses, setCourses] = useState<CourseConfig[]>(() => {
     if (typeof window !== 'undefined') {
        try {
-         const cached = localStorage.getItem('COURSES_CACHE');
+         const cached = localStorage.getItem('orca_courses_v4');
          if (cached) return JSON.parse(cached);
        } catch(e){}
     }
@@ -130,31 +130,11 @@ export default function PricingPage() {
     if (typeof window !== 'undefined') return store.getCurrentUser()?.role === 'admin';
     return false;
   });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window !== 'undefined') {
-       try {
-         const cached = localStorage.getItem('COURSES_CACHE');
-         if (cached && JSON.parse(cached).length > 0) return false;
-       } catch(e){}
-    }
-    return true;
-  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem('COURSES_CACHE');
-      if (cached) {
-        const data = JSON.parse(cached);
-        if (data && data.length > 0) {
-          setCourses(data);
-          setLoading(false);
-        }
-      }
-    } catch(e) {}
-    
     const user = store.getCurrentUser();
     if (user?.role === 'admin') setIsAdmin(true);
-    
     setMounted(true);
   }, []);
 
@@ -491,14 +471,7 @@ export default function PricingPage() {
   
 
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-        <div className="w-12 h-12 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-[#001a3a] font-bold">กำลังโหลดแพ็กเกจ...</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="font-['Anuphan',sans-serif]">
