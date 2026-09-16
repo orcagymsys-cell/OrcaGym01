@@ -304,7 +304,14 @@ export const store = {
         const { data, error } = await query;
         if (!error) {
           const freshData = data || [];
-          if (!parentId) setLocal('CHILDREN_CACHE', freshData);
+          if (parentId) {
+            // Merge parent's children into the existing cache
+            const existingCache = getLocal<Child[]>('CHILDREN_CACHE', []);
+            const otherKids = existingCache.filter(c => c.parent_id !== parentId);
+            setLocal('CHILDREN_CACHE', [...otherKids, ...freshData]);
+          } else {
+            setLocal('CHILDREN_CACHE', freshData);
+          }
           return parentId ? freshData.filter(c => c.parent_id === parentId) : freshData;
         }
       } catch (e) {
