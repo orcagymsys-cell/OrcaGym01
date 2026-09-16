@@ -90,16 +90,7 @@ export default function HomePage() {
       loadData();
     });
 
-    if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
-        <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-600 font-bold">กำลังโหลดข้อมูล...</p>
-      </div>
-    );
-  }
-
-  return () => {
+    return () => {
       if (cleanupRealtime) cleanupRealtime();
     };
   }, []);
@@ -195,6 +186,15 @@ export default function HomePage() {
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
         <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-slate-600 font-bold">กำลังเตรียมหน้าข้อมูลของคุณ...</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 font-sans animate-pulse">
+        <div className="w-16 h-16 border-4 border-[#001a3a] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-600 font-bold">กำลังโหลดข้อมูล...</p>
       </div>
     );
   }
