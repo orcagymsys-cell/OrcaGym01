@@ -4,44 +4,21 @@ import { showToast } from './Toast';
 import { store } from '@/lib/supabase';
 
 export default function ServiceTermsModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const currentUser = store.getCurrentUser();
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return false;
+    if (currentUser.pdpa_accepted) return false;
+    return true;
+  });
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [mediaConsent, setMediaConsent] = useState<boolean | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkPDPA = () => {
-      const currentUser = store.getCurrentUser();
-      
-      // If there is no user (e.g. during logout), do not show
-      if (!currentUser) {
-        setIsOpen(false);
-        return;
-      }
-      
-      // If user has already accepted PDPA in cache, do not show
-      if (currentUser.pdpa_accepted) {
-        setIsOpen(false);
-        return;
-      }
-
-      // If user is admin, don't show it
-      if (currentUser.role === 'admin') {
-        setIsOpen(false);
-        return;
-      }
-
-      // If we reach here, it means they are a parent and haven't accepted it.
-      // Show it INSTANTLY without waiting for database to prevent delayed popups.
-      setIsOpen(true);
-    };
-
-    checkPDPA();
-  }, []);
+  // No longer need useEffect for checkPDPA since it's initialized synchronously
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
