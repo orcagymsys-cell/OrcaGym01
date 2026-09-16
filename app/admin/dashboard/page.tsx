@@ -1836,15 +1836,15 @@ function AdminDashboardContent() {
 
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1050px]">
+                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1200px]">
                   <thead>
                     <tr className="bg-[#001a3a] text-white font-bold text-xs">
-                      <th className="py-3.5 px-4 font-semibold w-[12%]">USERNAME</th>
-                      <th className="py-3.5 px-4 font-semibold w-[22%]">ชื่อผู้ปกครอง</th>
+                      <th className="py-3.5 px-4 font-semibold w-[10%]">USERNAME</th>
+                      <th className="py-3.5 px-4 font-semibold w-[24%]">ชื่อผู้ปกครอง</th>
                       <th className="py-3.5 px-4 font-semibold w-[12%]">เบอร์โทรศัพท์</th>
                       <th className="py-3.5 px-4 font-semibold w-[18%]">คลาส & โควต้าที่ซื้อ</th>
-                      <th className="py-3.5 px-4 font-semibold text-center w-[16%]">การลงทะเบียนบุตรหลาน</th>
-                      <th className="py-3.5 px-4 font-semibold text-center w-[20%]">จัดการ</th>
+                      <th className="py-3.5 px-4 font-semibold text-center w-[12%]">ลงทะเบียนบุตร</th>
+                      <th className="py-3.5 px-4 font-semibold text-center w-[24%]">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -2084,10 +2084,10 @@ function AdminDashboardContent() {
                                        setTopUpPaymentDateTime('');
                                        setTopUpPaymentSlipFile(null);
                                      }}
-                                     className="group flex items-center gap-1 px-2.5 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                     className="group flex items-center gap-1.5 px-3 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0 whitespace-nowrap"
                                    >
-                                     <span>🛒</span>
-                                     <span>ซื้อคอร์สเพิ่ม</span>
+                                     <span className="shrink-0 text-[14px]">🛒</span>
+                                     <span className="shrink-0">ซื้อคอร์สเพิ่ม</span>
                                    </button>
                                    <button
                                      type="button"
