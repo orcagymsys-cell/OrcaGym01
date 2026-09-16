@@ -12,51 +12,30 @@ import ServiceTermsModal from '@/components/ServiceTermsModal';
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-  
   const requestRef = useRef(0);
-  const [children, setChildren] = useState<Child[]>(() => {
-    if (typeof window !== 'undefined') return store.getLocal('ORCA_MY_KIDS', []);
-    return [];
-  });
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    if (typeof window !== 'undefined') return store.getLocal('ORCA_MY_BOOKINGS', []);
-    return [];
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const user = store.getCurrentUser();
-      if (user?.role === 'admin') return false;
-      return store.getLocal('ORCA_MY_KIDS', []).length === 0;
-    }
-    return true;
-  });
+  const [children, setChildren] = useState<Child[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
-    // Clear any stale Supabase Auth sessions that cause JWT expired errors
-    if (typeof window !== 'undefined') {
-      try {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-            localStorage.removeItem(key);
-          }
-        });
-      } catch(e) {}
-    }
     const user = store.getCurrentUser();
-    if (user) {
-      if (user.role === 'admin') {
-        setLoading(false);
-      } else {
-        const myKids = store.getLocal('ORCA_MY_KIDS', []);
-        const myBookings = store.getLocal('ORCA_MY_BOOKINGS', []);
-        if (myKids.length > 0) {
-          setChildren(myKids);
-          setBookings(myBookings);
-          setLoading(false);
-        }
-      }
+    if (!user) {
+      setMounted(true);
+      setLoading(false);
+      return;
     }
+    if (user.role === 'admin') {
+      setMounted(true);
+      setLoading(false);
+      return;
+    }
+    // Load from cache instantly — always show content, never block on spinner
+    const myKids = store.getLocal<Child[]>('ORCA_MY_KIDS', []);
+    const myBookings = store.getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
+    setChildren(myKids);
+    setBookings(myBookings);
+    setLoading(false);   // ← Always false after mount, regardless of cache
     setMounted(true);
   }, []);
 
