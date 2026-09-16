@@ -50,20 +50,20 @@ const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in windo
   ? new BroadcastChannel('orca_store_channel') 
   : null;
 
-function setLocal(key: string, value: any) {
+function setLocal(key: string, val: any) {
   if (typeof window === 'undefined') return;
+  const newVal = JSON.stringify(val);
+  const oldVal = localStorage.getItem(key);
+  
+  // Prevents infinite SWR background fetch re-render loops
+  if (newVal === oldVal) return;
+  
   try {
-    const newVal = JSON.stringify(value);
-    const oldVal = localStorage.getItem(key);
-    
-    // Prevents infinite SWR background fetch re-render loops
-    if (newVal === oldVal) return;
-    
     localStorage.setItem(key, newVal);
-    window.dispatchEvent(new CustomEvent('orca_store_updated', { detail: { key, value } }));
+    window.dispatchEvent(new CustomEvent('orca_store_updated', { detail: { key, value: val } }));
     if (syncChannel) {
       try {
-        syncChannel.postMessage({ key, value });
+        syncChannel.postMessage({ key, value: val });
       } catch (err) {}
     }
   } catch (e) {

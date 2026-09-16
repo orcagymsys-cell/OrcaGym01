@@ -13,15 +13,30 @@ import ServiceTermsModal from '@/components/ServiceTermsModal';
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const requestRef = useRef(0);
   const [children, setChildren] = useState<Child[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+
+  useEffect(() => {
+    const user = store.getCurrentUser();
+    if (user) {
+      if (user.role === 'admin') {
+        setLoading(false);
+      } else {
+        const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
+        if (kidsCache.length > 0) {
+          setChildren(kidsCache);
+          const myKidIds = kidsCache.map(k => k.id);
+          const bCache = store.getBookingsSync().filter(b => myKidIds.includes(b.child_id));
+          setBookings(bCache.filter(b => b.status !== 'Cancelled'));
+          setLoading(false);
+        }
+      }
+    }
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
