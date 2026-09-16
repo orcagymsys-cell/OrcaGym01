@@ -117,9 +117,28 @@ function getThemeStyles(themeColor?: string, displayTitle?: string): ThemeStyleR
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
-  const [courses, setCourses] = useState<CourseConfig[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<CourseConfig[]>(() => {
+    if (typeof window !== 'undefined') {
+       try {
+         const cached = localStorage.getItem('COURSES_CACHE');
+         if (cached) return JSON.parse(cached);
+       } catch(e){}
+    }
+    return [];
+  });
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') return store.getCurrentUser()?.role === 'admin';
+    return false;
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+       try {
+         const cached = localStorage.getItem('COURSES_CACHE');
+         if (cached && JSON.parse(cached).length > 0) return false;
+       } catch(e){}
+    }
+    return true;
+  });
 
   useEffect(() => {
     try {

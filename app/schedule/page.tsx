@@ -78,14 +78,38 @@ function getChildColor(index: number) {
 
 export default function SchedulePage() {
   const [mounted, setMounted] = useState(false);
-  
   const requestRef = useRef(0);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') return store.getCurrentUser()?.role === 'admin';
+    return false;
+  });
+  const [children, setChildren] = useState<Child[]>(() => {
+    if (typeof window !== 'undefined') {
+       const user = store.getCurrentUser();
+       if (user?.role === 'admin') return [];
+       return store.getLocal('ORCA_MY_KIDS', []);
+    }
+    return [];
+  });
   const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [parents, setParents] = useState<UserProfile[]>([]);
-  const [allBookings, setAllBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allBookings, setAllBookings] = useState<Booking[]>(() => {
+    if (typeof window !== 'undefined') {
+       const user = store.getCurrentUser();
+       if (user?.role === 'admin') return store.getLocal('ORCA_BOOKINGS', []);
+       return store.getLocal('ORCA_MY_BOOKINGS', []);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+       const user = store.getCurrentUser();
+       if (!user) return false;
+       if (user.role === 'admin') return store.getLocal('ORCA_BOOKINGS', []).length === 0;
+       return store.getLocal('ORCA_MY_KIDS', []).length === 0;
+    }
+    return true;
+  });
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
   useEffect(() => {

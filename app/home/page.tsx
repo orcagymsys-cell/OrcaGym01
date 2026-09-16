@@ -14,9 +14,22 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   
   const requestRef = useRef(0);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [children, setChildren] = useState<Child[]>(() => {
+    if (typeof window !== 'undefined') return store.getLocal('ORCA_MY_KIDS', []);
+    return [];
+  });
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    if (typeof window !== 'undefined') return store.getLocal('ORCA_MY_BOOKINGS', []);
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const user = store.getCurrentUser();
+      if (user?.role === 'admin') return false;
+      return store.getLocal('ORCA_MY_KIDS', []).length === 0;
+    }
+    return true;
+  });
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
