@@ -635,36 +635,69 @@ export const store = {
       courses = [
         {
           id: 'c_cubs',
-          internal_name: 'Orca Cubs01',
-          display_title: 'Orca Cubs',
-          subtitle: 'Class',
-          age_range: 'Age 4-10',
-          duration_text: '1.5 hrs/time',
+          internal_name: 'Orca Cubs',
+          display_title: 'ORCA CUBS',
+          subtitle: 'FOUNDATION CLASS',
+          age_range: 'AGE 6-10',
+          duration_text: '1.5 HRS / TIME',
           theme_color: 'Blue (Cubs)',
           max_capacity: 10,
-          description: 'เปิดประตูสู่การเรียนรู้กับคลาส ORCA Cubs (สำหรับน้องๆ อายุ 6-10 ปี) คลาสเรียนพื้นฐานเบื้องต้นสำหรับเด็กๆ ที่ดีไซน์มาเพื่อเสริมสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นเพื่อให้พร้อมต่อยอดในระดับที่สูงขึ้นได้อย่างมั่นใจ',
+          description: 'เปิดประตูสู่การเรียนรู้กับคลาส ORCA Cubs (สำหรับน้องๆ อายุ 6-10 ปี) คลาสเรียนพื้นฐานเบื้องต้นสำหรับเด็กๆ ที่ดีไซน์มาเพื่อสร้างทักษะทางร่างกายและการเคลื่อนไหวอย่างถูกวิธี สนุกสนาน สมวัย ปูพื้นฐานแน่นเพื่อให้พร้อมต่อยอดในระดับที่สูงขึ้นได้อย่างมั่นใจ',
           pricing_options: [
-            { id: 'p1', times: 1, fee: '700 THB', duration: '-', tag: '' },
-            { id: 'p2', times: 6, fee: '4,100 THB (683)', duration: '2 Months', tag: '' },
-            { id: 'p3', times: 12, fee: '7,800 THB (650)', duration: '4 Months', tag: '' },
-            { id: 'p4', times: 24, fee: '14,400 THB (600)', duration: '6 Months', tag: 'free 2' }
+            { id: 'p_free', times: 2, fee: '0 THB (ฟรี)', duration: '1 Month', tag: 'Free Trial' },
+            { id: 'p_1', times: 1, fee: '700 THB', duration: '-', tag: '' },
+            { id: 'p_6', times: 6, fee: '4,100 THB (683/time)', duration: '2 MONTHS', tag: '' },
+            { id: 'p_12', times: 12, fee: '7,800 THB (650/time)', duration: '4 MONTHS', tag: '' },
+            { id: 'p_24', times: 24, fee: '14,400 THB (600/time)', duration: '6 MONTHS', tag: 'FREE 2 TIMES' }
+          ],
+          schedule_groups: [
+            { id: 'sg_tue_fri', day_label: 'Tuesday - Friday', time_slots: ['10:30-12:00', '14:30-16:00', '16:00-17:30'], highlight_tag: '', highlight_slot_no: null },
+            { id: 'sg_tue_wed', day_label: 'Tuesday - Wednesday', time_slots: ['17:30-19:00'], highlight_tag: '', highlight_slot_no: null },
+            { id: 'sg_sat_sun', day_label: 'Saturday - Sunday', time_slots: ['9:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00'], highlight_tag: '', highlight_slot_no: null }
+          ]
+        },
+        {
+          id: 'c_flip',
+          internal_name: 'Orca Flip',
+          display_title: 'ORCA FLIP',
+          subtitle: 'TUMBLING CLASS',
+          age_range: 'AGE 6-15+',
+          duration_text: '1.5 HRS / TIME',
+          theme_color: 'Amber (Flip)',
+          max_capacity: 10,
+          description: 'พัฒนาทักษะการตีลังกาอย่างเป็นระบบ ตั้งแต่พื้นฐานสู่ท่าที่ยากและสวยงาม คลาสที่เน้นการฝึกทักษะการตีลังกาโดยเฉพาะ เพิ่มความแข็งแรง ความยืดหยุ่น และความมั่นใจ เรียนสนุก ปลอดภัย เหมาะสำหรับทุกคนที่อยากพัฒนาทักษะการเคลื่อนไหวขั้นสูง',
+          pricing_options: [
+            { id: 'p_free', times: 2, fee: '0 THB (ฟรี)', duration: '1 Month', tag: 'Free Trial' },
+            { id: 'p_1', times: 1, fee: '750 THB', duration: '-', tag: '' },
+            { id: 'p_6', times: 6, fee: '4,200 THB (700/time)', duration: '2 MONTHS', tag: '' },
+            { id: 'p_12', times: 12, fee: '8,100 THB (675/time)', duration: '4 MONTHS', tag: '' },
+            { id: 'p_24', times: 24, fee: '15,000 THB (625/time)', duration: '6 MONTHS', tag: 'FREE 2 TIMES' }
+          ],
+          schedule_groups: [
+            { id: 'sg_thu_fri', day_label: 'Thursday - Friday', time_slots: ['17:30-19:00'], highlight_tag: '', highlight_slot_no: null },
+            { id: 'sg_sat_sun', day_label: 'Saturday - Sunday', time_slots: ['13:00-14:30'], highlight_tag: '', highlight_slot_no: null }
           ]
         },
         {
           id: 'c_mega',
-          internal_name: 'Mega Orca01',
-          display_title: 'Mega Orca',
-          subtitle: 'Class',
-          age_range: 'Age 7-15',
-          duration_text: '2.0 hrs/time',
-          theme_color: 'Indigo (Mega)',
-          max_capacity: 15,
-          description: 'ต่อยอดทักษะสู่ความเป็นเลิศกับคลาส Mega ORCA (สำหรับเด็กอายุ 7-15 ปี) เหมาะสำหรับผู้ที่มีพื้นฐานยิมนาสติกมาแล้ว หรือต้องการพัฒนาทักษะแบบก้าวกระโดด เน้นความแข็งแรง ความยืดหยุ่นขั้นสูง และความอดทน พร้อมปูทางสู่การแข่งขันในอนาคต',
+          internal_name: 'Mega Orca',
+          display_title: 'MEGA ORCA',
+          subtitle: 'COMPETITIVE CLASS',
+          age_range: 'AGE 5-15',
+          duration_text: '2 HRS / TIME',
+          theme_color: 'Purple (Mega)',
+          max_capacity: 10,
+          description: 'ก้าวสู่ความท้าทายขั้นกว่ากับคลาส MEGA Orca (สำหรับนักกีฬา เลเวล 1 ขึ้นไป) คลาสยกระดับทักษะสำหรับนักกีฬารุ่นเยาว์ เน้นการฝึกซ้อมที่เข้มข้น พัฒนาเทคนิคขั้นสูง เสริมสร้างสมรรถภาพทางร่างกายและความทนทาน เพื่อเตรียมความพร้อมสู่การแข่งขันอย่างเต็มศักยภาพ',
           pricing_options: [
-            { id: 'p1', times: 1, fee: '800 THB', duration: '-', tag: '' },
-            { id: 'p2', times: 6, fee: '4,300 THB (716)', duration: '2 Months', tag: '' },
-            { id: 'p3', times: 12, fee: '8,400 THB (700)', duration: '4 Months', tag: '' },
-            { id: 'p4', times: 24, fee: '15,600 THB (650)', duration: '6 Months', tag: 'free 2' }
+            { id: 'p_free', times: 2, fee: '0 THB (ฟรี)', duration: '1 Month', tag: 'Free Trial' },
+            { id: 'p_1', times: 1, fee: '800 THB', duration: '-', tag: '' },
+            { id: 'p_6', times: 6, fee: '4,300 THB (716/time)', duration: '2 MONTHS', tag: '' },
+            { id: 'p_12', times: 12, fee: '8,400 THB (700/time)', duration: '4 MONTHS', tag: '' },
+            { id: 'p_24', times: 24, fee: '15,600 THB (650/time)', duration: '6 MONTHS', tag: 'FREE 2 TIMES' }
+          ],
+          schedule_groups: [
+            { id: 'sg_tue_fri', day_label: 'Tuesday - Friday', time_slots: ['10:30-12:30', '17:30-19:30'], highlight_tag: '', highlight_slot_no: null },
+            { id: 'sg_sat_sun', day_label: 'Saturday - Sunday', time_slots: ['14:30-16:30', '16:00-18:00'], highlight_tag: '', highlight_slot_no: null }
           ]
         }
       ];
