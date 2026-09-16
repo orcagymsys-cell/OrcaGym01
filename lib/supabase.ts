@@ -315,7 +315,7 @@ export const store = {
     if (isSupabaseConfigured && supabase) {
       try {
         let query = supabase.from('children').select('*').order('id');
-        if (parentId) query = query.eq('parent_id', parentId);
+        // ALWAYS fetch all children and filter locally to avoid weird RLS/eq bugs
         const { data, error } = await query;
         if (typeof window !== 'undefined') {
           if (error) localStorage.setItem('ORCA_KIDS_ERR', JSON.stringify(error));
