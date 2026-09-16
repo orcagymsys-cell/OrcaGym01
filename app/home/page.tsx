@@ -93,8 +93,14 @@ export default function HomePage() {
           store.setCurrentUser(freshUser);
         }
 
-        const resolvedUserId = (freshUser || currentUser)?.id || (freshUser || currentUser)?.user_id || parentUserId;
-        const kidsToSave = allKids.filter(k => k.parent_id === resolvedUserId);
+        const resolvedUserId = ((freshUser || currentUser)?.id || (freshUser || currentUser)?.user_id || parentUserId)?.trim();
+        const kidsToSave = allKids.filter(k => k.parent_id?.trim() === resolvedUserId);
+        
+        // Debug: save filter result
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('ORCA_FILTER_DEBUG', `all:${allKids.length}, filtered:${kidsToSave.length}, uid:[${resolvedUserId}], firstPid:[${allKids[0]?.parent_id}]`);
+        }
+        
         setChildren(kidsToSave);
         store.setLocal('ORCA_MY_KIDS', kidsToSave);
         
@@ -226,9 +232,8 @@ export default function HomePage() {
         const user = store.getCurrentUser();
         if (user) {
           const dlen = localStorage.getItem('ORCA_KIDS_DATA_LEN') || 'N/A';
-          const myKids = store.getLocal('ORCA_MY_KIDS', []);
-          const resolvedId = user.id || (user as any).user_id;
-          debugText = `myKids:${myKids.length} | resolvedId:${resolvedId} | dbLen:${dlen}`;
+          const filterDebug = localStorage.getItem('ORCA_FILTER_DEBUG') || 'not run yet';
+          debugText = `${filterDebug}`;
         } else {
           debugText = "กำลังโหลดข้อมูล... (No User)";
         }
