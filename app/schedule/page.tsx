@@ -199,9 +199,6 @@ export default function SchedulePage() {
     diffWeeks < 0 ? `${Math.abs(diffWeeks)} สัปดาห์ที่แล้ว` :
     `${diffWeeks} สัปดาห์ข้างหน้า`;
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-[#f8fafc]"></div>;
-  }
 
   if (loading) {
     return (

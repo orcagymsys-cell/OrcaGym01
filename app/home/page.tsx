@@ -192,9 +192,6 @@ export default function HomePage() {
   const showUnbookedNearExpiryBanner = isPkgExpiringSoon && hasUnbookedClasses;
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-[#f8fafc]"></div>;
-  }
 
   if (loading) {
     return (

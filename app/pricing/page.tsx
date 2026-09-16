@@ -490,9 +490,6 @@ export default function PricingPage() {
 
   
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-[#f8fafc]"></div>;
-  }
 
   if (loading) {
     return (
