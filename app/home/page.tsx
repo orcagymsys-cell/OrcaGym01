@@ -25,12 +25,11 @@ export default function HomePage() {
       if (user.role === 'admin') {
         setLoading(false);
       } else {
-        const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
-        if (kidsCache.length > 0) {
-          setChildren(kidsCache);
-          const myKidIds = kidsCache.map(k => k.id);
-          const bCache = store.getBookingsSync().filter(b => myKidIds.includes(b.child_id));
-          setBookings(bCache.filter(b => b.status !== 'Cancelled'));
+        const myKids = store.getLocal('ORCA_MY_KIDS', []);
+        const myBookings = store.getLocal('ORCA_MY_BOOKINGS', []);
+        if (myKids.length > 0) {
+          setChildren(myKids);
+          setBookings(myBookings);
           setLoading(false);
         }
       }
@@ -54,28 +53,13 @@ export default function HomePage() {
           return;
         }
 
-        // --- SWR Pattern: Instant Cache Load ---
-        let hasCache = false;
-        const kidsCache = store.getChildrenSync().filter(k => k.parent_id === currentUser.id);
-        if (kidsCache.length > 0) hasCache = true;
-        setChildren(kidsCache);
-        if (kidsCache.length > 0) {
-          const myKidIdsCache = kidsCache.map(k => k.id);
-          const allBCache = store.getBookingsSync().filter(b => myKidIdsCache.includes(b.child_id));
-          setBookings(allBCache.filter(b => b.status !== 'Cancelled'));
-        }
-        if (hasCache) {
-          setLoading(false);
-        }
-
-        // --- SWR Pattern: Background Fetch ---
         const [allUsers, data, allBookingsSys] = await Promise.all([
           store.getUsers(),
           store.getChildren(currentUser.id),
           store.getBookings()
         ]);
         
-        if (reqId !== requestRef.current) return; // Prevent Race Condition
+        if (reqId !== requestRef.current) return;
         
         const freshUser = allUsers.find(u => u.phone === currentUser?.phone) || allUsers.find(u => u.id === currentUser?.id || u.user_id === currentUser?.user_id);
         if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
@@ -83,13 +67,19 @@ export default function HomePage() {
           store.setCurrentUser(freshUser);
         }
 
-        setChildren(data || []);
-        if (data && data.length > 0) {
-          const myKidIds = data.map(k => k.id);
+        const kidsToSave = data || [];
+        setChildren(kidsToSave);
+        store.setLocal('ORCA_MY_KIDS', kidsToSave);
+        
+        if (kidsToSave.length > 0) {
+          const myKidIds = kidsToSave.map(k => k.id);
           const allB = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
-          setBookings(allB.filter(b => b.status !== 'Cancelled'));
+          const bookingsToSave = allB.filter(b => b.status !== 'Cancelled');
+          setBookings(bookingsToSave);
+          store.setLocal('ORCA_MY_BOOKINGS', bookingsToSave);
         } else {
           setBookings([]);
+          store.setLocal('ORCA_MY_BOOKINGS', []);
         }
         setLoading(false);
       } catch (err) {

@@ -101,11 +101,11 @@ export default function SchedulePage() {
           setLoading(false);
         }
       } else {
-        const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
-        if (kidsCache.length > 0) {
-          setChildren(kidsCache);
-          const myKidIds = kidsCache.map(k => k.id);
-          setAllBookings(store.getBookingsSync().filter(b => myKidIds.includes(b.child_id)));
+        const myKids = store.getLocal('ORCA_MY_KIDS', []);
+        const myBookings = store.getLocal('ORCA_MY_BOOKINGS', []);
+        if (myKids.length > 0) {
+          setChildren(myKids);
+          setAllBookings(myBookings);
           setLoading(false);
         }
       }
@@ -121,27 +121,10 @@ export default function SchedulePage() {
       return;
     }
 
-    // --- SWR Pattern: Instant Load from Cache ---
-    let hasCache = false;
     if (user.role === 'admin') {
       setIsAdmin(true);
-      const bCache = store.getBookingsSync();
-      if (bCache.length > 0) hasCache = true;
-      setAllBookings(bCache);
-      setParents(store.getUsersSync().filter(u => u.role === 'parent'));
-      setAllChildren(store.getChildrenSync());
     } else {
       setIsAdmin(false);
-      const kidsCache = store.getChildrenSync().filter(k => k.parent_id === user.id);
-      if (kidsCache.length > 0) hasCache = true;
-      setChildren(kidsCache);
-      const myKidIdsCache = kidsCache.map(k => k.id);
-      setAllBookings(store.getBookingsSync().filter(b => myKidIdsCache.includes(b.child_id)));
-    }
-    
-    // Instantly hide loading ONLY if we have cache to prevent empty state flash
-    if (hasCache) {
-      setLoading(false);
     }
 
     // --- SWR Pattern: Background Fetch from Supabase ---
@@ -158,9 +141,19 @@ export default function SchedulePage() {
         store.getChildren(user.id), store.getBookings()
       ]);
       if (reqId !== requestRef.current) return;
-      setChildren(kids);
-      const myKidIds = kids.map(k => k.id);
-      setAllBookings(allBookingsSys.filter(b => myKidIds.includes(b.child_id)));
+      const kidsToSave = kids || [];
+      setChildren(kidsToSave);
+      store.setLocal('ORCA_MY_KIDS', kidsToSave);
+      
+      if (kidsToSave.length > 0) {
+        const myKidIds = kidsToSave.map(k => k.id);
+        const myB = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
+        setAllBookings(myB);
+        store.setLocal('ORCA_MY_BOOKINGS', myB);
+      } else {
+        setAllBookings([]);
+        store.setLocal('ORCA_MY_BOOKINGS', []);
+      }
     }
     
     // Ensure loading is hidden after fetch completes
