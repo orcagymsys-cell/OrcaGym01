@@ -80,15 +80,19 @@ export default function EditChildPage() {
     loadChild();
   }, [childId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        setPhotoDataUrl(evt.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { compressImage } = await import('@/lib/imageUtils');
+        const compressed = await compressImage(file, 600);
+        setPhotoDataUrl(compressed);
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onload = (evt) => setPhotoDataUrl(evt.target?.result as string);
+        reader.readAsDataURL(file);
+      }
     }
   };
 

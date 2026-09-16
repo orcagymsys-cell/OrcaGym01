@@ -343,7 +343,7 @@ export const store = {
   async getChildren(parentId?: string): Promise<Child[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('children').select('id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at').order('id');
+        const { data, error } = await supabase.from('children').select('id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at,photo_url').order('id');
         if (!error) {
           const freshData = data || [];
           setLocal(STORAGE_KEYS.CHILDREN, freshData);

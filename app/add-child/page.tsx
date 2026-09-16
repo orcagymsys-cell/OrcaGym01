@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import { store } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
+import { compressImage } from '@/lib/imageUtils';
 import { Child } from '@/lib/types';
 
 export default function AddChildPage() {
@@ -46,15 +47,22 @@ export default function AddChildPage() {
     checkCount();
   }, [router]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        setPhotoDataUrl(evt.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file, 600);
+        setPhotoDataUrl(compressedBase64);
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+        // Fallback to original
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setPhotoDataUrl(evt.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

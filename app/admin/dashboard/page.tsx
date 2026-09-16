@@ -7,6 +7,7 @@ import { store, isSupabaseConfigured, setupRealtimeSubscriptions } from '@/lib/s
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
 import { showToast } from '@/components/Toast';
+import { compressImage } from '@/lib/imageUtils';
 import { Child, AuditLog, Booking, UserProfile, PaymentProofRecord } from '@/lib/types';
 
 function calculateAge(dob: string): string {
@@ -1760,14 +1761,17 @@ function AdminDashboardContent() {
                       <input
                         type="file"
                         accept="image/*,.pdf"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setPaymentSlipFile(reader.result as string);
-                            };
-                            reader.readAsDataURL(file);
+                            try {
+                              const compressed = await compressImage(file, 600);
+                              setPaymentSlipFile(compressed);
+                            } catch (err) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => setPaymentSlipFile(reader.result as string);
+                              reader.readAsDataURL(file);
+                            }
                           }
                         }}
                         className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
@@ -2973,14 +2977,17 @@ function AdminDashboardContent() {
                     <input
                       type="file"
                       accept="image/*,.pdf"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setTopUpPaymentSlipFile(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const compressed = await compressImage(file, 600);
+                            setTopUpPaymentSlipFile(compressed);
+                          } catch (err) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => setTopUpPaymentSlipFile(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
                         }
                       }}
                       className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
@@ -3327,14 +3334,17 @@ function AdminDashboardContent() {
                     <input
                       type="file"
                       accept="image/*,.pdf"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setEditPaymentSlipFile(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const compressed = await compressImage(file, 600);
+                            setEditPaymentSlipFile(compressed);
+                          } catch (err) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => setEditPaymentSlipFile(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
                         }
                       }}
                       className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
@@ -3422,12 +3432,21 @@ function AdminDashboardContent() {
               
               <div className="overflow-y-auto pr-2 space-y-4 text-sm" style={{ scrollbarWidth: 'thin' }}>
                 {/* ข้อมูลเด็ก */}
-                <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100">
-                   <div className="font-extrabold text-[#001a3a] text-base mb-1">
-                     น้อง {c.nickname} ({c.full_name})
-                   </div>
-                   <div className="text-slate-600">
-                     อายุ: <strong>{calculateAge(c.dob)}</strong>
+                <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100 flex gap-4 items-center">
+                   {c.photo_url ? (
+                     <img src={c.photo_url} alt={c.nickname} className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm" />
+                   ) : (
+                     <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-3xl shadow-sm">
+                       {c.avatar === 'boy' ? '👦🏻' : '👧🏻'}
+                     </div>
+                   )}
+                   <div>
+                     <div className="font-extrabold text-[#001a3a] text-base mb-1">
+                       น้อง {c.nickname} ({c.full_name})
+                     </div>
+                     <div className="text-slate-600">
+                       อายุ: <strong>{calculateAge(c.dob)}</strong>
+                     </div>
                    </div>
                 </div>
                 
