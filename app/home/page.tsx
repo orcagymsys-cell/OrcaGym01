@@ -18,28 +18,9 @@ export default function HomePage() {
   }, []);
 
   const requestRef = useRef(0);
-  const [children, setChildren] = useState<Child[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (!user) return [];
-    return store.getChildrenSync().filter(k => k.parent_id === user.id);
-  });
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const user = store.getCurrentUser();
-    if (!user) return [];
-    const kids = store.getChildrenSync().filter(k => k.parent_id === user.id);
-    const kidIds = kids.map(k => k.id);
-    return store.getBookingsSync().filter(b => kidIds.includes(b.child_id));
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const user = store.getCurrentUser();
-    if (!user) return true;
-    if (user.role === 'admin') return false;
-    const kids = store.getChildrenSync().filter(k => k.parent_id === user.id);
-    return kids.length === 0;
-  });
+  const [children, setChildren] = useState<Child[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
