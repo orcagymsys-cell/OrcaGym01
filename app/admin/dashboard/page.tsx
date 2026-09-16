@@ -1023,10 +1023,15 @@ function AdminDashboardContent() {
 
   // 3. อัตราการจอง Class ที่นิยม & ช่วงเวลาที่นิยมมากที่สุด (Class & Slot Popularity)
   const activeBookings = allBookings.filter(b => b.status !== 'Cancelled');
-  const cubsBookingsCount = activeBookings.filter(b => b.course_name?.toLowerCase().includes('cubs') || !b.course_name?.toLowerCase().includes('mega')).length;
+  
+  const flipBookingsCount = activeBookings.filter(b => b.course_name?.toLowerCase().includes('flip')).length;
   const megaBookingsCount = activeBookings.filter(b => b.course_name?.toLowerCase().includes('mega')).length;
+  // Anything else (or specifically cubs) goes to Cubs
+  const cubsBookingsCount = activeBookings.filter(b => !b.course_name?.toLowerCase().includes('mega') && !b.course_name?.toLowerCase().includes('flip')).length;
+  
   const totalActiveBookings = activeBookings.length || 1;
   const cubsPercent = Math.round((cubsBookingsCount / totalActiveBookings) * 100);
+  const flipPercent = Math.round((flipBookingsCount / totalActiveBookings) * 100);
   const megaPercent = Math.round((megaBookingsCount / totalActiveBookings) * 100);
 
   // Group by time slot
@@ -1411,6 +1416,20 @@ function AdminDashboardContent() {
                       </div>
                       <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-sky-400 to-blue-600 rounded-full transition-all duration-500" style={{ width: `${cubsPercent}%` }}></div>
+                      </div>
+                    </div>
+
+                    {/* Orca Flip */}
+                    <div>
+                      <div className="flex justify-between items-center text-xs font-bold text-[#001a3a] mb-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                          <span>Orca Flip (อายุ 6-15+ ปี)</span>
+                        </span>
+                        <span className="font-extrabold text-emerald-700">{flipBookingsCount} ครั้ง ({flipPercent}%)</span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-600 rounded-full transition-all duration-500" style={{ width: `${flipPercent}%` }}></div>
                       </div>
                     </div>
 
