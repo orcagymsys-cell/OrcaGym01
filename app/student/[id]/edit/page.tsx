@@ -243,7 +243,7 @@ export default function EditChildPage() {
                     const val = idx + 1;
                     return (
                       <option key={val} value={val}>
-                        {val} ครั้ง {val > (child?.total_hours || 0) ? `(เติม +${val - (child?.total_hours || 0)} ครั้งจากตะกร้าครอบครัว)` : ''}
+                        {val} ครั้ง
                       </option>
                     );
                   })}
