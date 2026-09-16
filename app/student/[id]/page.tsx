@@ -17,8 +17,15 @@ export default function StudentDashboardPage() {
 
   const requestRef = useRef(0);
   const [mounted, setMounted] = useState(false);
-  const [child, setChild] = useState<Child | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [child, setChild] = useState<Child | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const all = store.getChildrenSync();
+    return all.find(c => c.id === childId) || null;
+  });
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    if (typeof window === 'undefined') return [];
+    return store.getBookingsSync().filter(b => b.child_id === childId);
+  });
   const [loading, setLoading] = useState(false);
   const [parentPurchased, setParentPurchased] = useState<number>(6);
   const [familyChildren, setFamilyChildren] = useState<Child[]>([]);
@@ -174,7 +181,7 @@ export default function StudentDashboardPage() {
     }
   };
 
-  if (!mounted || loading || !child) {
+  if (loading || !child) {
     return (
     <div className="font-sans animate-pulse p-4 max-w-[1200px] mx-auto space-y-6">
       <div className="bg-slate-200 h-12 w-64 rounded-xl"></div>

@@ -43,7 +43,11 @@ export default function BookingCalendarPage() {
   const minParentDate = getMinParentBookingDate();
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const [child, setChild] = useState<Child | null>(null);
+  const [child, setChild] = useState<Child | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const all = store.getChildrenSync();
+    return all.find(c => c.id === childId) || null;
+  });
   const [selectedDate, setSelectedDate] = useState<string>(minParentDate);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [month, setMonth] = useState<number>(new Date(minParentDate).getMonth());

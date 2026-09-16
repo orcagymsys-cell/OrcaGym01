@@ -222,8 +222,16 @@ export const store = {
   },
 
   getUsersSync(): UserProfile[] { return getLocal(STORAGE_KEYS.USERS, []); },
-  getChildrenSync(): Child[] { return getLocal('CHILDREN_CACHE', []); },
-  getBookingsSync(): Booking[] { return getLocal('BOOKINGS_CACHE', []); },
+  getChildrenSync(): Child[] { 
+    const myKids = getLocal<Child[]>('ORCA_MY_KIDS', []);
+    if (myKids.length > 0) return myKids;
+    return getLocal<Child[]>('CHILDREN_CACHE', []); 
+  },
+  getBookingsSync(): Booking[] { 
+    const myBookings = getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
+    if (myBookings.length > 0) return myBookings;
+    return getLocal<Booking[]>('BOOKINGS_CACHE', []); 
+  },
   getAuditLogsSync(): AuditLog[] { return getLocal(STORAGE_KEYS.AUDIT_LOGS, []); },
   getSlotQuotasSync(): Record<string, any> { return getLocal(STORAGE_KEYS.QUOTAS, {}); },
 
