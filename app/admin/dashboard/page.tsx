@@ -147,8 +147,9 @@ function AdminDashboardContent() {
   const [editPaymentDateTime, setEditPaymentDateTime] = useState('');
   const [editPaymentSlipFile, setEditPaymentSlipFile] = useState<string | null>(null);
 
-  // Search State
+  // Search & Filter State
   const [parentSearchQuery, setParentSearchQuery] = useState('');
+  const [parentStatusFilter, setParentStatusFilter] = useState('all'); // all, active, free_trial, expired
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
 
@@ -1139,6 +1140,74 @@ function AdminDashboardContent() {
     return <div className="p-8 text-center text-[#001a3a] font-bold text-lg h-screen flex items-center justify-center">กำลังตรวจสอบสิทธิ์ Admin...</div>;
   }
 
+  const checkParentFilter = (p: UserProfile) => {
+    let searchMatch = true;
+    if (parentSearchQuery.trim()) {
+      const q = parentSearchQuery.toLowerCase().trim();
+      searchMatch = !!(
+        p.name?.toLowerCase().includes(q) ||
+        p.user_id?.toLowerCase().includes(q) ||
+        p.email?.toLowerCase().includes(q) ||
+        p.phone?.toLowerCase().includes(q) ||
+        p.payment_ref_no?.toLowerCase().includes(q) ||
+        p.payment_payer_name?.toLowerCase().includes(q)
+      );
+    }
+    
+    if (!searchMatch) return false;
+    if (parentStatusFilter === 'all') return true;
+
+    const pChildren = children.filter((c) => isChildOfParent(c, p));
+    const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
+    const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
+    
+    const purchasedHoursNum = p.purchased_hours || 6;
+    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
+      || (purchasedHoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+      || (purchasedHoursNum === 2 ? coursesListGlobal.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
+    
+    const isFreeCourse = purchasedHoursNum === 2 || pricingOpt?.tag?.toLowerCase().includes('free trial');
+    
+    if (parentStatusFilter === 'free_trial' && !isFreeCourse) return false;
+    if (parentStatusFilter === 'active' && isFreeCourse) return false;
+
+    const pkgStartDateStr = p.payment_datetime || p.created_at || '';
+    const pkgStartDate = pkgStartDateStr ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T')) : new Date();
+    const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+    const pkgExpiryDate = new Date(validPkgStartDate);
+    
+    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+      const durStr = pricingOpt.duration;
+      const lower = durStr.toLowerCase();
+      const match = durStr.match(/(\d+)/);
+      const val = match ? parseInt(match[1], 10) : 0;
+      if (lower.includes('day') || lower.includes('วัน')) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
+      else if (lower.includes('week') || lower.includes('สัปดาห์')) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + (val * 7));
+      else pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
+    } else {
+      if (isFreeCourse) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + 14);
+      else {
+        let pkgDurationMonths = 2;
+        if (purchasedHoursNum === 12) pkgDurationMonths = 4;
+        else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+        else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+        pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+      }
+    }
+    
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const expDay = new Date(pkgExpiryDate);
+    expDay.setHours(0, 0, 0, 0);
+    
+    const isExpired = expDay.getTime() < todayDate.getTime();
+    
+    if (parentStatusFilter === 'expired' && !isExpired) return false;
+    if (parentStatusFilter === 'active' && isExpired) return false;
+    
+    return true;
+  };
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto w-full pb-24 font-['Anuphan',sans-serif]">
       
@@ -1875,39 +1944,40 @@ function AdminDashboardContent() {
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <h3 className="text-base font-bold text-[#001a3a]">
-                รายการบัญชีผู้ปกครองทั้งหมด ({parents.filter((p) => {
-                  if (!parentSearchQuery.trim()) return true;
-                  const q = parentSearchQuery.toLowerCase().trim();
-                  return (
-                    p.name?.toLowerCase().includes(q) ||
-                    p.user_id?.toLowerCase().includes(q) ||
-                    p.email?.toLowerCase().includes(q) ||
-                    p.phone?.toLowerCase().includes(q) ||
-                    p.payment_ref_no?.toLowerCase().includes(q) ||
-                    p.payment_payer_name?.toLowerCase().includes(q)
-                  );
-                }).length} / {parents.length} บัญชี)
+                รายการบัญชีผู้ปกครองทั้งหมด ({parents.filter(checkParentFilter).length} / {parents.length} บัญชี)
               </h3>
 
-              {/* Search Bar for Parents */}
-              <div className="relative w-full sm:w-72">
-                <input
-                  type="text"
-                  value={parentSearchQuery}
-                  onChange={(e) => setParentSearchQuery(e.target.value)}
-                  placeholder="ค้นหาผู้ปกครอง (ชื่อ, Email, Phone)..."
-                  className="w-full h-10 pl-9 pr-8 bg-slate-50 border border-slate-300 rounded-xl text-xs font-normal text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
-                />
-                <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
-                {parentSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setParentSearchQuery('')}
-                    className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer font-bold"
-                  >
-                    ✕
-                  </button>
-                )}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative w-full sm:w-72">
+                  <input
+                    type="text"
+                    value={parentSearchQuery}
+                    onChange={(e) => setParentSearchQuery(e.target.value)}
+                    placeholder="ค้นหาผู้ปกครอง (ชื่อ, Email, Phone)..."
+                    className="w-full h-10 pl-9 pr-8 bg-slate-50 border border-slate-300 rounded-xl text-xs font-normal text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
+                  {parentSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setParentSearchQuery('')}
+                      className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  value={parentStatusFilter}
+                  onChange={(e) => setParentStatusFilter(e.target.value)}
+                  className="w-full sm:w-48 h-10 px-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs cursor-pointer"
+                >
+                  <option value="all">ทั้งหมด (All)</option>
+                  <option value="active">นักเรียนปัจจุบัน (Active)</option>
+                  <option value="free_trial">ทดลองเรียนฟรี (Free Trial)</option>
+                  <option value="expired">หมดอายุแล้ว (Expired)</option>
+                </select>
               </div>
             </div>
 
@@ -1926,18 +1996,7 @@ function AdminDashboardContent() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {parents
-                      .filter((p) => {
-                        if (!parentSearchQuery.trim()) return true;
-                        const q = parentSearchQuery.toLowerCase().trim();
-                        return (
-                          p.name?.toLowerCase().includes(q) ||
-                          p.user_id?.toLowerCase().includes(q) ||
-                          p.email?.toLowerCase().includes(q) ||
-                          p.phone?.toLowerCase().includes(q) ||
-                          p.payment_ref_no?.toLowerCase().includes(q) ||
-                          p.payment_payer_name?.toLowerCase().includes(q)
-                        );
-                      })
+                      .filter(checkParentFilter)
                       .map((p) => {
                         const pChildren = children.filter((c) => isChildOfParent(c, p));
                         const pChildrenCount = pChildren.length;
