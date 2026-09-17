@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Booking, Child, UserProfile } from '@/lib/types';
 import { store } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
@@ -15,8 +15,15 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseFilter, setSelectedCourseFilter] = useState('All Courses');
 
-  // Derive unique courses from bookings
-  const courses = Array.from(new Set(allBookings.map(b => b.course_name).filter(Boolean)));
+  const [dbCourses, setDbCourses] = useState<any[]>([]);
+  useEffect(() => {
+    store.getCourses().then(c => setDbCourses(c || []));
+  }, []);
+
+  // Merge unique courses from DB and legacy bookings
+  const bookedCourses = Array.from(new Set(allBookings.map(b => b.course_name).filter(Boolean)));
+  const dbCourseNames = dbCourses.map(c => c.display_title);
+  const courses = Array.from(new Set([...dbCourseNames, ...bookedCourses]));
 
   const filteredBookings = allBookings.filter(b => {
     // Exclude cancelled if preferred, or keep them. Let's keep them so admin can see, but maybe they want to see active only?
@@ -223,8 +230,13 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
                     {/* Student Name */}
                     <td className="p-3 sm:p-3.5">
-                      <div className="font-black text-[#001a3a] text-sm">
+                      <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
                         {b.child_nickname ? (b.child_nickname.startsWith('น้อง') ? b.child_nickname : `น้อง${b.child_nickname}`) : 'น้องนักเรียน'}
+                        {parent?.purchased_hours === 2 && (
+                          <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
+                            ฟรี
+                          </span>
+                        )}
                       </div>
                       {b.child_full_name && (
                         <div className="text-[11px] font-medium text-slate-500">

@@ -241,7 +241,7 @@ export const store = {
   async getUsers(): Promise<UserProfile[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('profiles').select('id,user_id,name,phone,email,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_slip,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('profiles').select('id,user_id,name,phone,email,password,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_slip,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at').order('created_at', { ascending: false });
         if (!error) {
           // Always use Supabase data (even empty array) and overwrite local cache
           // This handles deletions without causing flicker

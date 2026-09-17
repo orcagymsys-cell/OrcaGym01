@@ -1935,13 +1935,21 @@ function AdminDashboardContent() {
                           : new Date();
                         const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
                         const purchasedHoursNum = p.purchased_hours || 6;
-                        let pkgDurationMonths = 2;
-                        if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-                        else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
-                        else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
-
+                        const isFreeCourse = purchasedHoursNum === 2;
+                        
                         const pkgExpiryDate = new Date(validPkgStartDate);
-                        pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+                        let pkgDurationText = '';
+                        if (isFreeCourse) {
+                          pkgExpiryDate.setDate(pkgExpiryDate.getDate() + 14);
+                          pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
+                        } else {
+                          let pkgDurationMonths = 2;
+                          if (purchasedHoursNum === 12) pkgDurationMonths = 4;
+                          else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+                          else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+                          pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+                          pkgDurationText = `${pkgDurationMonths} เดือน`;
+                        }
 
                         const todayDate = new Date();
                         todayDate.setHours(0, 0, 0, 0);
@@ -2040,7 +2048,7 @@ function AdminDashboardContent() {
                                     <span>{displayCourseName}</span>
                                     <span className="text-slate-300">|</span>
                                     <span className="font-bold text-blue-700">
-                                      {pBookingsCount}/{purchasedHoursNum} ครั้ง ({pkgDurationMonths} เดือน)
+                                      {pBookingsCount}/{purchasedHoursNum} ครั้ง ({pkgDurationText})
                                     </span>
                                   </span>
                                   <div className="text-[10px] text-slate-600 font-semibold pl-1">

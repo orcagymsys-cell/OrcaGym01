@@ -280,8 +280,13 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col pl-2">
-              <span className="text-base font-black text-[#001a3a] leading-tight">
+              <span className="text-base font-black text-[#001a3a] leading-tight flex items-center flex-wrap gap-1">
                 ตะกร้าเรียนครอบครัวรวม
+                {totalPurchased === 2 && (
+                  <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm animate-pulse">
+                    ทดลองเรียนฟรี
+                  </span>
+                )}
               </span>
               <span className="text-sm font-black text-[#0088ff] leading-snug">
                 {mainCourseName}
