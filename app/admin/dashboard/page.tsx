@@ -1052,6 +1052,11 @@ function AdminDashboardContent() {
   const sortedPopularSlots = Object.entries(slotCountMap).sort((a, b) => b[1] - a[1]);
   const maxSlotCount = Math.max(...Object.values(slotCountMap), 1);
 
+  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
+  useEffect(() => {
+    store.getCourses().then(c => setCoursesListGlobal(c || []));
+  }, []);
+
   // ⏳ 4. รายชื่อผู้ปกครองที่แพ็กเรียนใกล้ครบกำหนด (ภายใน 5 วัน หรือ หมดอายุแล้ว และยังจองคลาสเรียนไม่ครบ)
   const expiringParentsList = parents.map(p => {
     const pkgStartDateStr = p.payment_datetime || p.created_at || '';
@@ -1059,13 +1064,43 @@ function AdminDashboardContent() {
     const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
     
     const hoursNum = p.purchased_hours || 6;
-    let months = 2;
-    if (hoursNum === 12) months = 4;
-    else if (hoursNum === 24) months = 6;
-    else if (hoursNum === 48) months = 12;
+    
+    const pChildren = children.filter(c => isChildOfParent(c, p));
+    const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
+    const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
+    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === hoursNum);
 
     const expiryDate = new Date(validPkgStartDate);
-    expiryDate.setMonth(expiryDate.getMonth() + months);
+    let pkgDurationText = '';
+    
+    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+      const durStr = pricingOpt.duration;
+      const lower = durStr.toLowerCase();
+      const match = durStr.match(/(\d+)/);
+      const val = match ? parseInt(match[1], 10) : 0;
+      
+      if (lower.includes('day') || lower.includes('วัน')) {
+        expiryDate.setDate(expiryDate.getDate() + val);
+      } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
+        expiryDate.setDate(expiryDate.getDate() + (val * 7));
+      } else {
+        expiryDate.setMonth(expiryDate.getMonth() + val);
+      }
+      pkgDurationText = durStr;
+    } else {
+      const isFreeCourse = hoursNum === 2;
+      if (isFreeCourse) {
+        expiryDate.setDate(expiryDate.getDate() + 14);
+        pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
+      } else {
+        let months = 2;
+        if (hoursNum === 12) months = 4;
+        else if (hoursNum === 24) months = 6;
+        else if (hoursNum === 48) months = 12;
+        expiryDate.setMonth(expiryDate.getMonth() + months);
+        pkgDurationText = `${months} เดือน`;
+      }
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1078,7 +1113,6 @@ function AdminDashboardContent() {
     const yearStr = expiryDate.getFullYear() + 543;
     const formattedExpiryDate = `${dayStr}/${monthStr}/${yearStr}`;
 
-    const pChildren = children.filter(c => isChildOfParent(c, p));
     const pChildIds = pChildren.map(c => c.id);
     const pBookingsCount = allBookings.filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
     const unbookedCount = Math.max(0, hoursNum - pBookingsCount);
@@ -1086,18 +1120,13 @@ function AdminDashboardContent() {
     return {
       parent: p,
       daysLeft,
-      months,
+      pkgDurationText,
       hoursNum,
       unbookedCount,
       formattedExpiryDate,
       isExpiringSoon: daysLeft <= 5 && unbookedCount > 0,
     };
   }).filter(item => item.isExpiringSoon);
-
-  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
-  useEffect(() => {
-    store.getCourses().then(c => setCoursesListGlobal(c || []));
-  }, []);
   
   const cubsCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'));
   const megaCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'));
@@ -1239,12 +1268,12 @@ function AdminDashboardContent() {
                 พบผู้ปกครองจำนวน {expiringParentsList.length} บัญชี ที่แพ็กจะครบกำหนดระยะเวลาเรียน (แจ้งเตือนล่วงหน้า 5 วันก่อนวันครบกำหนด):
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {expiringParentsList.map(({ parent: p, daysLeft, months, hoursNum, formattedExpiryDate }) => (
+                {expiringParentsList.map(({ parent: p, daysLeft, pkgDurationText, hoursNum, formattedExpiryDate }) => (
                   <div key={p.id} className="bg-white p-3 rounded-2xl border border-amber-200 shadow-2xs flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-[#001a3a] text-xs sm:text-sm">{p.name}</div>
                       <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        📞 {p.phone} | โควต้า: <strong>{hoursNum} ครั้ง ({months} เดือน)</strong>
+                        📞 {p.phone} | โควต้า: <strong>{hoursNum} ครั้ง ({pkgDurationText})</strong>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1935,20 +1964,42 @@ function AdminDashboardContent() {
                           : new Date();
                         const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
                         const purchasedHoursNum = p.purchased_hours || 6;
-                        const isFreeCourse = purchasedHoursNum === 2;
+                        
+                        const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
+                        const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
+                        const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum);
                         
                         const pkgExpiryDate = new Date(validPkgStartDate);
                         let pkgDurationText = '';
-                        if (isFreeCourse) {
-                          pkgExpiryDate.setDate(pkgExpiryDate.getDate() + 14);
-                          pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
+                        
+                        if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+                          const durStr = pricingOpt.duration;
+                          const lower = durStr.toLowerCase();
+                          const match = durStr.match(/(\d+)/);
+                          const val = match ? parseInt(match[1], 10) : 0;
+                          
+                          if (lower.includes('day') || lower.includes('วัน')) {
+                            pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
+                          } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
+                            pkgExpiryDate.setDate(pkgExpiryDate.getDate() + (val * 7));
+                          } else {
+                            pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
+                          }
+                          pkgDurationText = durStr;
                         } else {
-                          let pkgDurationMonths = 2;
-                          if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-                          else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
-                          else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
-                          pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
-                          pkgDurationText = `${pkgDurationMonths} เดือน`;
+                          // Fallback logic
+                          const isFreeCourse = purchasedHoursNum === 2;
+                          if (isFreeCourse) {
+                            pkgExpiryDate.setDate(pkgExpiryDate.getDate() + 14);
+                            pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
+                          } else {
+                            let pkgDurationMonths = 2;
+                            if (purchasedHoursNum === 12) pkgDurationMonths = 4;
+                            else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+                            else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+                            pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+                            pkgDurationText = `${pkgDurationMonths} เดือน`;
+                          }
                         }
 
                         const todayDate = new Date();
