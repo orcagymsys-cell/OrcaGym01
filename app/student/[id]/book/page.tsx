@@ -156,7 +156,7 @@ export default function BookingCalendarPage() {
       }
 
       // Check Real-time Quota against all bookings for this slot
-      const allSlotBookings = await store.getAllBookings(); // We need all bookings to check class capacity
+      const allSlotBookings = await store.getBookings(); // We need all bookings to check class capacity
       const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && b.time_slot === selectedSlot && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
       
       const courseKeyName = freshChild.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
@@ -179,7 +179,7 @@ export default function BookingCalendarPage() {
         setAlertModalText(`🔒 ขออภัยค่ะ รอบเวลา ${selectedSlot} เพิ่งถูกจองเต็มไปเมื่อสักครู่ (${customQuota}/${customQuota} คน) กรุณาเลือกรอบเวลาอื่น`);
         setIsSubmitting(false);
         // Refresh the page data so UI updates the full slot
-        store.getAllBookings().then(b => setDateBookings(b.filter(bk => bk.booking_date === selectedDate)));
+        store.getBookings().then(b => setDateBookings(b.filter(bk => bk.booking_date === selectedDate)));
         return;
       }
 
