@@ -418,7 +418,7 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleSendEmailToParent = (p: any) => {
+  const handleSendEmailToParent = async (p: any) => {
     const parentEmail = p.email || `${p.user_id}@orcagym.com`;
     const parentName = p.name;
     const parentChildren = children.filter(c => isChildOfParent(c, p));
@@ -500,14 +500,27 @@ function AdminDashboardContent() {
       }
 
       body += `\nกรุณาติดต่อแอดมินเพื่อต่ออายุคอร์สเรียน หรือทำการจองคลาสเรียนก่อนหมดอายุครับ/ค่ะ\n\nขอบคุณครับ\nORCA GYMNASTICS`;
-      showToast(`📧 เปิดหน้าต่างส่งอีเมลแจ้งเตือนไปยังคุณ ${parentName} (${parentEmail})`);
     } else {
       body += `\n\nขอบคุณครับ\nORCA GYMNASTICS`;
-      showToast(`📧 เปิดหน้าต่างส่งอีเมลไปยังคุณ ${parentName} (${parentEmail})`);
     }
 
-    const mailtoLink = `mailto:${parentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
+    showToast(`⏳ กำลังส่งอีเมลไปยังคุณ ${parentName}...`);
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: parentEmail, name: parentName, subject, body }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ ส่งอีเมลไปยังคุณ ${parentName} (${parentEmail}) สำเร็จ!`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error('Email error:', err);
+      showToast(`❌ เกิดข้อผิดพลาดในการส่งอีเมล: ${err.message}`);
+    }
   };
 
   const handleToggleExpandParent = (parentId: string) => {
