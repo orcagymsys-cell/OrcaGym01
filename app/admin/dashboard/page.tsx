@@ -1088,7 +1088,7 @@ function AdminDashboardContent() {
       } else {
         expiryDate.setMonth(expiryDate.getMonth() + val);
       }
-      pkgDurationText = durStr;
+      pkgDurationText = (hoursNum === 2 || pricingOpt?.tag?.toLowerCase().includes('free trial')) ? `ทดลองเรียนฟรี (${durStr})` : durStr;
     } else {
       const isFreeCourse = hoursNum === 2;
       if (isFreeCourse) {
@@ -1990,7 +1990,7 @@ function AdminDashboardContent() {
                           } else {
                             pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
                           }
-                          pkgDurationText = durStr;
+                          pkgDurationText = (purchasedHoursNum === 2 || pricingOpt?.tag?.toLowerCase().includes('free trial')) ? `ทดลองเรียนฟรี (${durStr})` : durStr;
                         } else {
                           // Fallback logic
                           const isFreeCourse = purchasedHoursNum === 2;
