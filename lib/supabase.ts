@@ -227,6 +227,9 @@ export const store = {
     if (myKids.length > 0) return myKids;
     return getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []); 
   },
+  getCoursesSync(): CourseConfig[] {
+    return getLocal<CourseConfig[]>(STORAGE_KEYS.COURSES, []);
+  },
   getBookingsSync(): Booking[] { 
     const myBookings = getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
     if (myBookings.length > 0) return myBookings;
