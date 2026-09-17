@@ -1863,7 +1863,7 @@ function AdminDashboardContent() {
 
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1200px]">
+                <table className="w-full text-left border-collapse text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                   <thead>
                     <tr className="bg-[#001a3a] text-white font-bold text-xs">
                       <th className="py-3.5 px-4 font-semibold w-[10%]">USERNAME</th>
@@ -1983,10 +1983,6 @@ function AdminDashboardContent() {
                                 </div>
                                 <div className="text-[11px] text-slate-500 font-normal mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                   <span>✉️ {p.email || `${p.user_id}@orcagym.com`}</span>
-                                  <span className="text-slate-300">|</span>
-                                  <span>📅 วันที่ซื้อ: <strong className="text-slate-700 font-bold">{formattedPurchaseDate}</strong></span>
-                                  <span className="text-slate-300">|</span>
-                                  <span>⏳ หมดอายุ ({pkgDurationMonths} เดือน): <strong className="text-blue-900 font-bold">{formattedExpiryDate}</strong></span>
                                 </div>
                                 <div className="text-[10px] flex flex-wrap items-center gap-2 mt-1.5">
                                   {p.pdpa_accepted ? (
@@ -2126,7 +2122,9 @@ function AdminDashboardContent() {
                                      }}
                                      className="group flex items-center gap-1.5 px-3 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0 whitespace-nowrap"
                                    >
-                                     <span className="shrink-0 text-[14px]">🛒</span>
+                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                       <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                     </svg>
                                      <span className="shrink-0">ซื้อคอร์สเพิ่ม</span>
                                    </button>
                                    <button
@@ -2368,7 +2366,7 @@ function AdminDashboardContent() {
           {/* Structured Data Table for Student Information */}
           <div className="bg-white border border-slate-200/90 rounded-3xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse font-['Anuphan',sans-serif] table-fixed min-w-[1100px]">
+              <table className="w-full text-left border-collapse font-['Anuphan',sans-serif] whitespace-nowrap overflow-hidden text-ellipsis">
                 <thead>
                   <tr className="bg-[#001a3a] text-white text-xs font-bold tracking-wider">
                     <th className="py-4 px-4 whitespace-nowrap w-[25%]">
