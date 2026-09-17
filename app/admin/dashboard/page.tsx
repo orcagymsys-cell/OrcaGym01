@@ -1089,7 +1089,11 @@ function AdminDashboardContent() {
     };
   }).filter(item => item.isExpiringSoon);
 
-  const coursesListGlobal = typeof window !== 'undefined' ? store.getCoursesSync() : [];
+  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
+  useEffect(() => {
+    store.getCourses().then(c => setCoursesListGlobal(c || []));
+  }, []);
+  
   const cubsCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'));
   const megaCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'));
   const defaultCubsQuota = cubsCourse?.max_capacity || 10;
@@ -2740,12 +2744,11 @@ function AdminDashboardContent() {
                         <span>คลาส Orca Cubs (อายุ 4-10 ปี)</span>
                       </span>
                       <span className="bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {store.getCoursesSync().find(c => c.display_title.toLowerCase().includes('cubs'))?.max_capacity || 10} คน/รอบ
+                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'))?.max_capacity || 10} คน/รอบ
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
                       {['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'].map(slot => {
-                        const defaultCubsQuota = store.getCoursesSync().find(c => c.display_title.toLowerCase().includes('cubs'))?.max_capacity || 10;
                         const val = quotas[`Everyday_Orca Cubs_${slot}`]
                           ?? quotas[`Orca Cubs_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
@@ -2768,16 +2771,43 @@ function AdminDashboardContent() {
                         <span>คลาส Mega Orca (อายุ 5-15 ปี)</span>
                       </span>
                       <span className="bg-indigo-200 text-indigo-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {store.getCoursesSync().find(c => c.display_title.toLowerCase().includes('mega'))?.max_capacity || 10} คน/รอบ
+                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'))?.max_capacity || 10} คน/รอบ
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
                       {['10:00-12:00', '14:00-16:00', '17:30-19:30'].map(slot => {
-                        const defaultMegaQuota = store.getCoursesSync().find(c => c.display_title.toLowerCase().includes('mega'))?.max_capacity || 10;
                         const val = quotas[`Everyday_Mega Orca_${slot}`]
                           ?? quotas[`Mega Orca_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
                           ?? defaultMegaQuota;
+                        return (
+                          <div key={slot} className="flex justify-between">
+                            <span>• รอบ {slot} น.</span>
+                            <strong className="text-[#001a3a]">{val} คน</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Orca Flip Quota summary */}
+                  <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950">
+                      <span className="flex items-center gap-1.5">
+                        <span>🤸</span>
+                        <span>คลาส ORCA FLIP</span>
+                      </span>
+                      <span className="bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full text-[11px]">
+                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10} คน/รอบ
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 space-y-1 font-medium">
+                      {['13:00-14:30', '17:30-19:00'].map(slot => {
+                        const defaultFlipQuota = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10;
+                        const val = quotas[`Everyday_ORCA FLIP_${slot}`]
+                          ?? quotas[`ORCA FLIP_${slot}`]
+                          ?? quotas[`Everyday_${slot}`]
+                          ?? defaultFlipQuota;
                         return (
                           <div key={slot} className="flex justify-between">
                             <span>• รอบ {slot} น.</span>

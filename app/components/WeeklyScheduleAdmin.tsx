@@ -87,9 +87,11 @@ function getChildColor(str: string) {
 
 export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Booking[] }) {
   const [quotas, setQuotas] = useState<Record<string, number>>({});
+  const [courses, setCourses] = useState<any[]>([]);
   
   useEffect(() => {
     store.getSlotQuotas().then(setQuotas);
+    store.getCourses().then(c => setCourses(c || []));
   }, []);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
@@ -190,7 +192,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                                    quotas[`Everyday_${c.time}`] ??
                                                    quotas[`${c.course}_${c.time}`] ??
                                                    quotas[`${dateStr}_${c.time}`] ??
-                                                   (store.getCoursesSync().find(crs => crs.display_title.toLowerCase() === c.course.toLowerCase())?.max_capacity || 10);
+                                                   (courses.find(crs => crs.display_title.toLowerCase() === c.course.toLowerCase())?.max_capacity || 10);
                                   
                                   const isBooked = bookedForThisSlot.length > 0;
                                   const isFull = bookedForThisSlot.length >= maxQuota;
