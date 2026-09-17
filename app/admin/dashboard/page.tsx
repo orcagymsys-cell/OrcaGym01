@@ -2104,7 +2104,12 @@ function AdminDashboardContent() {
                                     <span>{displayCourseName}</span>
                                     <span className="text-slate-300">|</span>
                                     <span className="font-bold text-blue-700">
-                                      {pBookingsCount}/{purchasedHoursNum} ครั้ง ({pkgDurationText})
+                                      {pBookingsCount}/{purchasedHoursNum} ครั้ง{' '}
+                                      {pkgDurationText.includes('ทดลองเรียนฟรี') ? (
+                                        <span className="text-orange-500">({pkgDurationText})</span>
+                                      ) : (
+                                        <span>({pkgDurationText})</span>
+                                      )}
                                     </span>
                                   </span>
                                   <div className="text-[10px] text-slate-600 font-semibold pl-1">
