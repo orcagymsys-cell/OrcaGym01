@@ -155,7 +155,9 @@ export default function HomePage() {
     c.display_title?.toLowerCase().includes(mainCourseName.toLowerCase()) ||
     c.internal_name?.toLowerCase().includes(mainCourseName.toLowerCase())
   ) || coursesFromDB[0];
-  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum);
+  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
+    || (purchasedHoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+    || (purchasedHoursNum === 2 ? coursesFromDB.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
 
   const pkgExpiryDate = new Date(validPkgStartDate);
   let pkgDurationText = '';

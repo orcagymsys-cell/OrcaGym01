@@ -245,7 +245,9 @@ export default function StudentDashboardPage() {
     c.display_title?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) ||
     c.internal_name?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())
   ) || coursesFromDB[0];
-  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === totalPurchasedHours);
+  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === totalPurchasedHours)
+    || (totalPurchasedHours === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+    || (totalPurchasedHours === 2 ? coursesFromDB.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
 
   const pkgExpiryDate = new Date(validPkgStartDate);
   let pkgDurationText = '';

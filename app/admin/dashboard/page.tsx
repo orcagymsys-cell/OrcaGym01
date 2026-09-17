@@ -1068,7 +1068,9 @@ function AdminDashboardContent() {
     const pChildren = children.filter(c => isChildOfParent(c, p));
     const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
     const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
-    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === hoursNum);
+    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === hoursNum)
+      || (hoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+      || (hoursNum === 2 ? coursesListGlobal.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
 
     const expiryDate = new Date(validPkgStartDate);
     let pkgDurationText = '';
@@ -1967,7 +1969,10 @@ function AdminDashboardContent() {
                         
                         const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
                         const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
-                        const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum);
+                        // For free courses (purchasedHoursNum === 2), also search by Free Trial tag in case times field was saved incorrectly
+                        const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
+                          || (purchasedHoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+                          || (purchasedHoursNum === 2 ? coursesListGlobal.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
                         
                         const pkgExpiryDate = new Date(validPkgStartDate);
                         let pkgDurationText = '';
