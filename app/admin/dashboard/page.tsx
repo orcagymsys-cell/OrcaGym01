@@ -354,8 +354,7 @@ function AdminDashboardContent() {
     loadData();
 
     // Setup Supabase Realtime for instant updates
-    const cleanupRealtime = setupRealtimeSubscriptions(() => {
-      // Fetch fresh data in background without flickering
+    const fetchDataBackground = () => {
       Promise.all([
         store.getUsers(), store.getChildren(), store.getAuditLogs(),
         store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
@@ -367,7 +366,12 @@ function AdminDashboardContent() {
         setAllBookings(bAll);
         setQuotas(q);
       });
-    });
+    };
+
+    const cleanupRealtime = setupRealtimeSubscriptions(fetchDataBackground);
+
+    // Fallback: poll every 15 seconds in case Supabase Realtime is disabled on the project
+    const pollInterval = setInterval(fetchDataBackground, 15000);
 
     let syncChannel: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -378,6 +382,7 @@ function AdminDashboardContent() {
     return () => {
       if (cleanupRealtime) cleanupRealtime();
       if (syncChannel) syncChannel.close();
+      clearInterval(pollInterval);
     };
   }, [router, selectedDate]);
 
