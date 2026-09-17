@@ -17,6 +17,7 @@ export default function HomePage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [coursesFromDB, setCoursesFromDB] = useState<any[]>([]);
 
   useEffect(() => {
     const user = store.getCurrentUser();
@@ -59,11 +60,14 @@ export default function HomePage() {
 
         const parentUserId = currentUser.id || currentUser.user_id;
         
-        const [allUsers, allKids, allBookingsSys] = await Promise.all([
+        const [allUsers, allKids, allBookingsSys, allCourses] = await Promise.all([
           store.getUsers(),
           store.getChildren(),   // fetch ALL, filter locally to avoid id-field mismatch
-          store.getBookings()
+          store.getBookings(),
+          store.getCourses()
         ]);
+        
+        setCoursesFromDB(allCourses || []);
         
         if (reqId !== requestRef.current) return;
         
@@ -139,19 +143,50 @@ export default function HomePage() {
   const totalRemaining = Math.max(0, totalPurchased - totalAllocated);
   const mainCourseName = children[0]?.course_name || 'Orca Cubs';
 
-  // ⏳ 2-Month / Package Expiry Calculation (5 Days Pre-expiry Alert)
+  // ⏳ Package Expiry Calculation — reads duration from Orca Classes & Pricing
   const pkgStartDateStr = currentUser?.payment_datetime || currentUser?.created_at || new Date().toISOString();
   const pkgStartDate = new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'));
   const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
   
   const purchasedHoursNum = totalPurchased;
-  let pkgDurationMonths = 2; // Default 2 months for 6 hours
-  if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-  else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
-  else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+
+  // Look up the pricing option from the DB to get the exact duration
+  const mainCourseConfig = coursesFromDB.find(c =>
+    c.display_title?.toLowerCase().includes(mainCourseName.toLowerCase()) ||
+    c.internal_name?.toLowerCase().includes(mainCourseName.toLowerCase())
+  ) || coursesFromDB[0];
+  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum);
 
   const pkgExpiryDate = new Date(validPkgStartDate);
-  pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+  let pkgDurationText = '';
+  let pkgDurationMonths = 2; // kept for UI references
+
+  if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+    const durStr = pricingOpt.duration;
+    const lower = durStr.toLowerCase();
+    const match = durStr.match(/(\d+)/);
+    const val = match ? parseInt(match[1], 10) : 0;
+    if (lower.includes('day') || lower.includes('วัน')) {
+      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
+      pkgDurationText = durStr;
+      pkgDurationMonths = 0; // signal: not months-based
+    } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
+      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val * 7);
+      pkgDurationText = durStr;
+      pkgDurationMonths = 0;
+    } else {
+      pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
+      pkgDurationMonths = val;
+      pkgDurationText = `${val} เดือน`;
+    }
+  } else {
+    // Fallback to hardcoded mapping
+    if (purchasedHoursNum === 12) pkgDurationMonths = 4;
+    else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+    else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+    pkgDurationText = `${pkgDurationMonths} เดือน`;
+  }
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
@@ -319,7 +354,7 @@ export default function HomePage() {
         {/* Purchase & Expiry Date Box */}
         <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50/70 p-2.5 rounded-2xl border border-sky-100 text-xs font-semibold text-slate-700">
           <div>📅 <strong>วันที่ซื้อคอร์ส:</strong> <span className="text-slate-900 font-bold">{formattedPurchaseDate}</span></div>
-          <div>⏳ <strong>วันที่หมดอายุ ({pkgDurationMonths} เดือน):</strong> <span className="text-blue-900 font-extrabold">{formattedPkgExpiryDate}</span></div>
+          <div>⏳ <strong>วันที่หมดอายุ ({pkgDurationText}):</strong> <span className="text-blue-900 font-extrabold">{formattedPkgExpiryDate}</span></div>
         </div>
       </div>
 
@@ -331,7 +366,7 @@ export default function HomePage() {
               <span className="text-2xl sm:text-3xl">🚨</span>
               <div>
                 <h4 className="font-black text-sm sm:text-base leading-tight">
-                  แจ้งเตือน: คอร์สเรียนใกล้ครบกำหนดระยะเวลา {pkgDurationMonths} เดือน!
+                  แจ้งเตือน: คอร์สเรียนใกล้ครบกำหนดระยะเวลา {pkgDurationText}!
                 </h4>
                 <p className="text-xs text-amber-200 font-bold mt-0.5">
                   {daysUntilPkgExpiry <= 0
@@ -381,7 +416,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl space-y-2">
                 <div className="font-extrabold text-amber-950 text-sm">
-                  📅 ครบกำหนดแพ็ก {pkgDurationMonths} เดือน ({purchasedHoursNum} ครั้ง)
+                  📅 ครบกำหนดแพ็ก {pkgDurationText} ({purchasedHoursNum} ครั้ง)
                 </div>
                 <div className="text-xs text-amber-900 font-medium space-y-1">
                   <div>• วันที่เริ่มซื้อคอร์ส: <strong>{fullPurchaseDateStr} ({formattedPurchaseDate})</strong></div>

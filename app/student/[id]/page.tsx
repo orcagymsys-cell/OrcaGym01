@@ -33,6 +33,7 @@ export default function StudentDashboardPage() {
   const [showTopUpModal, setShowTopUpModal] = useState<boolean>(false);
   const [showMyCourseModal, setShowMyCourseModal] = useState<boolean>(false);
   const [topUpHours, setTopUpHours] = useState<number>(2);
+  const [coursesFromDB, setCoursesFromDB] = useState<any[]>([]);
 
   const formatThaiBookingDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -77,11 +78,14 @@ export default function StudentDashboardPage() {
         setLoading(false);
 
         // 2. Background fetch
-        const [allC, bList, uList] = await Promise.all([
+        const [allC, bList, uList, allCourses] = await Promise.all([
           store.getChildren(),
           store.getBookings(targetId),
-          store.getUsers()
+          store.getUsers(),
+          store.getCourses()
         ]);
+        
+        setCoursesFromDB(allCourses || []);
         
         if (reqId !== requestRef.current) return;
 
@@ -228,20 +232,50 @@ export default function StudentDashboardPage() {
 
   const showProfileLowHoursAlert = isQuotaLow && activeBookings.length > 0 && isWithin5DaysOfLastClass;
 
-  // ⏳ Unbooked Course Package Near-Expiry Alert Banner (5 days pre-expiry notification, stays displayed until ALL classes are booked!)
+  // ⏳ Unbooked Course Package Near-Expiry Alert Banner (reads duration from Orca Classes & Pricing)
   const totalPurchasedHours = parentPurchased || 6;
-  let pkgDurationMonths = 2;
-  if (totalPurchasedHours === 12) pkgDurationMonths = 4;
-  else if (totalPurchasedHours === 24) pkgDurationMonths = 6;
-  else if (totalPurchasedHours === 48) pkgDurationMonths = 12;
 
   const u = store.getCurrentUser();
   const pkgStartDateStr = u?.payment_datetime || u?.created_at || new Date().toISOString();
   const pkgStartDate = new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'));
   const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
 
+  const mainCourseNameForPricing = child?.course_name || 'Orca Cubs';
+  const mainCourseConfig = coursesFromDB.find(c =>
+    c.display_title?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) ||
+    c.internal_name?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())
+  ) || coursesFromDB[0];
+  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === totalPurchasedHours);
+
   const pkgExpiryDate = new Date(validPkgStartDate);
-  pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+  let pkgDurationText = '';
+  let pkgDurationMonths = 2;
+
+  if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+    const durStr = pricingOpt.duration;
+    const lower = durStr.toLowerCase();
+    const match = durStr.match(/(\d+)/);
+    const val = match ? parseInt(match[1], 10) : 0;
+    if (lower.includes('day') || lower.includes('วัน')) {
+      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
+      pkgDurationMonths = 0;
+      pkgDurationText = durStr;
+    } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
+      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val * 7);
+      pkgDurationMonths = 0;
+      pkgDurationText = durStr;
+    } else {
+      pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
+      pkgDurationMonths = val;
+      pkgDurationText = `${val} เดือน`;
+    }
+  } else {
+    if (totalPurchasedHours === 12) pkgDurationMonths = 4;
+    else if (totalPurchasedHours === 24) pkgDurationMonths = 6;
+    else if (totalPurchasedHours === 48) pkgDurationMonths = 12;
+    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+    pkgDurationText = `${pkgDurationMonths} เดือน`;
+  }
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
@@ -300,7 +334,7 @@ export default function StudentDashboardPage() {
               <span className="text-2xl sm:text-3xl">🚨</span>
               <div>
                 <h4 className="font-black text-sm sm:text-base leading-tight">
-                  แจ้งเตือน: แพ็กเกจคอร์สเรียนใกล้ครบกำหนดระยะเวลา ({pkgDurationMonths} เดือน)
+                  แจ้งเตือน: แพ็กเกจคอร์สเรียนใกล้ครบกำหนดระยะเวลา ({pkgDurationText})
                 </h4>
                 <p className="text-xs text-amber-200 font-bold mt-0.5">
                   {daysUntilPkgExpiry <= 0 ? '⚠️ ครบกำหนดเวลาแพ็กเกจแล้ว' : `⏰ เหลือเวลาอีกเพียง ${daysUntilPkgExpiry} วันก่อนครบกำหนดวันที่ ${formattedPkgExpiryDate} (${fullPkgExpiryDateStr}) — เริ่มแจ้งเตือนล่วงหน้า 5 วัน ตั้งแต่วันที่ ${alertStartStr}`}
@@ -372,7 +406,7 @@ export default function StudentDashboardPage() {
         {/* Purchase Date & Expiry Date Box */}
         <div className="mb-4 bg-sky-50/80 border border-sky-200 rounded-2xl p-2.5 text-xs text-slate-700 font-semibold flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-['Anuphan',sans-serif]">
           <div>📅 <strong>วันที่ซื้อคอร์ส:</strong> <span className="text-slate-900 font-bold">{formattedPurchaseDate}</span></div>
-          <div>⏳ <strong>วันที่หมดอายุ ({pkgDurationMonths} เดือน):</strong> <span className="text-blue-900 font-extrabold">{formattedPkgExpiryDate}</span></div>
+          <div>⏳ <strong>วันที่หมดอายุ ({pkgDurationText}):</strong> <span className="text-blue-900 font-extrabold">{formattedPkgExpiryDate}</span></div>
         </div>
 
         {/* Low Hours Warning Alert (Appears ONLY after bookings exist + within 5 days before last class date) */}
