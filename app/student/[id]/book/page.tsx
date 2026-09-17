@@ -155,6 +155,34 @@ export default function BookingCalendarPage() {
         return;
       }
 
+      // Check Real-time Quota against all bookings for this slot
+      const allSlotBookings = await store.getAllBookings(); // We need all bookings to check class capacity
+      const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && b.time_slot === selectedSlot && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
+      
+      const courseKeyName = freshChild.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const currentDayName = dayNames[new Date(selectedDate).getDay()];
+      const customQuota = quotas[`${selectedDate}_${freshChild.course_name}_${selectedSlot}`]
+        ?? quotas[`${selectedDate}_${courseKeyName}_${selectedSlot}`]
+        ?? quotas[`${currentDayName}_${freshChild.course_name}_${selectedSlot}`]
+        ?? quotas[`${currentDayName}_${courseKeyName}_${selectedSlot}`]
+        ?? quotas[`${currentDayName}_${selectedSlot}`]
+        ?? quotas[`Everyday_${freshChild.course_name}_${selectedSlot}`]
+        ?? quotas[`Everyday_${courseKeyName}_${selectedSlot}`]
+        ?? quotas[`Everyday_${selectedSlot}`]
+        ?? quotas[`${freshChild.course_name}_${selectedSlot}`]
+        ?? quotas[`${courseKeyName}_${selectedSlot}`]
+        ?? quotas[`${selectedDate}_${selectedSlot}`]
+        ?? 10;
+        
+      if (currentBookedCount >= customQuota) {
+        setAlertModalText(`🔒 ขออภัยค่ะ รอบเวลา ${selectedSlot} เพิ่งถูกจองเต็มไปเมื่อสักครู่ (${customQuota}/${customQuota} คน) กรุณาเลือกรอบเวลาอื่น`);
+        setIsSubmitting(false);
+        // Refresh the page data so UI updates the full slot
+        store.getAllBookings().then(b => setDateBookings(b.filter(bk => bk.booking_date === selectedDate)));
+        return;
+      }
+
       const remaining = freshChild.total_hours - freshChild.used_hours;
       if (remaining <= 0) {
         setAlertModalText('⚠️ ชั่วโมงเรียนของน้องหมดแล้ว กรุณาติดต่อแอดมินเพื่อเติมชั่วโมง');
