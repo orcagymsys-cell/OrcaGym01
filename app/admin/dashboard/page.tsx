@@ -529,19 +529,29 @@ function AdminDashboardContent() {
       showToast('กรุณาเลือก คลาส & โควต้าที่ซื้อ');
       return;
     }
-    if (hoursToAdd !== 2) {
+    // Warn if payment amount is below standard price
+    const mainCourseConfigForWarning = coursesListGlobal.find(c => 
+      c.display_title.toLowerCase().includes(courseName.toLowerCase()) || 
+      c.internal_name.toLowerCase().includes(courseName.toLowerCase())
+    );
+    const pricingOptForWarning = mainCourseConfigForWarning?.pricing_options?.find((po: any) => Number(po.times) === Number(hoursToAdd));
+    
+    // Check if free trial via tag
+    const isFreeTrial = pricingOptForWarning?.tag?.toLowerCase().includes('free trial') || pricingOptForWarning?.tag?.toLowerCase().includes('free');
+    
+    const expectedMinStr = pricingOptForWarning?.fee;
+    const expectedMin = expectedMinStr ? parseInt(String(expectedMinStr).replace(/,/g, ''), 10) : 0;
+    
+    const actualAmount = paymentAmount ? Number(paymentAmount) : 0;
+    
+    // Check if they left payment empty for a non-free course
+    if (!isFreeTrial && hoursToAdd) {
       if (!paymentAmount || !paymentPayerName || !paymentBank) {
         showToast('กรุณากรอกข้อมูลหลักฐานการชำระเงินให้ครบถ้วน (จำนวนเงินที่โอน, ชื่อบัญชีผู้โอน, ธนาคารต้นทาง)');
         return;
       }
     }
 
-    // Warn if payment amount is below standard price
-    const orcaCubsPrices: Record<number, number> = { 1: 700, 6: 4100, 12: 7800, 24: 14400 };
-    const megaOrcaPrices: Record<number, number> = { 1: 800, 6: 4300, 12: 8400, 24: 15600 };
-    const pricingMap = courseName === 'Mega Orca' ? megaOrcaPrices : orcaCubsPrices;
-    const expectedMin = pricingMap[Number(hoursToAdd)];
-    const actualAmount = paymentAmount ? Number(paymentAmount) : 0;
     if (expectedMin && actualAmount > 0 && actualAmount < expectedMin) {
       const confirmed = window.confirm(`⚠️ ยอดเงินที่กรอก (${actualAmount.toLocaleString()} บาท) ต่ำกว่าราคาปกติสำหรับ ${courseName} ${hoursToAdd} ครั้ง (${expectedMin.toLocaleString()} บาท)\n\nกดตกลงเพื่อยืนยันต่อ หรือยกเลิกเพื่อแก้ไข`);
       if (!confirmed) return;
@@ -1792,11 +1802,17 @@ function AdminDashboardContent() {
                       className="w-28 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
                       <option value="">-</option>
-                      <option value={2}>2 ครั้ง (ฟรี)</option>
-                      <option value={1}>1 ครั้ง</option>
-                      <option value={6}>6 ครั้ง</option>
-                      <option value={12}>12 ครั้ง</option>
-                      <option value={24}>24 ครั้ง</option>
+                      {coursesListGlobal
+                        .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
+                        ?.pricing_options?.map((opt: any, idx: number) => {
+                          const isFree = opt.tag?.toLowerCase().includes('free');
+                          const label = isFree ? `${opt.times} ครั้ง (ฟรี)` : `${opt.times} ครั้ง`;
+                          return (
+                            <option key={idx} value={opt.times}>
+                              {label}
+                            </option>
+                          );
+                        })}
                     </select>
                   </div>
                 </div>
@@ -3072,11 +3088,19 @@ function AdminDashboardContent() {
                     className="w-full h-11 px-3 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
                   >
                     <option value="">-- เลือกจำนวนครั้ง --</option>
-                    <option value={2}>2 ครั้ง (ทดลองเรียนฟรี)</option>
-                    <option value={1}>1 ครั้ง</option>
-                    <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
-                    <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
-                    <option value={24}>24 ครั้ง (แพ็ก 6 เดือน / แถม 2 ครั้ง)</option>
+                    {coursesListGlobal
+                      .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
+                      ?.pricing_options?.map((opt: any, idx: number) => {
+                        const isFree = opt.tag?.toLowerCase().includes('free');
+                        const label = isFree 
+                          ? `${opt.times} ครั้ง (ทดลองเรียนฟรี)` 
+                          : `${opt.times} ครั้ง ${opt.duration && opt.duration !== '-' ? `(แพ็ก ${opt.duration})` : ''} ${opt.tag ? ` / ${opt.tag}` : ''}`;
+                        return (
+                          <option key={idx} value={opt.times}>
+                            {label}
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
               </div>
