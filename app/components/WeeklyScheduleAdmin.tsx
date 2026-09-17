@@ -22,7 +22,8 @@ const COLUMNS = [
   { id: 3, label: '17.30-19.30' },
 ];
 
-function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
+function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
+  const isWeekend = dayKey === 0 || dayKey === 6;
   if (!isWeekend) {
     if (colIndex === 0) return [
       { course: 'Mega Orca', time: '10:00-12:00' },
@@ -30,10 +31,16 @@ function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
     ];
     if (colIndex === 1) return [{ course: 'Orca Cubs', time: '14:30-16:00' }];
     if (colIndex === 2) return [{ course: 'Orca Cubs', time: '16:00-17:30' }];
-    if (colIndex === 3) return [
-      { course: 'Orca Cubs', time: '17:30-19:30' },
-      { course: 'Mega Orca', time: '17:30-19:30' }
-    ];
+    if (colIndex === 3) {
+      const res = [
+        { course: 'Orca Cubs', time: '17:30-19:30' },
+        { course: 'Mega Orca', time: '17:30-19:30' }
+      ];
+      if (dayKey === 4 || dayKey === 5) { // Thursday or Friday
+        res.push({ course: 'ORCA FLIP', time: '17:30-19:00' });
+      }
+      return res;
+    }
   } else {
     if (colIndex === 0) return [
       { course: 'Orca Cubs', time: '09:00-10:30' },
@@ -42,6 +49,7 @@ function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
     ];
     if (colIndex === 1) return [
       { course: 'Orca Cubs', time: '13:00-14:30' },
+      { course: 'ORCA FLIP', time: '13:00-14:30' },
       { course: 'Mega Orca', time: '14:00-16:00' },
       { course: 'Orca Cubs', time: '14:30-16:00' }
     ];
@@ -159,7 +167,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                       </td>
                     ) : (
                       COLUMNS.map(col => {
-                        const slotCourses = getCoursesForLogicalSlot(col.id, isWeekend);
+                        const slotCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
                         
                         return (
                           <td key={col.id} className="p-2 border-r-2 border-slate-100 last:border-r-0 align-top">
@@ -182,7 +190,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                                    quotas[`Everyday_${c.time}`] ??
                                                    quotas[`${c.course}_${c.time}`] ??
                                                    quotas[`${dateStr}_${c.time}`] ??
-                                                   10;
+                                                   (store.getCoursesSync().find(crs => crs.display_title.toLowerCase() === c.course.toLowerCase())?.max_capacity || 10);
                                   
                                   const isBooked = bookedForThisSlot.length > 0;
                                   const isFull = bookedForThisSlot.length >= maxQuota;

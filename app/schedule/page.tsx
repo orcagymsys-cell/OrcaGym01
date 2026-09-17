@@ -25,7 +25,8 @@ const COLUMNS = [
   { id: 3, label: '17.30-19.30' },
 ];
 
-function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
+function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
+  const isWeekend = dayKey === 0 || dayKey === 6;
   if (!isWeekend) {
     if (colIndex === 0) return [
       { course: 'Mega Orca', time: '10:00-12:00' },
@@ -33,10 +34,16 @@ function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
     ];
     if (colIndex === 1) return [{ course: 'Orca Cubs', time: '14:30-16:00' }];
     if (colIndex === 2) return [{ course: 'Orca Cubs', time: '16:00-17:30' }];
-    if (colIndex === 3) return [
-      { course: 'Orca Cubs', time: '17:30-19:30' },
-      { course: 'Mega Orca', time: '17:30-19:30' }
-    ];
+    if (colIndex === 3) {
+      const res = [
+        { course: 'Orca Cubs', time: '17:30-19:30' },
+        { course: 'Mega Orca', time: '17:30-19:30' }
+      ];
+      if (dayKey === 4 || dayKey === 5) { // Thursday or Friday
+        res.push({ course: 'ORCA FLIP', time: '17:30-19:00' });
+      }
+      return res;
+    }
   } else {
     // Weekend logic
     if (colIndex === 0) return [
@@ -46,6 +53,7 @@ function getCoursesForLogicalSlot(colIndex: number, isWeekend: boolean) {
     ];
     if (colIndex === 1) return [
       { course: 'Orca Cubs', time: '13:00-14:30' },
+      { course: 'ORCA FLIP', time: '13:00-14:30' },
       { course: 'Mega Orca', time: '14:00-16:00' },
       { course: 'Orca Cubs', time: '14:30-16:00' }
     ];
@@ -305,7 +313,7 @@ export default function SchedulePage() {
                         </td>
                       ) : (
                         COLUMNS.map(col => {
-                          const slotCourses = getCoursesForLogicalSlot(col.id, isWeekend);
+                          const slotCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
                           
                           return (
                             <td key={col.id} className="p-2 border-r-2 border-slate-100 last:border-r-0 align-top">
