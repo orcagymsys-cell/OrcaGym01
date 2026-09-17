@@ -427,11 +427,87 @@ function AdminDashboardContent() {
       .map(c => `${c.nickname} (เหลือ ${c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length} ชม.)`)
       .join(', ');
 
-    if (lowHoursInfo) {
-      showToast(`📧 ส่งอีเมลแจ้งเตือนคอร์สใกล้หมดไปยังคุณ ${parentName} (${parentEmail}) [${lowHoursInfo}] เรียบร้อยแล้ว!`);
+    // Calculate expiration date
+    const pkgStartDateStr = p.payment_datetime || p.created_at || '';
+    const pkgStartDate = pkgStartDateStr ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T')) : new Date();
+    const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+    const hoursNum = p.purchased_hours || 6;
+    const mainCourseNameForPricing = parentChildren[0]?.course_name || 'Orca Cubs';
+    const mainCourseConfig = coursesListGlobal.find((c: any) => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
+    const pricingOpt = mainCourseConfig?.pricing_options?.find((po: any) => Number(po.times) === hoursNum)
+      || (hoursNum === 2 ? mainCourseConfig?.pricing_options?.find((po: any) => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
+      || (hoursNum === 2 ? coursesListGlobal.flatMap((c: any) => c.pricing_options || []).find((po: any) => po.tag?.toLowerCase().includes('free trial')) : undefined);
+
+    const expiryDate = new Date(validPkgStartDate);
+    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
+      const durStr = pricingOpt.duration;
+      const lower = durStr.toLowerCase();
+      const match = durStr.match(/(\d+)/);
+      const val = match ? parseInt(match[1], 10) : 0;
+      if (lower.includes('day') || lower.includes('วัน')) {
+        expiryDate.setDate(expiryDate.getDate() + val);
+      } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
+        expiryDate.setDate(expiryDate.getDate() + (val * 7));
+      } else {
+        expiryDate.setMonth(expiryDate.getMonth() + val);
+      }
     } else {
-      showToast(`📧 ส่งอีเมลแจ้งเตือน/ติดต่อผู้ปกครองคุณ ${parentName} (${parentEmail}) เรียบร้อยแล้ว!`);
+      const isFreeCourse = hoursNum === 2;
+      if (isFreeCourse) {
+        expiryDate.setDate(expiryDate.getDate() + 14);
+      } else {
+        let months = 2;
+        if (hoursNum === 12) months = 4;
+        else if (hoursNum === 24) months = 6;
+        else if (hoursNum === 48) months = 12;
+        expiryDate.setMonth(expiryDate.getMonth() + months);
+      }
     }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDay = new Date(expiryDate);
+    expDay.setHours(0, 0, 0, 0);
+    const daysLeft = Math.ceil((expDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const dayStr = String(expiryDate.getDate()).padStart(2, '0');
+    const monthStr = String(expiryDate.getMonth() + 1).padStart(2, '0');
+    const yearStr = expiryDate.getFullYear() + 543;
+    const formattedExpiryDate = `${dayStr}/${monthStr}/${yearStr}`;
+
+    const pChildIds = parentChildren.map(c => c.id);
+    const pBookingsCount = allBookings.filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
+    const unbookedCount = Math.max(0, hoursNum - pBookingsCount);
+    
+    const isExpiringSoon = daysLeft <= 7 && daysLeft >= 0 && unbookedCount > 0;
+    const isExpired = daysLeft < 0 && unbookedCount > 0;
+
+    let subject = 'แจ้งเตือนจาก ORCA GYMNASTICS';
+    let body = `เรียนคุณ ${parentName},\n\n`;
+
+    if (lowHoursInfo || isExpiringSoon || isExpired) {
+      subject = 'แจ้งเตือน: ชั่วโมงเรียนยิมนาสติกหรืออายุคอร์สใกล้หมด';
+      body += `ทาง ORCA GYMNASTICS ขอแจ้งให้ทราบถึงสถานะคอร์สเรียนของคุณ ดังนี้:\n\n`;
+      
+      if (lowHoursInfo) {
+        body += `- ชั่วโมงเรียนใกล้หมด: ${lowHoursInfo}\n`;
+      }
+      
+      if (isExpiringSoon) {
+        body += `- สิทธิ์การจองคลาสเรียนจะหมดอายุในอีก ${daysLeft} วัน (ครบกำหนดวันที่ ${formattedExpiryDate}) โดยยังมีชั่วโมงเหลืออีก ${unbookedCount} ครั้ง\n`;
+      } else if (isExpired) {
+        body += `- สิทธิ์การจองคลาสเรียนของคุณหมดอายุแล้วตั้งแต่วันที่ ${formattedExpiryDate} โดยยังมีชั่วโมงเหลืออีก ${unbookedCount} ครั้ง\n`;
+      }
+
+      body += `\nกรุณาติดต่อแอดมินเพื่อต่ออายุคอร์สเรียน หรือทำการจองคลาสเรียนก่อนหมดอายุครับ/ค่ะ\n\nขอบคุณครับ\nORCA GYMNASTICS`;
+      showToast(`📧 เปิดหน้าต่างส่งอีเมลแจ้งเตือนไปยังคุณ ${parentName} (${parentEmail})`);
+    } else {
+      body += `\n\nขอบคุณครับ\nORCA GYMNASTICS`;
+      showToast(`📧 เปิดหน้าต่างส่งอีเมลไปยังคุณ ${parentName} (${parentEmail})`);
+    }
+
+    const mailtoLink = `mailto:${parentEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
   };
 
   const handleToggleExpandParent = (parentId: string) => {

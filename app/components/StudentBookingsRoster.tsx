@@ -87,6 +87,26 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
       : { badgeBgColor: '#fdf4ff', badgeTextColor: '#a21caf', badgeBorderColor: '#fbcfe8' };
   };
 
+  const groupedBookings = filteredBookings.reduce((acc, b) => {
+    const key = `${b.booking_date} | ${b.time_slot} | ${b.course_name || 'Orca Cubs'}`;
+    if (!acc[key]) {
+      acc[key] = {
+        date: b.booking_date,
+        time: b.time_slot,
+        course: b.course_name || 'Orca Cubs',
+        bookings: []
+      };
+    }
+    acc[key].bookings.push(b);
+    return acc;
+  }, {} as Record<string, { date: string, time: string, course: string, bookings: Booking[] }>);
+
+  const sortedGroups = Object.values(groupedBookings).sort((a, b) => {
+    if (a.date !== b.date) return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (a.time !== b.time) return a.time.localeCompare(b.time);
+    return a.course.localeCompare(b.course);
+  });
+
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-slate-200 shadow-sm mt-8 space-y-5 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-4">
       
@@ -179,145 +199,145 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
         )}
       </div>
 
-      {/* Table Render */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs print:shadow-none print:border-black print:overflow-visible">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-[#001a3a] text-white border-b border-blue-950 font-black print:bg-slate-200 print:text-black print:border-black">
-              <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">วันที่เรียน</th>
-              <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">เวลาเรียน</th>
-              <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ชื่อนักเรียน</th>
-              <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">คลาสเรียน</th>
-              <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ผู้ปกครอง & เบอร์โทร</th>
-              <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">สถานะ</th>
-              <th className="hidden print:table-cell p-3 sm:p-3.5 font-black whitespace-nowrap text-center">เช็คชื่อ</th>
-              <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBookings.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400 font-bold bg-slate-50/50">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl">📭</span>
-                    <span>ไม่พบข้อมูลรายการจองเด็กที่ตรงตามเงื่อนไข</span>
+      {/* Grouped Tables Render */}
+      {sortedGroups.length === 0 ? (
+        <div className="p-8 text-center text-slate-400 font-bold bg-slate-50/50 rounded-2xl border border-slate-200 mt-4">
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-3xl">📭</span>
+            <span>ไม่พบข้อมูลรายการจองเด็กที่ตรงตามเงื่อนไข</span>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-8 mt-4">
+          {sortedGroups.map((group, groupIdx) => {
+            const theme = getThemeStyles(group.course);
+            return (
+              <div key={groupIdx} className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs print:shadow-none print:border-black print:overflow-visible print:mb-8 bg-white">
+                <div className="bg-[#001a3a] text-white p-3 sm:p-4 border-b border-blue-950 flex flex-wrap items-center justify-between gap-3 print:bg-slate-200 print:text-black print:border-black">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-black bg-white/20 px-3 py-1 rounded-xl inline-flex items-center gap-2 print:bg-white print:border print:border-black">
+                      <span>🗓️</span> {group.date}
+                    </span>
+                    <span className="text-lg font-black bg-white/20 px-3 py-1 rounded-xl inline-flex items-center gap-2 print:bg-white print:border print:border-black">
+                      <span>⏰</span> {group.time}
+                    </span>
                   </div>
-                </td>
-              </tr>
-            ) : (
-              filteredBookings.map((b) => {
-                const child = childrenList.find(c => c.id === b.child_id);
-                const parent = child ? parentsList.find(u => u.id === child.parent_id || u.user_id === child.parent_id) : null;
-                const theme = getThemeStyles(b.course_name);
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="px-4 py-1.5 rounded-full text-sm font-black border-2 print:border-black"
+                      style={{
+                        backgroundColor: theme.badgeBgColor,
+                        color: theme.badgeTextColor,
+                        borderColor: theme.badgeBorderColor
+                      }}
+                    >
+                      {group.course}
+                    </span>
+                    <span className="text-sm font-bold bg-blue-800 px-3 py-1.5 rounded-full print:bg-white print:text-black print:border print:border-black">
+                      👥 {group.bookings.length} คน
+                    </span>
+                  </div>
+                </div>
+                
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 font-black print:bg-slate-100 print:border-black">
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap w-12 text-center">ลำดับ</th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ชื่อนักเรียน</th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ผู้ปกครอง & เบอร์โทร</th>
+                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">สถานะ</th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap text-center print:w-32">เช็คชื่อ (Check-in)</th>
+                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.bookings.map((b, index) => {
+                      const child = childrenList.find(c => c.id === b.child_id);
+                      const parent = child ? parentsList.find(u => u.id === child.parent_id || u.user_id === child.parent_id) : null;
 
-                return (
-                  <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300">
-                    {/* Date */}
-                    <td className="p-3 sm:p-3.5 font-extrabold text-slate-800 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>🗓️</span>
-                        <span>{b.booking_date}</span>
-                      </span>
-                    </td>
+                      return (
+                        <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300">
+                          <td className="p-3 sm:p-3.5 text-center font-bold text-slate-500">
+                            {index + 1}
+                          </td>
+                          <td className="p-3 sm:p-3.5">
+                            <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
+                              {b.child_nickname ? (b.child_nickname.startsWith('น้อง') ? b.child_nickname : `น้อง${b.child_nickname}`) : 'น้องนักเรียน'}
+                              {parent?.purchased_hours === 2 && (
+                                <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
+                                  ฟรี
+                                </span>
+                              )}
+                            </div>
+                            {b.child_full_name && (
+                              <div className="text-[11px] font-medium text-slate-500">
+                                {b.child_full_name}
+                              </div>
+                            )}
+                          </td>
 
-                    {/* Time Slot */}
-                    <td className="p-3 sm:p-3.5 font-bold text-slate-700 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg text-slate-800 font-extrabold border border-slate-200">
-                        <span>⏰</span>
-                        <span>{b.time_slot}</span>
-                      </span>
-                    </td>
+                          {/* Parent & Phone */}
+                          <td className="p-3 sm:p-3.5">
+                            {parent ? (
+                              <div>
+                                <div className="font-bold text-slate-800">{parent.name}</div>
+                                <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                                  <span>📞</span>
+                                  <span>{parent.phone}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-slate-500 font-medium">
+                                {child ? `ผู้ปกครอง (${child.parent_id})` : 'ผู้ปกครอง'}
+                              </div>
+                            )}
+                          </td>
 
-                    {/* Student Name */}
-                    <td className="p-3 sm:p-3.5">
-                      <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
-                        {b.child_nickname ? (b.child_nickname.startsWith('น้อง') ? b.child_nickname : `น้อง${b.child_nickname}`) : 'น้องนักเรียน'}
-                        {parent?.purchased_hours === 2 && (
-                          <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
-                            ฟรี
-                          </span>
-                        )}
-                      </div>
-                      {b.child_full_name && (
-                        <div className="text-[11px] font-medium text-slate-500">
-                          {b.child_full_name}
-                        </div>
-                      )}
-                    </td>
+                          {/* Status */}
+                          <td className="print:hidden p-3 sm:p-3.5 text-center">
+                            {b.status === 'Cancelled' || b.status === 'cancelled' ? (
+                              <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
+                                <span>❌</span>
+                                <span>ยกเลิกแล้ว</span>
+                              </span>
+                            ) : (
+                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
+                                <span>✅</span>
+                                <span>{b.status === 'confirmed' ? 'ยืนยันแล้ว' : b.status}</span>
+                              </span>
+                            )}
+                          </td>
 
-                    {/* Course */}
-                    <td className="p-3 sm:p-3.5">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-black border inline-block"
-                        style={{
-                          backgroundColor: theme.badgeBgColor,
-                          color: theme.badgeTextColor,
-                          borderColor: theme.badgeBorderColor
-                        }}
-                      >
-                        {b.course_name}
-                      </span>
-                    </td>
+                          {/* Check-in */}
+                          <td className="p-3 sm:p-3.5 text-center">
+                            <div className="w-6 h-6 border-2 border-slate-300 rounded mx-auto print:border-black print:w-8 print:h-8"></div>
+                          </td>
 
-                    {/* Parent & Phone */}
-                    <td className="p-3 sm:p-3.5">
-                      {parent ? (
-                        <div>
-                          <div className="font-bold text-slate-800">{parent.name}</div>
-                          <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
-                            <span>📞</span>
-                            <span>{parent.phone}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-slate-500 font-medium">
-                          {child ? `ผู้ปกครอง (${child.parent_id})` : 'ผู้ปกครอง'}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Status */}
-                    <td className="print:hidden p-3 sm:p-3.5 text-center">
-                      {b.status === 'Cancelled' || b.status === 'cancelled' ? (
-                        <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
-                          <span>❌</span>
-                          <span>ยกเลิกแล้ว</span>
-                        </span>
-                      ) : (
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
-                          <span>✅</span>
-                          <span>{b.status === 'confirmed' ? 'ยืนยันแล้ว' : b.status}</span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Check-in */}
-                    <td className="hidden print:table-cell p-3 sm:p-3.5 text-center">
-                      <div className="w-5 h-5 border-2 border-slate-300 rounded mx-auto print:border-black"></div>
-                    </td>
-
-                    {/* Action */}
-                    <td className="print:hidden p-3 sm:p-3.5 text-center">
-                      {(b.status !== 'Cancelled' && b.status !== 'cancelled') ? (
-                        <button
-                          type="button"
-                          onClick={() => handleCancelBooking(b)}
-                          className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto shadow-2xs"
-                        >
-                          <span>🗑️</span>
-                          <span>ยกเลิกโดย Admin</span>
-                        </button>
-                      ) : (
-                        <span className="text-slate-300 font-bold text-xs">-</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                          {/* Action */}
+                          <td className="print:hidden p-3 sm:p-3.5 text-center">
+                            {(b.status !== 'Cancelled' && b.status !== 'cancelled') ? (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelBooking(b)}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto shadow-2xs"
+                              >
+                                <span>🗑️</span>
+                                <span>ยกเลิกโดย Admin</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

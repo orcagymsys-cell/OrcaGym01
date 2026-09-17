@@ -99,6 +99,18 @@ export default function TermsPage() {
             </ul>
           </section>
 
+          <section>
+            <h4 className="font-bold text-[#1e3a66] text-base mb-3 flex items-center">
+              <span className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-3 text-sm">6</span>
+              การจองคลาสเรียนและข้อตกลงการใช้บริการ
+            </h4>
+            <ul className="list-none pl-10 space-y-2 text-slate-600">
+              <li className="relative before:content-['•'] before:absolute before:-left-4 before:text-blue-300">ชั่วโมงเรียนมีอายุการใช้งานตามแพ็กเกจที่สมัคร</li>
+              <li className="relative before:content-['•'] before:absolute before:-left-4 before:text-blue-300">การจองคลาสเรียนขึ้นอยู่กับจำนวน Quotas ว่างในแต่ละรอบเวลา (สูงสุด 20 คนต่อรอบ)</li>
+              <li className="relative before:content-['•'] before:absolute before:-left-4 before:text-blue-300">ชั่วโมงเรียนไม่สามารถโอนสิทธิ์ให้ผู้อื่น หรือเปลี่ยนเป็นเงินสดได้ทุกกรณี</li>
+            </ul>
+          </section>
+
         </div>
       </div>
     </div>
