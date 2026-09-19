@@ -3409,6 +3409,7 @@ function AdminDashboardContent() {
                   <tr>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200">ครั้งที่</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200">วัน/เวลาโอน</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200">คอร์สเรียน</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">โควต้าที่ได้</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-right">ยอดเงิน (บาท)</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">สลิป</th>
@@ -3438,6 +3439,7 @@ function AdminDashboardContent() {
                       <tr key={h.id || i} className="hover:bg-slate-50 transition-colors">
                         <td className="py-2.5 px-4 text-xs font-medium text-slate-700">{i + 1}</td>
                         <td className="py-2.5 px-4 text-xs text-slate-600">{h.payment_datetime ? h.payment_datetime.replace('T', ' ') + ' น.' : '-'}</td>
+                        <td className="py-2.5 px-4 text-xs font-bold text-cyan-700">{h.course_name || 'ORCA CUBS'}</td>
                         <td className="py-2.5 px-4 text-xs font-bold text-emerald-700 text-center">{h.purchased_hours || 0} ครั้ง</td>
                         <td className="py-2.5 px-4 text-xs font-bold text-blue-700 text-right">{h.payment_amount ? Number(h.payment_amount).toLocaleString() : '-'}</td>
                         <td className="py-2.5 px-4 text-xs text-center">
