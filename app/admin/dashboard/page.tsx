@@ -762,11 +762,29 @@ function AdminDashboardContent() {
     if (confirm('คุณต้องการลบประวัติการทำรายการนี้ใช่หรือไม่?')) {
       const parentUser = parents.find(p => p.id === parentId);
       if (parentUser && parentUser.payment_history) {
+        const deletedRecord = parentUser.payment_history.find((h: any) => h.id === historyId);
         const updatedHistory = parentUser.payment_history.filter((h: any) => h.id !== historyId);
         await store.saveUser({
           ...parentUser,
           payment_history: updatedHistory
         });
+
+        // Add audit log for deletion to prevent fraud
+        if (deletedRecord) {
+          const adminUser = store.getCurrentUser();
+          const newLog: AuditLog = {
+            id: 'audit_' + Date.now(),
+            admin_name: adminUser?.name || 'แอดมิน',
+            parent_name: parentUser.name,
+            child_name: `ตะกร้าครอบครัว: ${parentUser.name}`,
+            hours_added: 0,
+            note: `[ลบประวัติโอนเงิน] ลบรายการยอด ${deletedRecord.payment_amount || 0} บาท (ได้โควต้า ${deletedRecord.purchased_hours || 0} ครั้ง)`
+          };
+          await store.saveAuditLog(newLog);
+          const currentLogs = await store.getAuditLogs();
+          setAuditLogs(currentLogs);
+        }
+
         showToast('ลบประวัติการทำรายการเรียบร้อยแล้ว');
         const uList = await store.getUsers();
         setParents(uList.filter(u => u.role !== 'admin'));
