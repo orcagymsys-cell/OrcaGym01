@@ -758,6 +758,26 @@ function AdminDashboardContent() {
     }
   };
 
+  const handleDeletePaymentHistory = async (parentId: string, historyId: string) => {
+    if (confirm('คุณต้องการลบประวัติการทำรายการนี้ใช่หรือไม่?')) {
+      const parentUser = parents.find(p => p.id === parentId);
+      if (parentUser && parentUser.payment_history) {
+        const updatedHistory = parentUser.payment_history.filter((h: any) => h.id !== historyId);
+        await store.saveUser({
+          ...parentUser,
+          payment_history: updatedHistory
+        });
+        showToast('ลบประวัติการทำรายการเรียบร้อยแล้ว');
+        const uList = await store.getUsers();
+        setParents(uList.filter(u => u.role !== 'admin'));
+        if (viewPaymentHistoryParent && viewPaymentHistoryParent.id === parentId) {
+          const updatedParent = uList.find(u => u.id === parentId);
+          if (updatedParent) setViewPaymentHistoryParent(updatedParent);
+        }
+      }
+    }
+  };
+
   const handleStartEditParent = (p: any) => {
     setEditingParent(p);
     setEditUserId(p.user_id || '');
@@ -3414,6 +3434,7 @@ function AdminDashboardContent() {
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">โควต้าที่ได้</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-right">ยอดเงิน (บาท)</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">สลิป</th>
+                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -3433,7 +3454,7 @@ function AdminDashboardContent() {
                       }];
                     }
                     if (hList.length === 0) return (
-                      <tr><td colSpan={5} className="py-4 text-center text-sm text-slate-500">ไม่มีประวัติการทำรายการ</td></tr>
+                      <tr><td colSpan={6} className="py-4 text-center text-sm text-slate-500">ไม่มีประวัติการทำรายการ</td></tr>
                     );
                     return hList.map((h, i) => (
                       <tr key={h.id || i} className="hover:bg-slate-50 transition-colors">
@@ -3453,6 +3474,15 @@ function AdminDashboardContent() {
                           ) : (
                             <span className="text-[10px] text-slate-400">-</span>
                           )}
+                        </td>
+                        <td className="py-2.5 px-4 text-xs text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePaymentHistory(viewPaymentHistoryParent.id, h.id)}
+                            className="text-[10px] bg-red-50 text-red-700 border border-red-200 px-2 py-1 rounded-md hover:bg-red-100 cursor-pointer font-semibold"
+                          >
+                            ลบ
+                          </button>
                         </td>
                       </tr>
                     ));
