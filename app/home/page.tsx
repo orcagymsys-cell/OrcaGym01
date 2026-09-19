@@ -184,7 +184,7 @@ export default function HomePage() {
   } else {
     // Fallback to hardcoded mapping
     if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-    else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+    else if (purchasedHoursNum === 24 || purchasedHoursNum === 26) pkgDurationMonths = 6;
     else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
     pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
     pkgDurationText = `${pkgDurationMonths} เดือน`;

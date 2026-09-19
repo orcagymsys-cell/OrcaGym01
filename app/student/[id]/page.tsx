@@ -273,7 +273,7 @@ export default function StudentDashboardPage() {
     }
   } else {
     if (totalPurchasedHours === 12) pkgDurationMonths = 4;
-    else if (totalPurchasedHours === 24) pkgDurationMonths = 6;
+    else if (totalPurchasedHours === 24 || totalPurchasedHours === 26) pkgDurationMonths = 6;
     else if (totalPurchasedHours === 48) pkgDurationMonths = 12;
     pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
     pkgDurationText = `${pkgDurationMonths} เดือน`;

@@ -459,7 +459,7 @@ function AdminDashboardContent() {
       } else {
         let months = 2;
         if (hoursNum === 12) months = 4;
-        else if (hoursNum === 24) months = 6;
+        else if (hoursNum === 24 || hoursNum === 26) months = 6;
         else if (hoursNum === 48) months = 12;
         expiryDate.setMonth(expiryDate.getMonth() + months);
       }
@@ -1012,7 +1012,7 @@ function AdminDashboardContent() {
           let months = 2;
           const p = newTotal;
           if (p === 12) months = 4;
-          else if (p === 24) months = 6;
+          else if (p === 24 || p === 26) months = 6;
           else if (p >= 48) months = 12;
           const validD = new Date();
           validD.setMonth(validD.getMonth() + months);
@@ -1226,7 +1226,7 @@ function AdminDashboardContent() {
       } else {
         let months = 2;
         if (hoursNum === 12) months = 4;
-        else if (hoursNum === 24) months = 6;
+        else if (hoursNum === 24 || hoursNum === 26) months = 6;
         else if (hoursNum === 48) months = 12;
         expiryDate.setMonth(expiryDate.getMonth() + months);
         pkgDurationText = `${months} เดือน`;
@@ -1317,7 +1317,7 @@ function AdminDashboardContent() {
       else {
         let pkgDurationMonths = 2;
         if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-        else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+        else if (purchasedHoursNum === 24 || purchasedHoursNum === 26) pkgDurationMonths = 6;
         else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
         pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
       }
@@ -2200,7 +2200,7 @@ function AdminDashboardContent() {
                           } else {
                             let pkgDurationMonths = 2;
                             if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-                            else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+                            else if (purchasedHoursNum === 24 || purchasedHoursNum === 26) pkgDurationMonths = 6;
                             else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
                             pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
                             pkgDurationText = `${pkgDurationMonths} เดือน`;
@@ -3608,6 +3608,7 @@ function AdminDashboardContent() {
                   <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
                   <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
                   <option value={24}>24 ครั้ง (แพ็ก 6 เดือน)</option>
+                  <option value={26}>26 ครั้ง (แพ็ก 6 เดือน + แถม 2)</option>
                 </select>
               </div>
 
@@ -3768,7 +3769,7 @@ function AdminDashboardContent() {
           const hoursNum = p.purchased_hours || 6;
           let months = 2;
           if (hoursNum === 12) months = 4;
-          else if (hoursNum === 24) months = 6;
+          else if (hoursNum === 24 || hoursNum === 26) months = 6;
           else if (hoursNum === 48) months = 12;
 
           const expiryDate = new Date(validPkgStartDate);

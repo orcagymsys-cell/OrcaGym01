@@ -137,7 +137,7 @@ export default function AddChildPage() {
         let months = 2;
         const p = user.purchased_hours || 6;
         if (p === 12) months = 4;
-        else if (p === 24) months = 6;
+        else if (p === 24 || p === 26) months = 6;
         else if (p >= 48) months = 12;
         const d = new Date(user.payment_datetime || user.created_at || new Date().toISOString().replace(' ', 'T'));
         const validD = isNaN(d.getTime()) ? new Date() : d;
