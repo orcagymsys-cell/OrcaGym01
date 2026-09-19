@@ -3599,17 +3599,14 @@ function AdminDashboardContent() {
                   <span>โควต้าจำนวนครั้ง/ชั่วโมงเรียนที่ซื้อ (Purchased Hours):</span>
                   <span className="text-[11px] text-blue-700 font-bold">* โควต้ารวมตะกร้าครอบครัว</span>
                 </label>
-                <select
+                <input
+                  type="number"
+                  min="0"
                   value={editPurchasedHours}
-                  onChange={(e) => setEditPurchasedHours(Number(e.target.value))}
+                  onChange={(e) => setEditPurchasedHours(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full h-11 px-4 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
-                >
-                  <option value={1}>1 ครั้ง</option>
-                  <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
-                  <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
-                  <option value={24}>24 ครั้ง (แพ็ก 6 เดือน)</option>
-                  <option value={26}>26 ครั้ง (แพ็ก 6 เดือน + แถม 2)</option>
-                </select>
+                  placeholder="เช่น 1, 6, 12, 24, 26, 52..."
+                />
               </div>
 
               {/* 💳 Payment Proof Section */}
