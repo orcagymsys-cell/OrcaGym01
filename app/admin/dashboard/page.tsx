@@ -767,7 +767,9 @@ function AdminDashboardContent() {
     setEditPassword(p.password || '123');
     setEditPurchasedHours(p.purchased_hours !== undefined ? p.purchased_hours : 6);
     const pChildren = children.filter((c) => isChildOfParent(c, p));
-    setEditCourseName(pChildren.length > 0 && pChildren[0].course_name ? pChildren[0].course_name : 'Orca Cubs');
+    const childCourse = pChildren.length > 0 && pChildren[0].course_name ? pChildren[0].course_name : 'Orca Cubs';
+    const matchedCourse = coursesListGlobal.find(c => c.display_title.toLowerCase() === childCourse.toLowerCase());
+    setEditCourseName(matchedCourse ? matchedCourse.display_title : childCourse);
     setEditPaymentAmount(p.payment_amount ? String(p.payment_amount) : '');
     setEditPaymentRefNo(p.payment_ref_no || '');
     setEditPaymentPayerName(p.payment_payer_name || '');
@@ -3566,7 +3568,7 @@ function AdminDashboardContent() {
                       {c.display_title}
                     </option>
                   ))}
-                  {!coursesListGlobal.some(c => c.display_title === editCourseName) && (
+                  {!coursesListGlobal.some(c => c.display_title.toLowerCase() === editCourseName.toLowerCase()) && (
                     <option value={editCourseName}>{editCourseName}</option>
                   )}
                 </select>
