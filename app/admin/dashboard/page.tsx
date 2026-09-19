@@ -1065,6 +1065,7 @@ function AdminDashboardContent() {
     const newLog: AuditLog = {
       id: 'audit_' + Date.now(),
       admin_name: adminUser?.name || 'แอดมิน Orca',
+      parent_name: parentUser?.name || (topUpChild as any)?.parent_id || '',
       child_id: topUpChild?.id || parentUser?.id || '',
       child_name: topUpChild
         ? `${topUpChild.full_name} (${topUpChild.nickname})`
