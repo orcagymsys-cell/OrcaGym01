@@ -534,7 +534,10 @@ export default function HomePage() {
                     <div className="flex flex-col gap-0.5 font-sans">
                       <div className="text-lg font-black text-[#003366]">{child.full_name}</div>
                       <div className="text-base font-extrabold text-[#003366]">น้อง {child.nickname}</div>
-                      <div className="text-xs font-semibold text-slate-600">เกิด {formattedDob} | {child.gender}</div>
+                      <div className="text-xs font-semibold text-slate-600 mb-1">เกิด {formattedDob} | {child.gender}</div>
+                      <div className="text-[11px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded-lg w-max flex items-center gap-1 shadow-sm">
+                        <span>🏷️</span> ตะกร้า: {child.course_name || 'ORCA CUBS'}
+                      </div>
                     </div>
                   </Link>
 

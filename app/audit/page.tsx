@@ -99,6 +99,10 @@ export default function AuditPage() {
     }
 
     return true;
+  }).sort((a, b) => {
+    const tsA = a.created_at ? new Date(a.created_at).getTime() : (a.id.startsWith('audit_curr') ? 0 : (a.id.startsWith('audit_') ? parseInt(a.id.replace('audit_', '')) : 0));
+    const tsB = b.created_at ? new Date(b.created_at).getTime() : (b.id.startsWith('audit_curr') ? 0 : (b.id.startsWith('audit_') ? parseInt(b.id.replace('audit_', '')) : 0));
+    return tsB - tsA;
   });
 
   // Calculate Stat Cards Summaries
