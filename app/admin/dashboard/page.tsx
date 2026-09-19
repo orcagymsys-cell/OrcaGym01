@@ -138,6 +138,7 @@ function AdminDashboardContent() {
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editCourseName, setEditCourseName] = useState('Orca Cubs');
   const [editPurchasedHours, setEditPurchasedHours] = useState<number | string>(6);
   const [editPaymentAmount, setEditPaymentAmount] = useState('');
   const [editPaymentRefNo, setEditPaymentRefNo] = useState('');
@@ -765,6 +766,8 @@ function AdminDashboardContent() {
     setEditPhone(p.phone || '');
     setEditPassword(p.password || '123');
     setEditPurchasedHours(p.purchased_hours !== undefined ? p.purchased_hours : 6);
+    const pChildren = children.filter((c) => isChildOfParent(c, p));
+    setEditCourseName(pChildren.length > 0 && pChildren[0].course_name ? pChildren[0].course_name : 'Orca Cubs');
     setEditPaymentAmount(p.payment_amount ? String(p.payment_amount) : '');
     setEditPaymentRefNo(p.payment_ref_no || '');
     setEditPaymentPayerName(p.payment_payer_name || '');
@@ -860,6 +863,16 @@ function AdminDashboardContent() {
 
     await store.saveUser(updatedParent);
 
+    // Update course_name for all children of this parent
+    const pChildren = children.filter((c) => isChildOfParent(c, updatedParent));
+    if (pChildren.length > 0 && editCourseName) {
+      for (const child of pChildren) {
+        if (child.course_name !== editCourseName) {
+          await store.updateChild(child.id, { course_name: editCourseName });
+        }
+      }
+    }
+
     const adminUser = store.getCurrentUser();
     const oldHours = editingParent.purchased_hours || 0;
     const newHours = editPurchasedHours !== '' ? Number(editPurchasedHours) : 0;
@@ -906,6 +919,8 @@ function AdminDashboardContent() {
 
     const uList = await store.getUsers();
     setParents(uList.filter(u => u.role !== 'admin'));
+    const cList = await store.getChildren();
+    setChildren(cList);
   };
 
   const handleApproveSubmit = async (e: React.FormEvent) => {
@@ -3537,6 +3552,24 @@ function AdminDashboardContent() {
                   onChange={(e) => setEditPassword(e.target.value)}
                   className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
                 />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-[#001a3a] mb-1.5">คอร์สเรียน (Course):</label>
+                <select
+                  value={editCourseName}
+                  onChange={(e) => setEditCourseName(e.target.value)}
+                  className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500 bg-white"
+                >
+                  {coursesListGlobal.map((c) => (
+                    <option key={c.id} value={c.display_title}>
+                      {c.display_title}
+                    </option>
+                  ))}
+                  {!coursesListGlobal.some(c => c.display_title === editCourseName) && (
+                    <option value={editCourseName}>{editCourseName}</option>
+                  )}
+                </select>
               </div>
 
               {/* 🎯 Purchased Hours / Quota */}

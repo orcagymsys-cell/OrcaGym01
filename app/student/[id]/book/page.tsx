@@ -59,6 +59,7 @@ export default function BookingCalendarPage() {
   const [alertModalText, setAlertModalText] = useState<string | null>(null);
   const [successModalText, setSuccessModalText] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -81,14 +82,16 @@ export default function BookingCalendarPage() {
       setLoading(false);
 
       // 2. Background Fetch
-      const [allC, b, q] = await Promise.all([
+      const [allC, b, q, crs] = await Promise.all([
         store.getChildren(),
         store.getBookings(undefined, selectedDate),
-        store.getSlotQuotas()
+        store.getSlotQuotas(),
+        store.getCourses()
       ]);
       
       if (reqId !== requestRef.current) return;
       
+      setCoursesListGlobal(crs || []);
       let c = allC.find(x => x.id === resolvedChildId);
       if (c) {
         if ((c.total_hours - c.used_hours) <= 0) {
@@ -157,6 +160,13 @@ export default function BookingCalendarPage() {
 
       // Check Real-time Quota against all bookings for this slot
       const allSlotBookings = await store.getBookings(); // We need all bookings to check class capacity
+      // Fetch the actual max_capacity from the course config
+      const matchedCourse = coursesListGlobal.find((c: any) => 
+        c.display_title?.toLowerCase().includes(freshChild.course_name?.toLowerCase() || 'cubs') ||
+        c.internal_name?.toLowerCase().includes(freshChild.course_name?.toLowerCase() || 'cubs')
+      );
+      const defaultCourseCapacity = matchedCourse?.max_capacity || 10;
+
       const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && b.time_slot === selectedSlot && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
       
       const courseKeyName = freshChild.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
@@ -173,7 +183,7 @@ export default function BookingCalendarPage() {
         ?? quotas[`${freshChild.course_name}_${selectedSlot}`]
         ?? quotas[`${courseKeyName}_${selectedSlot}`]
         ?? quotas[`${selectedDate}_${selectedSlot}`]
-        ?? 10;
+        ?? defaultCourseCapacity;
         
       if (currentBookedCount >= customQuota) {
         setAlertModalText(`🔒 ขออภัยค่ะ รอบเวลา ${selectedSlot} เพิ่งถูกจองเต็มไปเมื่อสักครู่ (${customQuota}/${customQuota} คน) กรุณาเลือกรอบเวลาอื่น`);
@@ -365,6 +375,11 @@ export default function BookingCalendarPage() {
               const courseKeyName = child.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
               const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
               const currentDayName = dayNames[new Date(selectedDate).getDay()];
+              const matchedCourse = coursesListGlobal.find((c: any) => 
+                c.display_title?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs') ||
+                c.internal_name?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs')
+              );
+              const defaultCourseCapacity = matchedCourse?.max_capacity || 10;
               const customQuota = quotas[`${selectedDate}_${child.course_name}_${slot}`]
                 ?? quotas[`${selectedDate}_${courseKeyName}_${slot}`]
                 ?? quotas[`${currentDayName}_${child.course_name}_${slot}`]
@@ -376,7 +391,7 @@ export default function BookingCalendarPage() {
                 ?? quotas[`${child.course_name}_${slot}`]
                 ?? quotas[`${courseKeyName}_${slot}`]
                 ?? quotas[`${selectedDate}_${slot}`]
-                ?? 10;
+                ?? defaultCourseCapacity;
               const currentBookedCount = dateBookings.filter(b => b.time_slot === slot && b.status !== 'Cancelled').length;
               const isFull = currentBookedCount >= customQuota;
               const isSelected = selectedSlot === slot;
