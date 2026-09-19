@@ -847,6 +847,7 @@ export interface FamilyBasket {
   course_name: string;
   original_hours: number;
   remaining_hours: number;
+  used_hours: number;
   created_at: string;
   duration_months: number;
   duration_text: string;
@@ -855,11 +856,14 @@ export interface FamilyBasket {
 export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[]): FamilyBasket[] {
   if (!parentUser) return [];
 
-  // 1. Calculate allocated hours per course from children
+  // 1. Calculate allocated and used hours per course from children
   const allocated: Record<string, number> = {};
+  const used: Record<string, number> = {};
+  
   children.forEach(c => {
     const cName = c.course_name || 'Orca Cubs';
     allocated[cName] = (allocated[cName] || 0) + (c.total_hours || 0);
+    used[cName] = (used[cName] || 0) + (c.used_hours || 0);
   });
 
   // 2. Extract purchase history
@@ -884,11 +888,18 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
 
     const cName = record.course_name || 'Orca Cubs';
     let remaining = hours;
+    let basketUsed = 0;
 
     if (allocated[cName] > 0) {
-      const deduct = Math.min(remaining, allocated[cName]);
-      remaining -= deduct;
-      allocated[cName] -= deduct;
+      const deductAlloc = Math.min(remaining, allocated[cName]);
+      remaining -= deductAlloc;
+      allocated[cName] -= deductAlloc;
+      
+      if (used[cName] > 0) {
+        const deductUsed = Math.min(deductAlloc, used[cName]);
+        basketUsed += deductUsed;
+        used[cName] -= deductUsed;
+      }
     }
 
     const courseConfig = coursesListGlobal.find(c => 
@@ -903,6 +914,7 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
       course_name: cName,
       original_hours: hours,
       remaining_hours: remaining,
+      used_hours: basketUsed, // ADDED
       created_at: record.created_at || new Date().toISOString(),
       duration_months: expiryInfo.months,
       duration_text: expiryInfo.text
