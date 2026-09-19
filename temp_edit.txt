@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
-import { store, getFamilyBaskets, type FamilyBasket } from '@/lib/supabase';
+import { store } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { Child } from '@/lib/types';
 
@@ -21,12 +21,10 @@ export default function EditChildPage() {
   const [gender, setGender] = useState('Girl');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [totalHours, setTotalHours] = useState<number | string>(2);
+  const [totalHours, setTotalHours] = useState<number>(2);
   const [parentPurchased, setParentPurchased] = useState<number>(6);
   const [familyChildren, setFamilyChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(false);
-  const [baskets, setBaskets] = useState<FamilyBasket[]>([]);
-  const [selectedBasketId, setSelectedBasketId] = useState<string>('');
 
   useEffect(() => {
     if (!childId) return;
@@ -64,18 +62,12 @@ export default function EditChildPage() {
     async function loadChild() {
       try {
         const u = store.getCurrentUser();
-        const [c, famC, courses] = await Promise.all([
+        const [c, famC] = await Promise.all([
           store.getChildById(childId),
-          store.getChildren(u?.id),
-          store.getCourses()
+          store.getChildren(u?.id)
         ]);
         if (c) {
           fillForm(c);
-          const fb = getFamilyBaskets(u, famC || [], courses || []);
-          setBaskets(fb);
-          const targetB = fb.find(b => b.course_name === c.course_name);
-          if (targetB) setSelectedBasketId(targetB.id);
-          else if (fb.length > 0) setSelectedBasketId(fb[0].id);
           setParentPurchased(u?.purchased_hours || 6);
           setFamilyChildren(famC || []);
         }
@@ -120,8 +112,7 @@ export default function EditChildPage() {
       gender,
       avatar: gender.toLowerCase() === 'boy' ? 'boy' : 'girl',
       photo_url: photoDataUrl || undefined,
-      total_hours: totalHours === '' ? 0 : Number(totalHours),
-      course_name: baskets.find(b => b.id === selectedBasketId)?.course_name || child?.course_name
+      total_hours: totalHours
     };
 
     await store.updateChild(targetId, updates);
@@ -234,65 +225,39 @@ export default function EditChildPage() {
           </select>
         </div>
 
-        {/* Selected Course Basket Dropdown */}
-        <div className="mb-4 font-['Anuphan',sans-serif]">
-          <label className="block text-xs font-bold text-[#001a3a] mb-1">
-            เลือกตะกร้าคอร์สเรียน (Course Basket):
-          </label>
-          <select
-            value={selectedBasketId}
-            onChange={(e) => {
-              setSelectedBasketId(e.target.value);
-              setTotalHours('');
-            }}
-            className="w-full h-9 px-3 border border-[#486581] rounded-full text-[#102a43] text-xs font-bold bg-white focus:outline-none focus:border-[#001a3a]"
-          >
-            {baskets.length === 0 && <option value="">ไม่มีตะกร้าว่าง</option>}
-            {baskets.filter(b => b.remaining_hours > 0 || b.course_name === child?.course_name).map(b => {
-              const maxT = b.course_name === child?.course_name ? (b.remaining_hours + (child?.total_hours || 0)) : b.remaining_hours;
-              return (
-                <option key={b.id} value={b.id}>
-                  {b.course_name} (โควต้ารวมที่จะระบุได้สูงสุด {maxT} ครั้ง)
-                </option>
-              );
-            })}
-          </select>
-        </div>
-
         {/* Hour Allocation / Top Up Field */}
         <div className="pt-1 font-['Anuphan',sans-serif]">
-          <div className="bg-sky-50/80 border border-sky-200 p-3 rounded-2xl mb-4">
-            <label className="block text-xs font-bold text-[#001a3a] mb-1">
-              โควต้าชั่วโมงเรียนสะสมที่จัดสรรให้น้อง:
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={totalHours}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^0-9]/g, '');
-                const num = val === '' ? '' : Number(val);
-                const targetBasket = baskets.find(b => b.id === selectedBasketId);
-                let maxAllowed = 0;
-                if (targetBasket) {
-                  maxAllowed = targetBasket.course_name === child?.course_name ? (targetBasket.remaining_hours + (child?.total_hours || 0)) : targetBasket.remaining_hours;
-                }
-                if (num !== '' && Number(num) > maxAllowed) {
-                  showToast(`⚠️ ใส่ได้สูงสุด ${maxAllowed} ครั้ง (โควต้ารวม)`);
-                  setTotalHours(maxAllowed);
-                } else {
-                  setTotalHours(num);
-                }
-              }}
-              placeholder="โปรดระบุจำนวนครั้งที่ต้องการ"
-              className="w-full h-9 px-3 border border-[#486581] rounded-full text-[#102a43] text-xs font-bold bg-white focus:outline-none focus:border-[#001a3a] placeholder:text-slate-400 placeholder:font-normal"
-              required
-            />
-            <p className="text-[10px] text-slate-500 font-normal mt-1">
-              * สามารถปรับเพิ่มชั่วโมงโดยดึงจากโควต้าคงเหลือในตะกร้าครอบครัวได้
-            </p>
-          </div>
+          {(() => {
+            const otherChildrenAllocated = familyChildren
+              .filter(fc => fc.id !== (child ? child.id : ''))
+              .reduce((sum, fc) => sum + (fc.total_hours || 0), 0);
+            const maxAllowedForThisChild = Math.max(totalHours, parentPurchased - otherChildrenAllocated);
+
+            return (
+              <div className="bg-sky-50/80 border border-sky-200 p-3 rounded-2xl">
+                <label className="block text-xs font-bold text-[#001a3a] mb-1">
+                  โควต้าชั่วโมงเรียนสะสมที่จัดสรรให้น้อง:
+                </label>
+                <select
+                  value={totalHours}
+                  onChange={(e) => setTotalHours(Number(e.target.value))}
+                  className="w-full h-9 px-3 border border-[#486581] rounded-full text-[#102a43] text-xs font-bold bg-white focus:outline-none focus:border-[#001a3a]"
+                >
+                  {Array.from({ length: maxAllowedForThisChild }).map((_, idx) => {
+                    const val = idx + 1;
+                    return (
+                      <option key={val} value={val}>
+                        {val} ครั้ง
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-[10px] text-slate-500 font-normal mt-1">
+                  * สามารถปรับเพิ่มชั่วโมงโดยดึงจากโควต้าคงเหลือในตะกร้าครอบครัวได้
+                </p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Save Button */}
