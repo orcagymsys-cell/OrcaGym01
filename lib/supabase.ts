@@ -390,24 +390,48 @@ export const store = {
   },
 
   async saveChild(child: Child): Promise<Child> {
-    if (!isSupabaseConfigured || !supabase) return child;
-    const childForDB = { ...child };
-    const { error } = await supabase.from('children').upsert([childForDB]);
-    if (error) throw new Error(error.message);
+    const children = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+    const idx = children.findIndex(c => c.id === child.id);
+    if (idx !== -1) children[idx] = child;
+    else children.push(child);
+    setLocal(STORAGE_KEYS.CHILDREN, children);
+
+    if (isSupabaseConfigured && supabase) {
+      const childForDB = { ...child };
+      const { error } = await supabase.from('children').upsert([childForDB]);
+      if (error) console.error(error.message);
+    }
     if (typeof window !== "undefined") window.dispatchEvent(new Event("orca_store_updated"));
     return child;
   },
 
   async updateChild(id: string, updates: Partial<Child>): Promise<void> {
-    if (!isSupabaseConfigured || !supabase) return;
-    await supabase.from('children').update(updates).eq('id', id);
+    const children = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+    const idx = children.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      children[idx] = { ...children[idx], ...updates };
+      setLocal(STORAGE_KEYS.CHILDREN, children);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('children').update(updates).eq('id', id);
+    }
     if (typeof window !== "undefined") window.dispatchEvent(new Event("orca_store_updated"));
   },
 
   async deleteChild(id: string): Promise<void> {
-    if (!isSupabaseConfigured || !supabase) return;
-    await supabase.from('children').delete().eq('id', id);
-    await supabase.from('bookings').delete().eq('child_id', id);
+    let children = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+    children = children.filter(c => c.id !== id);
+    setLocal(STORAGE_KEYS.CHILDREN, children);
+
+    let bookings = getLocal<Booking[]>(STORAGE_KEYS.BOOKINGS, []);
+    bookings = bookings.filter(b => b.child_id !== id);
+    setLocal(STORAGE_KEYS.BOOKINGS, bookings);
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('children').delete().eq('id', id);
+      await supabase.from('bookings').delete().eq('child_id', id);
+    }
     if (typeof window !== "undefined") window.dispatchEvent(new Event("orca_store_updated"));
   },
 

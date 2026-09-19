@@ -767,7 +767,13 @@ function AdminDashboardContent() {
     setEditPassword(p.password || '123');
     setEditPurchasedHours(p.purchased_hours !== undefined ? p.purchased_hours : 6);
     const pChildren = children.filter((c) => isChildOfParent(c, p));
-    const childCourse = pChildren.length > 0 && pChildren[0].course_name ? pChildren[0].course_name : 'Orca Cubs';
+    let childCourse = 'Orca Cubs';
+    if (pChildren.length > 0 && pChildren[0].course_name) {
+      childCourse = pChildren[0].course_name;
+    } else if (p.payment_history && p.payment_history.length > 0) {
+      const lastHist = p.payment_history[p.payment_history.length - 1];
+      if (lastHist.course_name) childCourse = lastHist.course_name;
+    }
     const matchedCourse = coursesListGlobal.find(c => c.display_title.toLowerCase() === childCourse.toLowerCase());
     setEditCourseName(matchedCourse ? matchedCourse.display_title : childCourse);
     setEditPaymentAmount(p.payment_amount ? String(p.payment_amount) : '');
@@ -830,6 +836,7 @@ function AdminDashboardContent() {
           payment_datetime: editPaymentDateTime || undefined,
           payment_slip: editPaymentSlipFile || undefined,
           purchased_hours: editPurchasedHours !== '' ? Number(editPurchasedHours) : undefined,
+          course_name: editCourseName,
         };
       } else {
         currentHistory.push({
@@ -841,8 +848,13 @@ function AdminDashboardContent() {
           payment_datetime: editPaymentDateTime || undefined,
           payment_slip: editPaymentSlipFile || undefined,
           purchased_hours: editPurchasedHours !== '' ? Number(editPurchasedHours) : undefined,
+          course_name: editCourseName,
           created_at: new Date().toISOString(),
         });
+      }
+    } else {
+      if (currentHistory.length > 0) {
+        currentHistory[currentHistory.length - 1].course_name = editCourseName;
       }
     }
 
@@ -2133,7 +2145,16 @@ function AdminDashboardContent() {
                         };
                         
                         const parentCourseNames = Array.from(new Set(pChildren.map(c => formatCourseName(c.course_name))));
-                        const displayCourseName = parentCourseNames.length > 0 ? parentCourseNames.join(', ') : 'ORCA CUBS AGE 6-10';
+                        let displayCourseName = parentCourseNames.length > 0 ? parentCourseNames.join(', ') : 'ORCA CUBS AGE 6-10';
+                        let mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
+
+                        if (pChildren.length === 0 && p.payment_history && p.payment_history.length > 0) {
+                          const lastHist = p.payment_history[p.payment_history.length - 1];
+                          if (lastHist.course_name) {
+                            displayCourseName = formatCourseName(lastHist.course_name);
+                            mainCourseNameForPricing = lastHist.course_name;
+                          }
+                        }
 
                         const pBookingsCount = allBookings.filter(
                           (b) =>
@@ -2147,8 +2168,6 @@ function AdminDashboardContent() {
                           : new Date();
                         const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
                         const purchasedHoursNum = p.purchased_hours || 6;
-                        
-                        const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
                         const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
                         // For free courses (purchasedHoursNum === 2), also search by Free Trial tag in case times field was saved incorrectly
                         const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
