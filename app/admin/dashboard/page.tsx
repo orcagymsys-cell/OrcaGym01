@@ -458,9 +458,9 @@ function AdminDashboardContent() {
         expiryDate.setDate(expiryDate.getDate() + 14);
       } else {
         let months = 2;
-        if (hoursNum === 12) months = 4;
-        else if (hoursNum === 24 || hoursNum === 26) months = 6;
-        else if (hoursNum === 48) months = 12;
+        if (hoursNum >= 48) months = 12;
+        else if (hoursNum >= 24) months = 6;
+        else if (hoursNum >= 12) months = 4;
         expiryDate.setMonth(expiryDate.getMonth() + months);
       }
     }
@@ -1049,9 +1049,9 @@ function AdminDashboardContent() {
         expiry_date: (() => {
           let months = 2;
           const p = newTotal;
-          if (p === 12) months = 4;
-          else if (p === 24 || p === 26) months = 6;
-          else if (p >= 48) months = 12;
+          if (p >= 48) months = 12;
+          else if (p >= 24) months = 6;
+          else if (p >= 12) months = 4;
           const validD = new Date();
           validD.setMonth(validD.getMonth() + months);
           return `${String(validD.getDate()).padStart(2, '0')}/${String(validD.getMonth() + 1).padStart(2, '0')}/${validD.getFullYear()}`;
@@ -1263,9 +1263,9 @@ function AdminDashboardContent() {
         pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
       } else {
         let months = 2;
-        if (hoursNum === 12) months = 4;
-        else if (hoursNum === 24 || hoursNum === 26) months = 6;
-        else if (hoursNum === 48) months = 12;
+        if (hoursNum >= 48) months = 12;
+        else if (hoursNum >= 24) months = 6;
+        else if (hoursNum >= 12) months = 4;
         expiryDate.setMonth(expiryDate.getMonth() + months);
         pkgDurationText = `${months} เดือน`;
       }
@@ -2237,9 +2237,9 @@ function AdminDashboardContent() {
                             pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
                           } else {
                             let pkgDurationMonths = 2;
-                            if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-                            else if (purchasedHoursNum === 24 || purchasedHoursNum === 26) pkgDurationMonths = 6;
-                            else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+                            if (purchasedHoursNum >= 48) pkgDurationMonths = 12;
+                            else if (purchasedHoursNum >= 24) pkgDurationMonths = 6;
+                            else if (purchasedHoursNum >= 12) pkgDurationMonths = 4;
                             pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
                             pkgDurationText = `${pkgDurationMonths} เดือน`;
                           }

@@ -255,11 +255,28 @@ export default function BookingCalendarPage() {
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
   const scheduleConfig = COURSE_SCHEDULES[courseKey] || COURSE_SCHEDULES['Orca Cubs'];
+  
+  // Use dynamic schedule from ORCA CLASSES & PRICING if available
+  const activeCourse = coursesListGlobal.find((c: any) => 
+    c.display_title?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs') ||
+    c.internal_name?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs')
+  );
+  let dynWd: string[] = [];
+  let dynWe: string[] = [];
+  if (activeCourse && activeCourse.schedule_groups) {
+    const wd = activeCourse.schedule_groups.find((g: any) => g.day_label?.toLowerCase().includes('week') || g.day_label?.toLowerCase().includes('tue'));
+    const we = activeCourse.schedule_groups.find((g: any) => g.day_label?.toLowerCase().includes('end') || g.day_label?.toLowerCase().includes('sat'));
+    if (wd) dynWd = wd.time_slots || [];
+    if (we) dynWe = we.time_slots || [];
+  }
+  const finalWeekday = dynWd.length > 0 ? dynWd : scheduleConfig.weekday;
+  const finalWeekend = dynWe.length > 0 ? dynWe : scheduleConfig.weekend;
+
   const availableSlots = isMonday
     ? []
     : isWeekend
-    ? scheduleConfig.weekend
-    : scheduleConfig.weekday;
+    ? finalWeekend
+    : finalWeekday;
 
   // Calendar render math
   const firstDayIndex = new Date(year, month, 1).getDay();
