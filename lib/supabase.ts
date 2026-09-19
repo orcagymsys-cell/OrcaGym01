@@ -787,8 +787,40 @@ export function setupRealtimeSubscriptions(onUpdate: () => void) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'children' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, onUpdate)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'course_configs' }, onUpdate)
     .subscribe();
   return () => {
     if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }
   };
+}
+
+export function calculateDynamicExpiry(purchasedHours: number, courseConfig: any): { months: number, text: string } {
+  if (!courseConfig || !courseConfig.pricing_options) {
+    if (purchasedHours >= 48) return { months: 12, text: '12 เดือน' };
+    if (purchasedHours >= 24) return { months: 6, text: '6 เดือน' };
+    if (purchasedHours >= 12) return { months: 4, text: '4 เดือน' };
+    return { months: 2, text: '2 เดือน' };
+  }
+  const exact = courseConfig.pricing_options.find((po: any) => Number(po.times) === purchasedHours);
+  if (exact && exact.duration && exact.duration !== '-') {
+    const match = exact.duration.match(/(\d+)\s*(month|เดือน)/i);
+    if (match) return { months: parseInt(match[1], 10), text: exact.duration };
+  }
+  const validOptions = courseConfig.pricing_options
+    .filter((po: any) => !po.tag?.toLowerCase().includes('free') && Number(po.times) > 0)
+    .sort((a: any, b: any) => Number(b.times) - Number(a.times));
+  for (const opt of validOptions) {
+    const times = Number(opt.times);
+    const match = opt.duration.match(/(\d+)\s*(month|เดือน)/i);
+    if (times > 0 && purchasedHours >= times && match) {
+      const baseMonths = parseInt(match[1], 10);
+      const multiplier = Math.floor(purchasedHours / times);
+      const totalMonths = baseMonths * multiplier;
+      return { months: totalMonths, text: `${totalMonths} เดือน` };
+    }
+  }
+  if (purchasedHours >= 48) return { months: 12, text: '12 เดือน' };
+  if (purchasedHours >= 24) return { months: 6, text: '6 เดือน' };
+  if (purchasedHours >= 12) return { months: 4, text: '4 เดือน' };
+  return { months: 2, text: '2 เดือน' };
 }
