@@ -3,12 +3,49 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import BackButton from '@/components/BackButton';
-import { store, setupRealtimeSubscriptions, isSupabaseConfigured } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions, isSupabaseConfigured, getFamilyBaskets, type FamilyBasket } from '@/lib/supabase';
 import { Child, Booking } from '@/lib/types';
 import { showToast } from '@/components/Toast';
 import ServiceTermsModal from '@/components/ServiceTermsModal';
 
 
+
+function formatThaiShortDate(dateInput: string | Date | undefined | null, includeTime = false): string {
+  if (!dateInput) return '-';
+  const str = String(dateInput);
+  let d: Date;
+
+  if (str.includes('/') && str.split('/').length === 3) {
+    const parts = str.split('/');
+    let day = parseInt(parts[0], 10);
+    let month = parseInt(parts[1], 10) - 1;
+    let year = parseInt(parts[2], 10);
+    if (year > 2500) year -= 543;
+    d = new Date(year, month, day);
+  } else {
+    d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+  }
+
+  if (isNaN(d.getTime())) return str;
+
+  const monthShortNames = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+  ];
+
+  const day = d.getDate();
+  const monthStr = monthShortNames[d.getMonth()];
+  const year = d.getFullYear() + (d.getFullYear() < 2500 ? 543 : 0);
+
+  let dateStr = `${day} ${monthStr} ${year}`;
+  if (includeTime) {
+    const timeMatch = str.match(/(\d{2}:\d{2})/);
+    if (timeMatch) {
+      dateStr += ` ${timeMatch[1]} น.`;
+    }
+  }
+  return dateStr;
+}
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -137,66 +174,22 @@ export default function HomePage() {
   const basePurchased = (currentUser && currentUser.purchased_hours !== undefined && currentUser.purchased_hours > 0)
     ? currentUser.purchased_hours
     : 6;
-  const totalAllocated = children.reduce((sum, c) => sum + (c.total_hours || 0), 0);
-  const totalPurchased = Math.max(basePurchased, totalAllocated);
-  const totalUsed = children.reduce((sum, c) => sum + (c.used_hours || 0), 0);
-  const totalRemaining = Math.max(0, totalPurchased - totalAllocated);
-  const mainCourseName = children[0]?.course_name || 'Orca Cubs';
-
-  // ⏳ Package Expiry Calculation — reads duration from Orca Classes & Pricing
-  const pkgStartDateStr = currentUser?.payment_datetime || currentUser?.created_at || new Date().toISOString();
-  const pkgStartDate = new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'));
-  const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+  const familyBaskets = currentUser ? getFamilyBaskets(currentUser, children, coursesFromDB) : [];
   
-  const purchasedHoursNum = totalPurchased;
-
-  // Look up the pricing option from the DB to get the exact duration
-  const mainCourseConfig = coursesFromDB.find(c =>
-    c.display_title?.toLowerCase().includes(mainCourseName.toLowerCase()) ||
-    c.internal_name?.toLowerCase().includes(mainCourseName.toLowerCase())
-  ) || coursesFromDB[0];
-  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
-    || (purchasedHoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
-    || (purchasedHoursNum === 2 ? coursesFromDB.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
-
-  const pkgExpiryDate = new Date(validPkgStartDate);
+  // Backwards compatibility for unused single-basket references (e.g. notifications)
+  // We just pick the most prominent basket for the global alert if there's any.
+  let showUnbookedNearExpiryBanner = false;
+  let alertStartStr = '';
+  let formattedPkgExpiryDate = '';
+  let fullPkgExpiryDateStr = '';
+  let daysUntilPkgExpiry = 0;
+  let unbookedClassesCount = 0;
   let pkgDurationText = '';
-  let pkgDurationMonths = 2; // kept for UI references
-
-  if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
-    const durStr = pricingOpt.duration;
-    const lower = durStr.toLowerCase();
-    const match = durStr.match(/(\d+)/);
-    const val = match ? parseInt(match[1], 10) : 0;
-    if (lower.includes('day') || lower.includes('วัน')) {
-      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
-      pkgDurationText = durStr;
-      pkgDurationMonths = 0; // signal: not months-based
-    } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
-      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val * 7);
-      pkgDurationText = durStr;
-      pkgDurationMonths = 0;
-    } else {
-      pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
-      pkgDurationMonths = val;
-      pkgDurationText = `${val} เดือน`;
-    }
-  } else {
-    // Fallback to hardcoded mapping
-    if (purchasedHoursNum >= 48) pkgDurationMonths = 12;
-    else if (purchasedHoursNum >= 24) pkgDurationMonths = 6;
-    else if (purchasedHoursNum >= 12) pkgDurationMonths = 4;
-    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
-    pkgDurationText = `${pkgDurationMonths} เดือน`;
-  }
+  let totalPurchased = 0;
+  let activeBookingsCount = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled').length;
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
-  const expiryDay = new Date(pkgExpiryDate);
-  expiryDay.setHours(0, 0, 0, 0);
-
-  const daysUntilPkgExpiry = Math.ceil((expiryDay.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-  const isPkgExpiringSoon = daysUntilPkgExpiry <= 5; // Triggers alert 5 days before 2-month expiry
 
   const monthNames = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -207,31 +200,37 @@ export default function HomePage() {
     'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
   ];
 
-  const expYearStr = pkgExpiryDate.getFullYear() + 543;
-  const pYearStr = validPkgStartDate.getFullYear() + 543;
+  // Check if ANY basket is near expiry and has remaining allocation
+  for (const basket of familyBaskets) {
+    const pkgExpiryDate = new Date(basket.created_at);
+    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + basket.duration_months);
+    const expiryDay = new Date(pkgExpiryDate);
+    expiryDay.setHours(0, 0, 0, 0);
+    const daysUntil = Math.ceil((expiryDay.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntil <= 5 && basket.remaining_hours > 0) {
+      showUnbookedNearExpiryBanner = true;
+      daysUntilPkgExpiry = daysUntil;
+      unbookedClassesCount = basket.remaining_hours;
+      pkgDurationText = basket.duration_text;
+      totalPurchased = basket.original_hours;
+      
+      const expYearStr = pkgExpiryDate.getFullYear() + 543;
+      formattedPkgExpiryDate = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr.toString().substring(2)}`;
+      fullPkgExpiryDateStr = `${pkgExpiryDate.getDate()} ${monthNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
+      
+      const alertStart = new Date(pkgExpiryDate);
+      alertStart.setDate(alertStart.getDate() - 5);
+      alertStartStr = `${alertStart.getDate()} ${monthShortNames[alertStart.getMonth()]} ${String(alertStart.getFullYear() + 543).substring(2)}`;
+      break; // Just show one alert
+    }
+  }
 
-  const formattedPkgExpiryDate = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
-  const fullPkgExpiryDateStr = `${pkgExpiryDate.getDate()} ${monthNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
-
-  const formattedPurchaseDate = `${validPkgStartDate.getDate()} ${monthShortNames[validPkgStartDate.getMonth()]} ${pYearStr}`;
-  const fullPurchaseDateStr = `${validPkgStartDate.getDate()} ${monthNames[validPkgStartDate.getMonth()]} ${pYearStr}`;
-
-  const alertStartDate = new Date(pkgExpiryDate);
-  alertStartDate.setDate(alertStartDate.getDate() - 5);
-  const alertStartStr = `${alertStartDate.getDate()} ${monthShortNames[alertStartDate.getMonth()]} ${alertStartDate.getFullYear() + 543}`;
-  const alertStartFullStr = `${alertStartDate.getDate()} ${monthNames[alertStartDate.getMonth()]} ${alertStartDate.getFullYear() + 543}`;
-
-  // Count active bookings and unbooked classes
-  const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
-  const activeBookingsCount = activeBookings.length;
-  const unbookedClassesCount = Math.max(0, totalPurchased - activeBookingsCount);
-  const hasUnbookedClasses = unbookedClassesCount > 0;
-
-  // Condition 1: Family basket remaining <= 2
+  // Remove the old totalAllocated etc since we loop over baskets
+  const totalRemaining = familyBaskets.reduce((sum, b) => sum + b.remaining_hours, 0);
   const isBasketLow = totalRemaining <= 2;
 
-  // Persistent Alert Banner: Stays shown as long as package is near expiry AND classes remain unbooked!
-  const showUnbookedNearExpiryBanner = isPkgExpiringSoon && hasUnbookedClasses;
+  // Check if ANY basket is low
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
 
 
@@ -298,67 +297,67 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Global Shared Family Basket Card placed right under HOME button */}
-      <div className="my-4 bg-white border-2 border-slate-200 p-4 rounded-3xl text-xs space-y-3 font-['Anuphan',sans-serif] shadow-xs">
-        <div className="flex items-center justify-between gap-3">
-          
-          {/* Left: Cart Icon with Floating Pink Badge + Title + Course Name */}
-          <div className="flex items-center gap-3">
-            <div className="relative shrink-0 pt-1">
-              {/* Dark Navy Shopping Cart Icon */}
-              <svg className="w-10 h-10 fill-[#1d2a44]" viewBox="0 0 24 24">
-                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-              </svg>
-
-              {/* Floating Pink Oval Badge displaying total remaining / total purchased e.g. 4/6 */}
-              <span className="absolute -top-1.5 -right-3.5 bg-[#ff3b69] text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white leading-none tracking-tight">
-                {totalRemaining}/{totalPurchased}
-              </span>
+      {/* Multiple Family Baskets Render */}
+      {familyBaskets.length === 0 ? (
+        <div className="my-4 bg-white border-2 border-slate-200 p-4 rounded-3xl text-center text-slate-500 font-bold shadow-xs">
+          ยังไม่มีแพ็กเกจคอร์สเรียน
+        </div>
+      ) : (
+        familyBaskets.map((basket, idx) => {
+          const pkgExpiryDate = new Date(basket.created_at);
+          pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + basket.duration_months);
+          const expYearStr = pkgExpiryDate.getFullYear() + 543;
+          const fmtExp = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr.toString().substring(2)}`;
+          const pDate = new Date(basket.created_at);
+          const pYearStr = pDate.getFullYear() + 543;
+          const fmtPur = `${pDate.getDate()} ${monthShortNames[pDate.getMonth()]} ${pYearStr.toString().substring(2)}`;
+          return (
+            <div key={basket.id || idx} className="my-4 bg-white border-2 border-slate-200 p-4 rounded-3xl text-xs space-y-3 font-['Anuphan',sans-serif] shadow-xs">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0 pt-1">
+                    <svg className="w-10 h-10 fill-[#1d2a44]" viewBox="0 0 24 24">
+                      <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                    <span className="absolute -top-1.5 -right-3.5 bg-[#ff3b69] text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white leading-none tracking-tight">
+                      {basket.remaining_hours}/{basket.original_hours}
+                    </span>
+                  </div>
+                  <div className="flex flex-col pl-2">
+                    <span className="text-base font-black text-[#001a3a] leading-tight">
+                      ตะกร้า: <span className="text-[#0088ff]">{basket.course_name}</span>
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      (อายุคอร์ส {basket.duration_text})
+                    </span>
+                  </div>
+                </div>
+                <span className="text-blue-900 bg-sky-100 px-3 py-1.5 rounded-full text-[11px] font-extrabold border border-sky-300 shrink-0">
+                  คงเหลือ: <strong className="text-blue-700 text-sm">{basket.remaining_hours}</strong> ครั้ง
+                </span>
+              </div>
+              <div className="grid grid-cols-3 text-center gap-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 font-bold shadow-2xs">
+                <div>
+                  <div className="text-[10px] text-slate-500 font-normal">ซื้อจำนวน</div>
+                  <div className="text-slate-800 text-xs sm:text-sm font-extrabold">{basket.original_hours} ครั้ง</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 font-normal">จัดสรรแล้ว</div>
+                  <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{basket.original_hours - basket.remaining_hours} ครั้ง</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 font-normal">คงเหลือในตะกร้า</div>
+                  <div className="text-blue-700 text-xs sm:text-sm font-black">{basket.remaining_hours} ครั้ง</div>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50/70 p-2.5 rounded-2xl border border-sky-100 text-[11px] font-semibold text-slate-700">
+                <div>📅 <strong>วันที่ซื้อ:</strong> <span className="text-slate-900 font-bold">{fmtPur}</span></div>
+                <div>⏳ <strong>วันหมดอายุ:</strong> <span className="text-blue-900 font-extrabold">{fmtExp}</span></div>
+              </div>
             </div>
-
-            <div className="flex flex-col pl-2">
-              <span className="text-base font-black text-[#001a3a] leading-tight flex items-center flex-wrap gap-1">
-                ตะกร้าเรียนครอบครัวรวม
-                {totalPurchased === 2 && (
-                  <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm animate-pulse">
-                    ทดลองเรียนฟรี
-                  </span>
-                )}
-              </span>
-              <span className="text-sm font-black text-[#0088ff] leading-snug">
-                {mainCourseName}
-              </span>
-            </div>
-          </div>
-
-          {/* Right: Family Total Quota Pill */}
-          <span className="text-blue-900 bg-sky-100 px-3 py-1 rounded-full text-xs font-extrabold border border-sky-300 shrink-0">
-            โควต้ารวม: <strong className="text-blue-700 text-sm">{totalRemaining}/{totalPurchased}</strong> ครั้ง
-          </span>
-        </div>
-
-        {/* Global Breakdown Grid */}
-        <div className="grid grid-cols-3 text-center gap-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 font-bold shadow-2xs">
-          <div>
-            <div className="text-[10px] text-slate-500 font-normal">ซื้อรวมครอบครัว</div>
-            <div className="text-slate-800 text-xs sm:text-sm font-extrabold">{totalPurchased} ครั้ง</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-slate-500 font-normal">จัดสรรแล้ว</div>
-            <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{totalAllocated} ครั้ง</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-slate-500 font-normal">คงเหลือครอบครัว</div>
-            <div className="text-blue-700 text-xs sm:text-sm font-black">{totalRemaining} ครั้ง</div>
-          </div>
-        </div>
-
-        {/* Purchase & Expiry Date Box */}
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50/70 p-2.5 rounded-2xl border border-sky-100 text-xs font-semibold text-slate-700">
-          <div>📅 <strong>วันที่ซื้อคอร์ส:</strong> <span className="text-slate-900 font-bold">{formattedPurchaseDate}</span></div>
-          <div>⏳ <strong>วันที่หมดอายุ ({pkgDurationText}):</strong> <span className="text-blue-900 font-extrabold">{formattedPkgExpiryDate}</span></div>
-        </div>
-      </div>
+          );
+        })
+      )}
 
       {/* 🚨 Prominent Unbooked Course Package Near-Expiry Persistent Banner */}
       {showUnbookedNearExpiryBanner && (
@@ -416,26 +415,43 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl space-y-2">
-                <div className="font-extrabold text-amber-950 text-sm">
-                  📅 ครบกำหนดแพ็ก {pkgDurationText} ({purchasedHoursNum} ครั้ง)
-                </div>
-                <div className="text-xs text-amber-900 font-medium space-y-1">
-                  <div>• วันที่เริ่มซื้อคอร์ส: <strong>{fullPurchaseDateStr} ({formattedPurchaseDate})</strong></div>
-                  <div>• วันที่ครบกำหนด (หมดอายุ): <strong className="text-blue-900">{fullPkgExpiryDateStr} ({formattedPkgExpiryDate})</strong></div>
-                  <div>• เริ่มแจ้งเตือนล่วงหน้า 5 วัน: <strong className="text-rose-800">{alertStartFullStr} ({alertStartStr})</strong></div>
-                  <div>• สถานะ: <strong className="text-rose-700">{daysUntilPkgExpiry > 0 ? `เหลือเวลาอีก ${daysUntilPkgExpiry} วัน` : 'ครบกำหนดแล้ว'}</strong></div>
-                </div>
-                <p className="text-xs text-slate-600 font-normal pt-1">
-                  * ตัวอย่าง: ซื้อวันที่ 1 ตุลาคม 2569 (แพ็ก 2 เดือน) จะครบกำหนดวันที่ 1 ธันวาคม 2569 โดยระบบจะ Alert แจ้งเตือนก่อนครบกำหนด 5 วัน (เริ่มตั้งแต่วันที่ 26 พฤศจิกายน 2569) ทั้งฝั่งผู้ปกครองและ Admin
-                </p>
-              </div>
+              {familyBaskets.map((basket, bIdx) => {
+                const bExpiry = new Date(basket.created_at);
+                bExpiry.setMonth(bExpiry.getMonth() + basket.duration_months);
+                
+                const bFormattedPurchase = formatThaiShortDate(new Date(basket.created_at));
+                const bFormattedExpiry = formatThaiShortDate(bExpiry);
+                
+                const alertStart = new Date(bExpiry);
+                alertStart.setDate(alertStart.getDate() - 5);
+                const bAlertStart = formatThaiShortDate(alertStart);
+                
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const exp = new Date(bExpiry);
+                exp.setHours(0,0,0,0);
+                const bDaysLeft = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                return (
+                  <div key={bIdx} className="bg-amber-50 border border-amber-200 p-4 rounded-2xl space-y-2">
+                    <div className="font-extrabold text-amber-950 text-sm">
+                      📅 แพ็กเกจ {basket.course_name} ({basket.original_hours} ครั้ง)
+                    </div>
+                    <div className="text-xs text-amber-900 font-medium space-y-1">
+                      <div>• วันที่เริ่มซื้อคอร์ส: <strong>{bFormattedPurchase}</strong></div>
+                      <div>• วันที่ครบกำหนด (หมดอายุ): <strong className="text-blue-900">{bFormattedExpiry}</strong></div>
+                      <div>• เริ่มแจ้งเตือนล่วงหน้า 5 วัน: <strong className="text-rose-800">{bAlertStart}</strong></div>
+                      <div>• สถานะ: <strong className="text-rose-700">{bDaysLeft > 0 ? `เหลือเวลาอีก ${bDaysLeft} วัน` : 'ครบกำหนดแล้ว'}</strong></div>
+                    </div>
+                  </div>
+                );
+              })}
 
               <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl space-y-1 text-xs">
                 <div className="font-bold text-[#001a3a]">🛒 สรุปโควต้าตะกร้าครอบครัว</div>
-                <div>ซื้อรวม: <strong>{totalPurchased} ครั้ง</strong></div>
-                <div>จัดสรรให้เด็กแล้ว: <strong>{totalUsed} ครั้ง</strong></div>
-                <div>คงเหลือครอบครัว: <strong className="text-blue-700">{totalRemaining} ครั้ง</strong></div>
+                <div>ซื้อรวม: <strong>{familyBaskets.reduce((acc, b) => acc + b.original_hours, 0)} ครั้ง</strong></div>
+                <div>จัดสรรให้เด็กแล้ว: <strong>{familyBaskets.reduce((acc, b) => acc + (b.original_hours - b.remaining_hours), 0)} ครั้ง</strong></div>
+                <div>คงเหลือครอบครัว: <strong className="text-blue-700">{familyBaskets.reduce((acc, b) => acc + b.remaining_hours, 0)} ครั้ง</strong></div>
               </div>
 
               <div className="flex gap-3 pt-2">

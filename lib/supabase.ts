@@ -795,32 +795,119 @@ export function setupRealtimeSubscriptions(onUpdate: () => void) {
 }
 
 export function calculateDynamicExpiry(purchasedHours: number, courseConfig: any): { months: number, text: string } {
-  if (!courseConfig || !courseConfig.pricing_options) {
+  if (!courseConfig || !courseConfig.pricing_options || purchasedHours <= 0) {
     if (purchasedHours >= 48) return { months: 12, text: '12 เดือน' };
     if (purchasedHours >= 24) return { months: 6, text: '6 เดือน' };
     if (purchasedHours >= 12) return { months: 4, text: '4 เดือน' };
     return { months: 2, text: '2 เดือน' };
   }
+
+  // Exact match fast path
   const exact = courseConfig.pricing_options.find((po: any) => Number(po.times) === purchasedHours);
   if (exact && exact.duration && exact.duration !== '-') {
     const match = exact.duration.match(/(\d+)\s*(month|เดือน)/i);
     if (match) return { months: parseInt(match[1], 10), text: exact.duration };
   }
+
+  // Additive calculation
   const validOptions = courseConfig.pricing_options
     .filter((po: any) => !po.tag?.toLowerCase().includes('free') && Number(po.times) > 0)
-    .sort((a: any, b: any) => Number(b.times) - Number(a.times));
+    .sort((a: any, b: any) => Number(b.times) - Number(a.times)); // Descending
+
+  let remainingHours = purchasedHours;
+  let totalMonths = 0;
+
   for (const opt of validOptions) {
     const times = Number(opt.times);
     const match = opt.duration.match(/(\d+)\s*(month|เดือน)/i);
-    if (times > 0 && purchasedHours >= times && match) {
+    if (times > 0 && remainingHours >= times && match) {
       const baseMonths = parseInt(match[1], 10);
-      const multiplier = Math.floor(purchasedHours / times);
-      const totalMonths = baseMonths * multiplier;
-      return { months: totalMonths, text: `${totalMonths} เดือน` };
+      const multiplier = Math.floor(remainingHours / times);
+      totalMonths += baseMonths * multiplier;
+      remainingHours -= times * multiplier;
     }
   }
+
+  // If there's leftover hours that don't fit any package but totalMonths > 0, 
+  // they still get the months they accumulated. If they didn't accumulate anything,
+  // we fallback to the default logic.
+  if (totalMonths > 0) {
+    return { months: totalMonths, text: `${totalMonths} เดือน` };
+  }
+
+  // Fallback
   if (purchasedHours >= 48) return { months: 12, text: '12 เดือน' };
   if (purchasedHours >= 24) return { months: 6, text: '6 เดือน' };
   if (purchasedHours >= 12) return { months: 4, text: '4 เดือน' };
   return { months: 2, text: '2 เดือน' };
+}
+
+export interface FamilyBasket {
+  id: string;
+  course_name: string;
+  original_hours: number;
+  remaining_hours: number;
+  created_at: string;
+  duration_months: number;
+  duration_text: string;
+}
+
+export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[]): FamilyBasket[] {
+  if (!parentUser) return [];
+
+  // 1. Calculate allocated hours per course from children
+  const allocated: Record<string, number> = {};
+  children.forEach(c => {
+    const cName = c.course_name || 'Orca Cubs';
+    allocated[cName] = (allocated[cName] || 0) + (c.total_hours || 0);
+  });
+
+  // 2. Extract purchase history
+  let history = parentUser.payment_history ? [...parentUser.payment_history] : [];
+  if (history.length === 0 && parentUser.purchased_hours > 0) {
+    history.push({
+      id: 'legacy_init',
+      purchased_hours: parentUser.purchased_hours,
+      course_name: 'Orca Cubs',
+      created_at: parentUser.created_at || new Date().toISOString()
+    });
+  }
+
+  // Sort oldest first (FIFO)
+  history.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+
+  const baskets: FamilyBasket[] = [];
+
+  for (const record of history) {
+    const hours = Number(record.purchased_hours) || 0;
+    if (hours <= 0) continue;
+
+    const cName = record.course_name || 'Orca Cubs';
+    let remaining = hours;
+
+    if (allocated[cName] > 0) {
+      const deduct = Math.min(remaining, allocated[cName]);
+      remaining -= deduct;
+      allocated[cName] -= deduct;
+    }
+
+    const courseConfig = coursesListGlobal.find(c => 
+      c.display_title.toLowerCase().includes(cName.toLowerCase()) || 
+      c.internal_name.toLowerCase().includes(cName.toLowerCase())
+    );
+
+    const expiryInfo = calculateDynamicExpiry(hours, courseConfig);
+
+    baskets.push({
+      id: record.id || `pay_${Math.random()}`,
+      course_name: cName,
+      original_hours: hours,
+      remaining_hours: remaining,
+      created_at: record.created_at || new Date().toISOString(),
+      duration_months: expiryInfo.months,
+      duration_text: expiryInfo.text
+    });
+  }
+
+  return baskets;
 }

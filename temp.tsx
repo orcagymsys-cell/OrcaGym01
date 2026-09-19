@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, Suspense, Fragment } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import { store, isSupabaseConfigured, setupRealtimeSubscriptions, getFamilyBaskets } from '@/lib/supabase';
+import { store, isSupabaseConfigured, setupRealtimeSubscriptions } from '@/lib/supabase';
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
 import { showToast } from '@/components/Toast';
@@ -138,7 +138,6 @@ function AdminDashboardContent() {
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editCourseName, setEditCourseName] = useState('Orca Cubs');
   const [editPurchasedHours, setEditPurchasedHours] = useState<number | string>(6);
   const [editPaymentAmount, setEditPaymentAmount] = useState('');
   const [editPaymentRefNo, setEditPaymentRefNo] = useState('');
@@ -148,9 +147,8 @@ function AdminDashboardContent() {
   const [editPaymentDateTime, setEditPaymentDateTime] = useState('');
   const [editPaymentSlipFile, setEditPaymentSlipFile] = useState<string | null>(null);
 
-  // Search & Filter State
+  // Search State
   const [parentSearchQuery, setParentSearchQuery] = useState('');
-  const [parentStatusFilter, setParentStatusFilter] = useState('all'); // all, active, free_trial, expired
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
 
@@ -213,10 +211,6 @@ function AdminDashboardContent() {
     const adminDayName = dayNames[new Date(adminBookingDate).getDay()];
     const courseKeyName = adminBookingChild.course_name || 'Orca Cubs';
 
-    const coursesList = store.getCoursesSync();
-    const matchedCourse = coursesList.find(c => courseKeyName.toLowerCase().includes(c.display_title.toLowerCase()));
-    const defaultMaxCapacity = matchedCourse?.max_capacity || 10;
-
     const maxQuota =
       quotas[`${adminBookingDate}_${courseKeyName}_${adminBookingSlot}`] ??
       quotas[`${adminDayName}_${courseKeyName}_${adminBookingSlot}`] ??
@@ -225,7 +219,7 @@ function AdminDashboardContent() {
       quotas[`Everyday_${adminBookingSlot}`] ??
       quotas[`${courseKeyName}_${adminBookingSlot}`] ??
       quotas[`${adminBookingDate}_${adminBookingSlot}`] ??
-      defaultMaxCapacity;
+      10;
     const currentBooked = existingDayBookings.filter(b => b.time_slot === adminBookingSlot && b.status !== 'Cancelled').length;
 
     if (currentBooked >= maxQuota) {
@@ -356,7 +350,8 @@ function AdminDashboardContent() {
     loadData();
 
     // Setup Supabase Realtime for instant updates
-    const fetchDataBackground = () => {
+    const cleanupRealtime = setupRealtimeSubscriptions(() => {
+      // Fetch fresh data in background without flickering
       Promise.all([
         store.getUsers(), store.getChildren(), store.getAuditLogs(),
         store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
@@ -368,12 +363,7 @@ function AdminDashboardContent() {
         setAllBookings(bAll);
         setQuotas(q);
       });
-    };
-
-    const cleanupRealtime = setupRealtimeSubscriptions(fetchDataBackground);
-
-    // Fallback: poll every 15 seconds in case Supabase Realtime is disabled on the project
-    const pollInterval = setInterval(fetchDataBackground, 15000);
+    });
 
     let syncChannel: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -384,7 +374,6 @@ function AdminDashboardContent() {
     return () => {
       if (cleanupRealtime) cleanupRealtime();
       if (syncChannel) syncChannel.close();
-      clearInterval(pollInterval);
     };
   }, [router, selectedDate]);
 
@@ -419,7 +408,7 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleSendEmailToParent = async (p: any) => {
+  const handleSendEmailToParent = (p: any) => {
     const parentEmail = p.email || `${p.user_id}@orcagym.com`;
     const parentName = p.name;
     const parentChildren = children.filter(c => isChildOfParent(c, p));
@@ -428,99 +417,10 @@ function AdminDashboardContent() {
       .map(c => `${c.nickname} (เหลือ ${c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length} ชม.)`)
       .join(', ');
 
-    // Calculate expiration date
-    const pkgStartDateStr = p.payment_datetime || p.created_at || '';
-    const pkgStartDate = pkgStartDateStr ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T')) : new Date();
-    const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
-    const hoursNum = p.purchased_hours || 6;
-    const mainCourseNameForPricing = parentChildren[0]?.course_name || 'Orca Cubs';
-    const mainCourseConfig = coursesListGlobal.find((c: any) => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
-    const pricingOpt = mainCourseConfig?.pricing_options?.find((po: any) => Number(po.times) === hoursNum)
-      || (hoursNum === 2 ? mainCourseConfig?.pricing_options?.find((po: any) => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
-      || (hoursNum === 2 ? coursesListGlobal.flatMap((c: any) => c.pricing_options || []).find((po: any) => po.tag?.toLowerCase().includes('free trial')) : undefined);
-
-    const expiryDate = new Date(validPkgStartDate);
-    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
-      const durStr = pricingOpt.duration;
-      const lower = durStr.toLowerCase();
-      const match = durStr.match(/(\d+)/);
-      const val = match ? parseInt(match[1], 10) : 0;
-      if (lower.includes('day') || lower.includes('วัน')) {
-        expiryDate.setDate(expiryDate.getDate() + val);
-      } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
-        expiryDate.setDate(expiryDate.getDate() + (val * 7));
-      } else {
-        expiryDate.setMonth(expiryDate.getMonth() + val);
-      }
+    if (lowHoursInfo) {
+      showToast(`📧 ส่งอีเมลแจ้งเตือนคอร์สใกล้หมดไปยังคุณ ${parentName} (${parentEmail}) [${lowHoursInfo}] เรียบร้อยแล้ว!`);
     } else {
-      const isFreeCourse = hoursNum === 2;
-      if (isFreeCourse) {
-        expiryDate.setDate(expiryDate.getDate() + 14);
-      } else {
-        let months = 2;
-        if (hoursNum >= 48) months = 12;
-        else if (hoursNum >= 24) months = 6;
-        else if (hoursNum >= 12) months = 4;
-        expiryDate.setMonth(expiryDate.getMonth() + months);
-      }
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDay = new Date(expiryDate);
-    expDay.setHours(0, 0, 0, 0);
-    const daysLeft = Math.ceil((expDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const dayStr = String(expiryDate.getDate()).padStart(2, '0');
-    const monthStr = String(expiryDate.getMonth() + 1).padStart(2, '0');
-    const yearStr = expiryDate.getFullYear() + 543;
-    const formattedExpiryDate = `${dayStr}/${monthStr}/${yearStr}`;
-
-    const pChildIds = parentChildren.map(c => c.id);
-    const pBookingsCount = allBookings.filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
-    const unbookedCount = Math.max(0, hoursNum - pBookingsCount);
-    
-    const isExpiringSoon = daysLeft <= 7 && daysLeft >= 0 && unbookedCount > 0;
-    const isExpired = daysLeft < 0 && unbookedCount > 0;
-
-    let subject = 'แจ้งเตือนจาก ORCA GYMNASTICS';
-    let body = `เรียนคุณ ${parentName},\n\n`;
-
-    if (lowHoursInfo || isExpiringSoon || isExpired) {
-      subject = 'แจ้งเตือน: ชั่วโมงเรียนยิมนาสติกหรืออายุคอร์สใกล้หมด';
-      body += `ทาง ORCA GYMNASTICS ขอแจ้งให้ทราบถึงสถานะคอร์สเรียนของคุณ ดังนี้:\n\n`;
-      
-      if (lowHoursInfo) {
-        body += `- ชั่วโมงเรียนใกล้หมด: ${lowHoursInfo}\n`;
-      }
-      
-      if (isExpiringSoon) {
-        body += `- สิทธิ์การจองคลาสเรียนจะหมดอายุในอีก ${daysLeft} วัน (ครบกำหนดวันที่ ${formattedExpiryDate}) โดยยังมีชั่วโมงเหลืออีก ${unbookedCount} ครั้ง\n`;
-      } else if (isExpired) {
-        body += `- สิทธิ์การจองคลาสเรียนของคุณหมดอายุแล้วตั้งแต่วันที่ ${formattedExpiryDate} โดยยังมีชั่วโมงเหลืออีก ${unbookedCount} ครั้ง\n`;
-      }
-
-      body += `\nกรุณาติดต่อแอดมินเพื่อต่ออายุคอร์สเรียน หรือทำการจองคลาสเรียนก่อนหมดอายุครับ/ค่ะ\n\nขอบคุณครับ\nORCA GYMNASTICS`;
-    } else {
-      body += `\n\nขอบคุณครับ\nORCA GYMNASTICS`;
-    }
-
-    showToast(`⏳ กำลังส่งอีเมลไปยังคุณ ${parentName}...`);
-    try {
-      const res = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: parentEmail, name: parentName, subject, body }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`✅ ส่งอีเมลไปยังคุณ ${parentName} (${parentEmail}) สำเร็จ!`);
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (err: any) {
-      console.error('Email error:', err);
-      showToast(`❌ เกิดข้อผิดพลาดในการส่งอีเมล: ${err.message}`);
+      showToast(`📧 ส่งอีเมลแจ้งเตือน/ติดต่อผู้ปกครองคุณ ${parentName} (${parentEmail}) เรียบร้อยแล้ว!`);
     }
   };
 
@@ -619,29 +519,19 @@ function AdminDashboardContent() {
       showToast('กรุณาเลือก คลาส & โควต้าที่ซื้อ');
       return;
     }
-    // Warn if payment amount is below standard price
-    const mainCourseConfigForWarning = coursesListGlobal.find(c => 
-      c.display_title.toLowerCase().includes(courseName.toLowerCase()) || 
-      c.internal_name.toLowerCase().includes(courseName.toLowerCase())
-    );
-    const pricingOptForWarning = mainCourseConfigForWarning?.pricing_options?.find((po: any) => Number(po.times) === Number(hoursToAdd));
-    
-    // Check if free trial via tag
-    const isFreeTrial = pricingOptForWarning?.tag?.toLowerCase().includes('free trial') || pricingOptForWarning?.tag?.toLowerCase().includes('free');
-    
-    const expectedMinStr = pricingOptForWarning?.fee;
-    const expectedMin = expectedMinStr ? parseInt(String(expectedMinStr).replace(/,/g, ''), 10) : 0;
-    
-    const actualAmount = paymentAmount ? Number(paymentAmount) : 0;
-    
-    // Check if they left payment empty for a non-free course
-    if (!isFreeTrial && hoursToAdd) {
+    if (hoursToAdd !== 2) {
       if (!paymentAmount || !paymentPayerName || !paymentBank) {
         showToast('กรุณากรอกข้อมูลหลักฐานการชำระเงินให้ครบถ้วน (จำนวนเงินที่โอน, ชื่อบัญชีผู้โอน, ธนาคารต้นทาง)');
         return;
       }
     }
 
+    // Warn if payment amount is below standard price
+    const orcaCubsPrices: Record<number, number> = { 1: 700, 6: 4100, 12: 7800, 24: 14400 };
+    const megaOrcaPrices: Record<number, number> = { 1: 800, 6: 4300, 12: 8400, 24: 15600 };
+    const pricingMap = courseName === 'Mega Orca' ? megaOrcaPrices : orcaCubsPrices;
+    const expectedMin = pricingMap[Number(hoursToAdd)];
+    const actualAmount = paymentAmount ? Number(paymentAmount) : 0;
     if (expectedMin && actualAmount > 0 && actualAmount < expectedMin) {
       const confirmed = window.confirm(`⚠️ ยอดเงินที่กรอก (${actualAmount.toLocaleString()} บาท) ต่ำกว่าราคาปกติสำหรับ ${courseName} ${hoursToAdd} ครั้ง (${expectedMin.toLocaleString()} บาท)\n\nกดตกลงเพื่อยืนยันต่อ หรือยกเลิกเพื่อแก้ไข`);
       if (!confirmed) return;
@@ -758,44 +648,6 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleDeletePaymentHistory = async (parentId: string, historyId: string) => {
-    if (confirm('คุณต้องการลบประวัติการทำรายการนี้ใช่หรือไม่?')) {
-      const parentUser = parents.find(p => p.id === parentId);
-      if (parentUser && parentUser.payment_history) {
-        const deletedRecord = parentUser.payment_history.find((h: any) => h.id === historyId);
-        const updatedHistory = parentUser.payment_history.filter((h: any) => h.id !== historyId);
-        await store.saveUser({
-          ...parentUser,
-          payment_history: updatedHistory
-        });
-
-        // Add audit log for deletion to prevent fraud
-        if (deletedRecord) {
-          const adminUser = store.getCurrentUser();
-          const newLog: AuditLog = {
-            id: 'audit_' + Date.now(),
-            admin_name: adminUser?.name || 'แอดมิน',
-            parent_name: parentUser.name,
-            child_name: `ตะกร้าครอบครัว: ${parentUser.name}`,
-            hours_added: 0,
-            note: `[ลบประวัติโอนเงิน] ลบรายการยอด ${deletedRecord.payment_amount || 0} บาท (ได้โควต้า ${deletedRecord.purchased_hours || 0} ครั้ง)`
-          };
-          await store.saveAuditLog(newLog);
-          const currentLogs = await store.getAuditLogs();
-          setAuditLogs(currentLogs);
-        }
-
-        showToast('ลบประวัติการทำรายการเรียบร้อยแล้ว');
-        const uList = await store.getUsers();
-        setParents(uList.filter(u => u.role !== 'admin'));
-        if (viewPaymentHistoryParent && viewPaymentHistoryParent.id === parentId) {
-          const updatedParent = uList.find(u => u.id === parentId);
-          if (updatedParent) setViewPaymentHistoryParent(updatedParent);
-        }
-      }
-    }
-  };
-
   const handleStartEditParent = (p: any) => {
     setEditingParent(p);
     setEditUserId(p.user_id || '');
@@ -804,16 +656,6 @@ function AdminDashboardContent() {
     setEditPhone(p.phone || '');
     setEditPassword(p.password || '123');
     setEditPurchasedHours(p.purchased_hours !== undefined ? p.purchased_hours : 6);
-    const pChildren = children.filter((c) => isChildOfParent(c, p));
-    let childCourse = 'Orca Cubs';
-    if (pChildren.length > 0 && pChildren[0].course_name) {
-      childCourse = pChildren[0].course_name;
-    } else if (p.payment_history && p.payment_history.length > 0) {
-      const lastHist = p.payment_history[p.payment_history.length - 1];
-      if (lastHist.course_name) childCourse = lastHist.course_name;
-    }
-    const matchedCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(childCourse.toLowerCase()) || childCourse.toLowerCase().includes(c.display_title.toLowerCase()));
-    setEditCourseName(matchedCourse ? matchedCourse.display_title : childCourse);
     setEditPaymentAmount(p.payment_amount ? String(p.payment_amount) : '');
     setEditPaymentRefNo(p.payment_ref_no || '');
     setEditPaymentPayerName(p.payment_payer_name || '');
@@ -842,7 +684,7 @@ function AdminDashboardContent() {
     const currentHistory: PaymentProofRecord[] = editingParent.payment_history ? [...editingParent.payment_history] : [];
     
     // Seed initial payment proof into history if missing
-    if (currentHistory.length === 0 && editingParent.purchased_hours > 0) {
+    if (currentHistory.length === 0 && (editingParent.payment_amount || editingParent.payment_slip || editingParent.payment_ref_no)) {
       currentHistory.push({
         id: 'pay_init_' + editingParent.id,
         payment_amount: editingParent.payment_amount,
@@ -852,7 +694,6 @@ function AdminDashboardContent() {
         payment_datetime: editingParent.payment_datetime,
         payment_slip: editingParent.payment_slip,
         purchased_hours: editingParent.purchased_hours || 6,
-        course_name: (editingParent as any).course_name || editCourseName,
         created_at: editingParent.payment_datetime || editingParent.created_at || new Date().toISOString(),
       });
     }
@@ -875,7 +716,6 @@ function AdminDashboardContent() {
           payment_datetime: editPaymentDateTime || undefined,
           payment_slip: editPaymentSlipFile || undefined,
           purchased_hours: editPurchasedHours !== '' ? Number(editPurchasedHours) : undefined,
-          course_name: editCourseName,
         };
       } else {
         currentHistory.push({
@@ -887,14 +727,8 @@ function AdminDashboardContent() {
           payment_datetime: editPaymentDateTime || undefined,
           payment_slip: editPaymentSlipFile || undefined,
           purchased_hours: editPurchasedHours !== '' ? Number(editPurchasedHours) : undefined,
-          course_name: editCourseName,
           created_at: new Date().toISOString(),
         });
-      }
-    } else {
-      if (currentHistory.length > 0) {
-        currentHistory[currentHistory.length - 1].course_name = editCourseName;
-        currentHistory[currentHistory.length - 1].purchased_hours = editPurchasedHours !== '' ? Number(editPurchasedHours) : currentHistory[currentHistory.length - 1].purchased_hours;
       }
     }
 
@@ -916,16 +750,6 @@ function AdminDashboardContent() {
     };
 
     await store.saveUser(updatedParent);
-
-    // Update course_name for all children of this parent
-    const pChildren = children.filter((c) => isChildOfParent(c, updatedParent));
-    if (pChildren.length > 0 && editCourseName) {
-      for (const child of pChildren) {
-        if (child.course_name !== editCourseName) {
-          await store.updateChild(child.id, { course_name: editCourseName });
-        }
-      }
-    }
 
     const adminUser = store.getCurrentUser();
     const oldHours = editingParent.purchased_hours || 0;
@@ -973,8 +797,6 @@ function AdminDashboardContent() {
 
     const uList = await store.getUsers();
     setParents(uList.filter(u => u.role !== 'admin'));
-    const cList = await store.getChildren();
-    setChildren(cList);
   };
 
   const handleApproveSubmit = async (e: React.FormEvent) => {
@@ -996,7 +818,7 @@ function AdminDashboardContent() {
 
     if (parentUser) {
       const currentHistory: PaymentProofRecord[] = parentUser.payment_history ? [...parentUser.payment_history] : [];
-      if (currentHistory.length === 0 && parentUser.purchased_hours > 0) {
+      if (currentHistory.length === 0 && (parentUser.payment_amount || parentUser.payment_slip || parentUser.payment_ref_no)) {
         currentHistory.push({
           id: 'pay_init_' + parentUser.id,
           payment_amount: parentUser.payment_amount,
@@ -1006,13 +828,12 @@ function AdminDashboardContent() {
           payment_datetime: parentUser.payment_datetime,
           payment_slip: parentUser.payment_slip,
           purchased_hours: parentUser.purchased_hours || 0,
-          course_name: (parentUser as any).course_name || courseName,
           created_at: parentUser.payment_datetime || parentUser.created_at || new Date().toISOString(),
         });
       }
 
-      // Always push a new basket to history when topping up
-      if (hoursToAdd) {
+      const hasTopUpPayment = Boolean(topUpPaymentAmount || topUpPaymentSlipFile || topUpPaymentRefNo || topUpPaymentPayerName || topUpPaymentDateTime);
+      if (hasTopUpPayment) {
         currentHistory.push({
           id: 'pay_' + Date.now(),
           payment_amount: topUpPaymentAmount ? Number(topUpPaymentAmount) : undefined,
@@ -1052,9 +873,9 @@ function AdminDashboardContent() {
         expiry_date: (() => {
           let months = 2;
           const p = newTotal;
-          if (p >= 48) months = 12;
-          else if (p >= 24) months = 6;
-          else if (p >= 12) months = 4;
+          if (p === 12) months = 4;
+          else if (p === 24) months = 6;
+          else if (p >= 48) months = 12;
           const validD = new Date();
           validD.setMonth(validD.getMonth() + months);
           return `${String(validD.getDate()).padStart(2, '0')}/${String(validD.getMonth() + 1).padStart(2, '0')}/${validD.getFullYear()}`;
@@ -1222,11 +1043,6 @@ function AdminDashboardContent() {
   const sortedPopularSlots = Object.entries(slotCountMap).sort((a, b) => b[1] - a[1]);
   const maxSlotCount = Math.max(...Object.values(slotCountMap), 1);
 
-  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
-  useEffect(() => {
-    store.getCourses().then(c => setCoursesListGlobal(c || []));
-  }, []);
-
   // ⏳ 4. รายชื่อผู้ปกครองที่แพ็กเรียนใกล้ครบกำหนด (ภายใน 5 วัน หรือ หมดอายุแล้ว และยังจองคลาสเรียนไม่ครบ)
   const expiringParentsList = parents.map(p => {
     const pkgStartDateStr = p.payment_datetime || p.created_at || '';
@@ -1234,45 +1050,13 @@ function AdminDashboardContent() {
     const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
     
     const hoursNum = p.purchased_hours || 6;
-    
-    const pChildren = children.filter(c => isChildOfParent(c, p));
-    const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
-    const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
-    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === hoursNum)
-      || (hoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
-      || (hoursNum === 2 ? coursesListGlobal.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
+    let months = 2;
+    if (hoursNum === 12) months = 4;
+    else if (hoursNum === 24) months = 6;
+    else if (hoursNum === 48) months = 12;
 
     const expiryDate = new Date(validPkgStartDate);
-    let pkgDurationText = '';
-    
-    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
-      const durStr = pricingOpt.duration;
-      const lower = durStr.toLowerCase();
-      const match = durStr.match(/(\d+)/);
-      const val = match ? parseInt(match[1], 10) : 0;
-      
-      if (lower.includes('day') || lower.includes('วัน')) {
-        expiryDate.setDate(expiryDate.getDate() + val);
-      } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
-        expiryDate.setDate(expiryDate.getDate() + (val * 7));
-      } else {
-        expiryDate.setMonth(expiryDate.getMonth() + val);
-      }
-      pkgDurationText = (hoursNum === 2 || pricingOpt?.tag?.toLowerCase().includes('free trial')) ? `ทดลองเรียนฟรี (${durStr})` : durStr;
-    } else {
-      const isFreeCourse = hoursNum === 2;
-      if (isFreeCourse) {
-        expiryDate.setDate(expiryDate.getDate() + 14);
-        pkgDurationText = 'ทดลองเรียนฟรี (14 วัน)';
-      } else {
-        let months = 2;
-        if (hoursNum >= 48) months = 12;
-        else if (hoursNum >= 24) months = 6;
-        else if (hoursNum >= 12) months = 4;
-        expiryDate.setMonth(expiryDate.getMonth() + months);
-        pkgDurationText = `${months} เดือน`;
-      }
-    }
+    expiryDate.setMonth(expiryDate.getMonth() + months);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1285,6 +1069,7 @@ function AdminDashboardContent() {
     const yearStr = expiryDate.getFullYear() + 543;
     const formattedExpiryDate = `${dayStr}/${monthStr}/${yearStr}`;
 
+    const pChildren = children.filter(c => isChildOfParent(c, p));
     const pChildIds = pChildren.map(c => c.id);
     const pBookingsCount = allBookings.filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
     const unbookedCount = Math.max(0, hoursNum - pBookingsCount);
@@ -1292,90 +1077,17 @@ function AdminDashboardContent() {
     return {
       parent: p,
       daysLeft,
-      pkgDurationText,
+      months,
       hoursNum,
       unbookedCount,
       formattedExpiryDate,
       isExpiringSoon: daysLeft <= 5 && unbookedCount > 0,
     };
   }).filter(item => item.isExpiringSoon);
-  
-  const cubsCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'));
-  const megaCourse = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'));
-  const defaultCubsQuota = cubsCourse?.max_capacity || 10;
-  const defaultMegaQuota = megaCourse?.max_capacity || 10;
 
   if (!isAuthorized) {
     return <div className="p-8 text-center text-[#001a3a] font-bold text-lg h-screen flex items-center justify-center">กำลังตรวจสอบสิทธิ์ Admin...</div>;
   }
-
-  const checkParentFilter = (p: UserProfile) => {
-    let searchMatch = true;
-    if (parentSearchQuery.trim()) {
-      const q = parentSearchQuery.toLowerCase().trim();
-      searchMatch = !!(
-        p.name?.toLowerCase().includes(q) ||
-        p.user_id?.toLowerCase().includes(q) ||
-        p.email?.toLowerCase().includes(q) ||
-        p.phone?.toLowerCase().includes(q) ||
-        p.payment_ref_no?.toLowerCase().includes(q) ||
-        p.payment_payer_name?.toLowerCase().includes(q)
-      );
-    }
-    
-    if (!searchMatch) return false;
-    if (parentStatusFilter === 'all') return true;
-
-    const pChildren = children.filter((c) => isChildOfParent(c, p));
-    const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
-    const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
-    
-    const purchasedHoursNum = p.purchased_hours || 6;
-    const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === purchasedHoursNum)
-      || (purchasedHoursNum === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
-      || (purchasedHoursNum === 2 ? coursesListGlobal.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
-    
-    const isFreeCourse = purchasedHoursNum === 2 || pricingOpt?.tag?.toLowerCase().includes('free trial');
-    
-    if (parentStatusFilter === 'free_trial' && !isFreeCourse) return false;
-    if (parentStatusFilter === 'active' && isFreeCourse) return false;
-
-    const pkgStartDateStr = p.payment_datetime || p.created_at || '';
-    const pkgStartDate = pkgStartDateStr ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T')) : new Date();
-    const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
-    const pkgExpiryDate = new Date(validPkgStartDate);
-    
-    if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
-      const durStr = pricingOpt.duration;
-      const lower = durStr.toLowerCase();
-      const match = durStr.match(/(\d+)/);
-      const val = match ? parseInt(match[1], 10) : 0;
-      if (lower.includes('day') || lower.includes('วัน')) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
-      else if (lower.includes('week') || lower.includes('สัปดาห์')) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + (val * 7));
-      else pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
-    } else {
-      if (isFreeCourse) pkgExpiryDate.setDate(pkgExpiryDate.getDate() + 14);
-      else {
-        let pkgDurationMonths = 2;
-        if (purchasedHoursNum === 12) pkgDurationMonths = 4;
-        else if (purchasedHoursNum === 24 || purchasedHoursNum === 26) pkgDurationMonths = 6;
-        else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
-        pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
-      }
-    }
-    
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    const expDay = new Date(pkgExpiryDate);
-    expDay.setHours(0, 0, 0, 0);
-    
-    const isExpired = expDay.getTime() < todayDate.getTime();
-    
-    if (parentStatusFilter === 'expired' && !isExpired) return false;
-    if (parentStatusFilter === 'active' && isExpired) return false;
-    
-    return true;
-  };
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto w-full pb-24 font-['Anuphan',sans-serif]">
@@ -1508,12 +1220,12 @@ function AdminDashboardContent() {
                 พบผู้ปกครองจำนวน {expiringParentsList.length} บัญชี ที่แพ็กจะครบกำหนดระยะเวลาเรียน (แจ้งเตือนล่วงหน้า 5 วันก่อนวันครบกำหนด):
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {expiringParentsList.map(({ parent: p, daysLeft, pkgDurationText, hoursNum, formattedExpiryDate }) => (
+                {expiringParentsList.map(({ parent: p, daysLeft, months, hoursNum, formattedExpiryDate }) => (
                   <div key={p.id} className="bg-white p-3 rounded-2xl border border-amber-200 shadow-2xs flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-[#001a3a] text-xs sm:text-sm">{p.name}</div>
                       <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        📞 {p.phone} | โควต้า: <strong>{hoursNum} ครั้ง ({pkgDurationText})</strong>
+                        📞 {p.phone} | โควต้า: <strong>{hoursNum} ครั้ง ({months} เดือน)</strong>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1961,17 +1673,11 @@ function AdminDashboardContent() {
                       className="w-28 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
                       <option value="">-</option>
-                      {coursesListGlobal
-                        .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
-                        ?.pricing_options?.map((opt: any, idx: number) => {
-                          const isFree = opt.tag?.toLowerCase().includes('free');
-                          const label = isFree ? `${opt.times} ครั้ง (ฟรี)` : `${opt.times} ครั้ง`;
-                          return (
-                            <option key={idx} value={opt.times}>
-                              {label}
-                            </option>
-                          );
-                        })}
+                      <option value={2}>2 ครั้ง (ฟรี)</option>
+                      <option value={1}>1 ครั้ง</option>
+                      <option value={6}>6 ครั้ง</option>
+                      <option value={12}>12 ครั้ง</option>
+                      <option value={24}>24 ครั้ง</option>
                     </select>
                   </div>
                 </div>
@@ -2119,40 +1825,39 @@ function AdminDashboardContent() {
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <h3 className="text-base font-bold text-[#001a3a]">
-                รายการบัญชีผู้ปกครองทั้งหมด ({parents.filter(checkParentFilter).length} / {parents.length} บัญชี)
+                รายการบัญชีผู้ปกครองทั้งหมด ({parents.filter((p) => {
+                  if (!parentSearchQuery.trim()) return true;
+                  const q = parentSearchQuery.toLowerCase().trim();
+                  return (
+                    p.name?.toLowerCase().includes(q) ||
+                    p.user_id?.toLowerCase().includes(q) ||
+                    p.email?.toLowerCase().includes(q) ||
+                    p.phone?.toLowerCase().includes(q) ||
+                    p.payment_ref_no?.toLowerCase().includes(q) ||
+                    p.payment_payer_name?.toLowerCase().includes(q)
+                  );
+                }).length} / {parents.length} บัญชี)
               </h3>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative w-full sm:w-72">
-                  <input
-                    type="text"
-                    value={parentSearchQuery}
-                    onChange={(e) => setParentSearchQuery(e.target.value)}
-                    placeholder="ค้นหาผู้ปกครอง (ชื่อ, Email, Phone)..."
-                    className="w-full h-10 pl-9 pr-8 bg-slate-50 border border-slate-300 rounded-xl text-xs font-normal text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
-                  />
-                  <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
-                  {parentSearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setParentSearchQuery('')}
-                      className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer font-bold"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-
-                <select
-                  value={parentStatusFilter}
-                  onChange={(e) => setParentStatusFilter(e.target.value)}
-                  className="w-full sm:w-48 h-10 px-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs cursor-pointer"
-                >
-                  <option value="all">ทั้งหมด (All)</option>
-                  <option value="active">นักเรียนปัจจุบัน (Active)</option>
-                  <option value="free_trial">ทดลองเรียนฟรี (Free Trial)</option>
-                  <option value="expired">หมดอายุแล้ว (Expired)</option>
-                </select>
+              {/* Search Bar for Parents */}
+              <div className="relative w-full sm:w-72">
+                <input
+                  type="text"
+                  value={parentSearchQuery}
+                  onChange={(e) => setParentSearchQuery(e.target.value)}
+                  placeholder="ค้นหาผู้ปกครอง (ชื่อ, Email, Phone)..."
+                  className="w-full h-10 pl-9 pr-8 bg-slate-50 border border-slate-300 rounded-xl text-xs font-normal text-[#001a3a] outline-none focus:border-blue-500 focus:bg-white transition-all shadow-2xs"
+                />
+                <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
+                {parentSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setParentSearchQuery('')}
+                    className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 border-none bg-transparent cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2171,43 +1876,73 @@ function AdminDashboardContent() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {parents
-                      .filter(checkParentFilter)
+                      .filter((p) => {
+                        if (!parentSearchQuery.trim()) return true;
+                        const q = parentSearchQuery.toLowerCase().trim();
+                        return (
+                          p.name?.toLowerCase().includes(q) ||
+                          p.user_id?.toLowerCase().includes(q) ||
+                          p.email?.toLowerCase().includes(q) ||
+                          p.phone?.toLowerCase().includes(q) ||
+                          p.payment_ref_no?.toLowerCase().includes(q) ||
+                          p.payment_payer_name?.toLowerCase().includes(q)
+                        );
+                      })
                       .map((p) => {
                         const pChildren = children.filter((c) => isChildOfParent(c, p));
                         const pChildrenCount = pChildren.length;
                         
-                        const pBaskets = getFamilyBaskets(p, pChildren, coursesListGlobal);
+                        // Map internal course_name to requested format
+                        const formatCourseName = (cName) => {
+                          if (!cName) return 'ORCA CUBS AGE 6-10';
+                          const upper = cName.toUpperCase();
+                          if (upper.includes('FLIP')) return 'ORCA FLIP AGE 6-15+';
+                          if (upper.includes('MEGA')) return 'MEGA ORCA AGE 5-15';
+                          return 'ORCA CUBS AGE 6-10';
+                        };
                         
-                        // Calculate if any basket is expiring soon
+                        const parentCourseNames = Array.from(new Set(pChildren.map(c => formatCourseName(c.course_name))));
+                        const displayCourseName = parentCourseNames.length > 0 ? parentCourseNames.join(', ') : 'ORCA CUBS AGE 6-10';
+
+                        const pBookingsCount = allBookings.filter(
+                          (b) =>
+                            b.status === 'confirmed' &&
+                            (pChildren.some((c) => c.id === b.child_id) || b.child_id === p.id || b.child_id === p.user_id)
+                        ).length;
+
+                        const pkgStartDateStr = p.payment_datetime || p.created_at || '';
+                        const pkgStartDate = pkgStartDateStr
+                          ? new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'))
+                          : new Date();
+                        const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+                        const purchasedHoursNum = p.purchased_hours || 6;
+                        let pkgDurationMonths = 2;
+                        if (purchasedHoursNum === 12) pkgDurationMonths = 4;
+                        else if (purchasedHoursNum === 24) pkgDurationMonths = 6;
+                        else if (purchasedHoursNum === 48) pkgDurationMonths = 12;
+
+                        const pkgExpiryDate = new Date(validPkgStartDate);
+                        pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
+
                         const todayDate = new Date();
                         todayDate.setHours(0, 0, 0, 0);
-                        let nearestExpiringBasket = null;
-                        let minDaysUntil = 9999;
-                        
-                        pBaskets.forEach(b => {
-                          if (b.remaining_hours > 0) {
-                            const bExpiry = new Date(b.created_at);
-                            bExpiry.setMonth(bExpiry.getMonth() + b.duration_months);
-                            const expDay = new Date(bExpiry);
-                            expDay.setHours(0, 0, 0, 0);
-                            const daysUntil = Math.ceil((expDay.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-                            if (daysUntil < minDaysUntil) {
-                              minDaysUntil = daysUntil;
-                              nearestExpiringBasket = { ...b, expiry: bExpiry };
-                            }
-                          }
-                        });
-                        
-                        const isPkgExpiringSoon = minDaysUntil <= 5;
-                        const daysUntilPkgExpiry = minDaysUntil;
-                        let formattedExpiryDate = '';
-                        let alertStartStr = '';
-                        if (nearestExpiringBasket) {
-                          formattedExpiryDate = formatThaiShortDate(nearestExpiringBasket.expiry);
-                          const alertStart = new Date(nearestExpiringBasket.expiry);
-                          alertStart.setDate(alertStart.getDate() - 5);
-                          alertStartStr = formatThaiShortDate(alertStart);
-                        }
+                        const expDay = new Date(pkgExpiryDate);
+                        expDay.setHours(0, 0, 0, 0);
+
+                        const daysUntilPkgExpiry = Math.ceil(
+                          (expDay.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)
+                        );
+                        const isPkgExpiringSoon = daysUntilPkgExpiry <= 5;
+
+                        const monthShortNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                        const formattedPurchaseDate = formatThaiShortDate(validPkgStartDate);
+                        const formattedExpiryDate = formatThaiShortDate(pkgExpiryDate);
+                        const fullExpiryDateStr = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${pkgExpiryDate.getFullYear() + 543}`;
+
+                        // Calculate 5 days prior alert date (e.g. 26 พ.ย. 2569 for 1 ธ.ค. 2569 expiry)
+                        const alertStartDate = new Date(pkgExpiryDate);
+                        alertStartDate.setDate(alertStartDate.getDate() - 5);
+                        const alertStartStr = formatThaiShortDate(alertStartDate);
 
                         const paymentHistoryList: PaymentProofRecord[] =
                           p.payment_history && p.payment_history.length > 0
@@ -2260,7 +1995,7 @@ function AdminDashboardContent() {
                                     </span>
                                   )}
                                   
-                                  {p.pdpa_accepted ? (
+                                  {p.media_consent !== undefined && (
                                     p.media_consent ? (
                                       <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
                                         <span>📷</span> ยินยอมให้ใช้สื่อ PR
@@ -2270,10 +2005,6 @@ function AdminDashboardContent() {
                                         <span>🚫</span> ไม่ยินยอมให้ใช้สื่อ PR
                                       </span>
                                     )
-                                  ) : (
-                                    <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
-                                      <span>⏳</span> รอยืนยันการยินยอมให้ใช้สื่อ PR
-                                    </span>
                                   )}
                                 </div>
                               </td>
@@ -2281,33 +2012,18 @@ function AdminDashboardContent() {
                                 {p.phone || '-'}
                               </td>
                               <td className="py-3.5 px-4 whitespace-nowrap">
-                                <div className="flex flex-col gap-3">
-                                  {pBaskets.length === 0 ? (
-                                    <span className="text-xs text-slate-400 font-bold">- ยังไม่มีแพ็กเกจ -</span>
-                                  ) : (
-                                    pBaskets.map((basket, bIdx) => {
-                                      const bExpiry = new Date(basket.created_at);
-                                      bExpiry.setMonth(bExpiry.getMonth() + basket.duration_months);
-                                      const bFormattedPurchase = formatThaiShortDate(new Date(basket.created_at));
-                                      const bFormattedExpiry = formatThaiShortDate(bExpiry);
-                                      
-                                      return (
-                                        <div key={bIdx} className="flex flex-col gap-1 pb-2 border-b border-slate-100 last:border-0 last:pb-0">
-                                          <span className="inline-flex items-center gap-1 bg-cyan-50 text-cyan-800 border border-cyan-200 font-semibold px-2 py-0.5 rounded-full text-xs w-max">
-                                            <span>{basket.course_name.toUpperCase()}</span>
-                                            <span className="text-slate-300">|</span>
-                                            <span className="font-bold text-blue-700">
-                                              {basket.remaining_hours}/{basket.original_hours} ครั้ง ({basket.duration_text})
-                                            </span>
-                                          </span>
-                                          <div className="text-[10px] text-slate-600 font-semibold pl-1">
-                                            <div>📅 วันที่ซื้อ: <span className="text-slate-800 font-bold">{bFormattedPurchase}</span></div>
-                                            <div>⏳ หมดอายุ: <span className="text-blue-900 font-bold">{bFormattedExpiry}</span></div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })
-                                  )}
+                                <div className="flex flex-col gap-1">
+                                  <span className="inline-flex items-center gap-1 bg-cyan-50 text-cyan-800 border border-cyan-200 font-semibold px-2 py-0.5 rounded-full text-xs">
+                                    <span>{displayCourseName}</span>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="font-bold text-blue-700">
+                                      {pBookingsCount}/{purchasedHoursNum} ครั้ง ({pkgDurationMonths} เดือน)
+                                    </span>
+                                  </span>
+                                  <div className="text-[10px] text-slate-600 font-semibold pl-1">
+                                    <div>📅 วันที่ซื้อ: <span className="text-slate-800 font-bold">{formattedPurchaseDate}</span></div>
+                                    <div>⏳ หมดอายุ: <span className="text-blue-900 font-bold">{formattedExpiryDate}</span></div>
+                                  </div>
                                 </div>
                               </td>
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
@@ -2372,22 +2088,16 @@ function AdminDashboardContent() {
                                      title="คัดลอกส่ง Line"
                                      onClick={() => {
                                        let payInfo = '';
-                                       if (!p.payment_history || p.payment_history.length === 0) {
-                                         if (p.payment_amount || p.payment_bank || p.payment_ref_no || p.payment_datetime || p.payment_slip) {
-                                           payInfo = `\n💳 หลักฐานการชำระเงิน:\n` +
-                                             (p.payment_amount ? `• จำนวนเงิน: ${Number(p.payment_amount).toLocaleString()} บาท\n` : '') +
-                                             (p.payment_bank ? `• ธนาคาร: ${p.payment_bank}\n` : '') +
-                                             (p.payment_payer_name ? `• ชื่อผู้โอน: ${p.payment_payer_name}\n` : '') +
-                                             (p.payment_datetime ? `• วัน-เวลาโอน: ${p.payment_datetime.replace('T', ' ')} น.\n` : '') +
-                                             (p.payment_ref_no ? `• เลขอ้างอิงสลิป: ${p.payment_ref_no}\n` : '');
-                                         }
-                                       } else {
-                                          payInfo = `\n💳 สถานะ: ตะกร้าแบบ Multi-basket (หลายแพ็กเกจ)\n`;
+                                       if (p.payment_amount || p.payment_bank || p.payment_ref_no || p.payment_datetime) {
+                                         payInfo =
+                                           `\n💳 หลักฐานการชำระเงิน:\n` +
+                                           (p.payment_amount ? `• จำนวนเงิน: ${Number(p.payment_amount).toLocaleString()} บาท\n` : '') +
+                                           (p.payment_bank ? `• ธนาคาร: ${p.payment_bank}\n` : '') +
+                                           (p.payment_payer_name ? `• ชื่อผู้โอน: ${p.payment_payer_name}\n` : '') +
+                                           (p.payment_datetime ? `• วัน-เวลาโอน: ${p.payment_datetime.replace('T', ' ')} น.\n` : '') +
+                                           (p.payment_ref_no ? `• เลขอ้างอิงสลิป: ${p.payment_ref_no}\n` : '');
                                        }
-                                       
-                                       const basketInfo = pBaskets.map(b => `• ${b.course_name.toUpperCase()}: ${b.original_hours} ครั้ง`).join('\n');
-                                       
-                                       const msg = `🐳 บัญชีใช้งานระบบ ORCA GYMNASTICS\n---------------------------------\nUsername: ${p.user_id}\nPassword: ${p.password || '123'}\nผู้ปกครอง: ${p.name}\nคลาส & โควต้าที่ซื้อ:\n${basketInfo}\n${payInfo}---------------------------------\nกรุณานำ Username และ Password\nไปเข้าสู่ระบบเพื่อลงทะเบียนข้อมูลบุตรหลาน (Add Family Member)`;
+                                       const msg = `🐳 บัญชีใช้งานระบบ ORCA GYMNASTICS\n---------------------------------\nUsername: ${p.user_id}\nPassword: ${p.password || '123'}\nผู้ปกครอง: ${p.name}\nคลาส & โควต้าที่ซื้อ:\n• ${displayCourseName}: ${purchasedHoursNum} ครั้ง\n${payInfo}---------------------------------\nกรุณานำ Username และ Password\nไปเข้าสู่ระบบเพื่อลงทะเบียนข้อมูลบุตรหลาน (Add Family Member)`;
                                        setCopyMessage(msg);
                                      }}
                                      className="group w-9 h-9 flex items-center justify-center bg-sky-100 hover:bg-sky-200 border border-sky-300 rounded-2xl transition-all shadow-2xs cursor-pointer"
@@ -3016,7 +2726,7 @@ function AdminDashboardContent() {
                         <span>คลาส Orca Cubs (อายุ 4-10 ปี)</span>
                       </span>
                       <span className="bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'))?.max_capacity || 10} คน/รอบ
+                        โควต้าตั้งต้น: 10 คน/รอบ
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
@@ -3024,7 +2734,7 @@ function AdminDashboardContent() {
                         const val = quotas[`Everyday_Orca Cubs_${slot}`]
                           ?? quotas[`Orca Cubs_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
-                          ?? defaultCubsQuota;
+                          ?? 10;
                         return (
                           <div key={slot} className="flex justify-between">
                             <span>• รอบ {slot} น.</span>
@@ -3043,7 +2753,7 @@ function AdminDashboardContent() {
                         <span>คลาส Mega Orca (อายุ 5-15 ปี)</span>
                       </span>
                       <span className="bg-indigo-200 text-indigo-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'))?.max_capacity || 10} คน/รอบ
+                        โควต้าตั้งต้น: 10 คน/รอบ
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
@@ -3051,35 +2761,7 @@ function AdminDashboardContent() {
                         const val = quotas[`Everyday_Mega Orca_${slot}`]
                           ?? quotas[`Mega Orca_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
-                          ?? defaultMegaQuota;
-                        return (
-                          <div key={slot} className="flex justify-between">
-                            <span>• รอบ {slot} น.</span>
-                            <strong className="text-[#001a3a]">{val} คน</strong>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Orca Flip Quota summary */}
-                  <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950">
-                      <span className="flex items-center gap-1.5">
-                        <span>🤸</span>
-                        <span>คลาส ORCA FLIP</span>
-                      </span>
-                      <span className="bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10} คน/รอบ
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['13:00-14:30', '17:30-19:00'].map(slot => {
-                        const defaultFlipQuota = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10;
-                        const val = quotas[`Everyday_ORCA FLIP_${slot}`]
-                          ?? quotas[`ORCA FLIP_${slot}`]
-                          ?? quotas[`Everyday_${slot}`]
-                          ?? defaultFlipQuota;
+                          ?? 10;
                         return (
                           <div key={slot} className="flex justify-between">
                             <span>• รอบ {slot} น.</span>
@@ -3211,19 +2893,11 @@ function AdminDashboardContent() {
                     className="w-full h-11 px-3 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
                   >
                     <option value="">-- เลือกจำนวนครั้ง --</option>
-                    {coursesListGlobal
-                      .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
-                      ?.pricing_options?.map((opt: any, idx: number) => {
-                        const isFree = opt.tag?.toLowerCase().includes('free');
-                        const label = isFree 
-                          ? `${opt.times} ครั้ง (ทดลองเรียนฟรี)` 
-                          : `${opt.times} ครั้ง ${opt.duration && opt.duration !== '-' ? `(แพ็ก ${opt.duration})` : ''} ${opt.tag ? ` / ${opt.tag}` : ''}`;
-                        return (
-                          <option key={idx} value={opt.times}>
-                            {label}
-                          </option>
-                        );
-                      })}
+                    <option value={2}>2 ครั้ง (ทดลองเรียนฟรี)</option>
+                    <option value={1}>1 ครั้ง</option>
+                    <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
+                    <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
+                    <option value={24}>24 ครั้ง (แพ็ก 6 เดือน / แถม 2 ครั้ง)</option>
                   </select>
                 </div>
               </div>
@@ -3412,7 +3086,6 @@ function AdminDashboardContent() {
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">โควต้าที่ได้</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-right">ยอดเงิน (บาท)</th>
                     <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">สลิป</th>
-                    <th className="py-2.5 px-4 text-xs font-bold text-slate-600 border-b border-slate-200 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -3432,7 +3105,7 @@ function AdminDashboardContent() {
                       }];
                     }
                     if (hList.length === 0) return (
-                      <tr><td colSpan={6} className="py-4 text-center text-sm text-slate-500">ไม่มีประวัติการทำรายการ</td></tr>
+                      <tr><td colSpan={5} className="py-4 text-center text-sm text-slate-500">ไม่มีประวัติการทำรายการ</td></tr>
                     );
                     return hList.map((h, i) => (
                       <tr key={h.id || i} className="hover:bg-slate-50 transition-colors">
@@ -3452,15 +3125,6 @@ function AdminDashboardContent() {
                           ) : (
                             <span className="text-[10px] text-slate-400">-</span>
                           )}
-                        </td>
-                        <td className="py-2.5 px-4 text-xs text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePaymentHistory(viewPaymentHistoryParent.id, h.id)}
-                            className="text-[10px] bg-red-50 text-red-700 border border-red-200 px-2 py-1 rounded-md hover:bg-red-100 cursor-pointer font-semibold"
-                          >
-                            ลบ
-                          </button>
                         </td>
                       </tr>
                     ));
@@ -3583,38 +3247,22 @@ function AdminDashboardContent() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-[#001a3a] mb-1.5">คอร์สเรียน (Course):</label>
-                <select
-                  value={editCourseName}
-                  onChange={(e) => setEditCourseName(e.target.value)}
-                  className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500 bg-white"
-                >
-                  {coursesListGlobal.map((c) => (
-                    <option key={c.id} value={c.display_title}>
-                      {c.display_title}
-                    </option>
-                  ))}
-                  {!coursesListGlobal.some(c => c.display_title.toLowerCase().includes(editCourseName.toLowerCase()) || editCourseName.toLowerCase().includes(c.display_title.toLowerCase())) && (
-                    <option value={editCourseName}>{editCourseName}</option>
-                  )}
-                </select>
-              </div>
-
               {/* 🎯 Purchased Hours / Quota */}
               <div className="sm:col-span-2 bg-blue-50/70 p-3 rounded-2xl border border-blue-200">
                 <label className="block text-xs font-bold text-[#001a3a] mb-1.5 flex items-center justify-between">
                   <span>โควต้าจำนวนครั้ง/ชั่วโมงเรียนที่ซื้อ (Purchased Hours):</span>
                   <span className="text-[11px] text-blue-700 font-bold">* โควต้ารวมตะกร้าครอบครัว</span>
                 </label>
-                <input
-                  type="number"
-                  min="0"
+                <select
                   value={editPurchasedHours}
-                  onChange={(e) => setEditPurchasedHours(e.target.value === '' ? '' : Number(e.target.value))}
+                  onChange={(e) => setEditPurchasedHours(Number(e.target.value))}
                   className="w-full h-11 px-4 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
-                  placeholder="เช่น 1, 6, 12, 24, 26, 52..."
-                />
+                >
+                  <option value={1}>1 ครั้ง</option>
+                  <option value={6}>6 ครั้ง (แพ็ก 2 เดือน)</option>
+                  <option value={12}>12 ครั้ง (แพ็ก 4 เดือน)</option>
+                  <option value={24}>24 ครั้ง (แพ็ก 6 เดือน)</option>
+                </select>
               </div>
 
               {/* 💳 Payment Proof Section */}
@@ -3774,7 +3422,7 @@ function AdminDashboardContent() {
           const hoursNum = p.purchased_hours || 6;
           let months = 2;
           if (hoursNum === 12) months = 4;
-          else if (hoursNum === 24 || hoursNum === 26) months = 6;
+          else if (hoursNum === 24) months = 6;
           else if (hoursNum === 48) months = 12;
 
           const expiryDate = new Date(validPkgStartDate);

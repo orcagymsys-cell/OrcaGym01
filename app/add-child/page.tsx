@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
-import { store } from '@/lib/supabase';
+import { store, getFamilyBaskets, type FamilyBasket } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { compressImage } from '@/lib/imageUtils';
 import { Child } from '@/lib/types';
@@ -22,6 +22,8 @@ export default function AddChildPage() {
   const [showTermsTooltip, setShowTermsTooltip] = useState(false);
   const [parentPurchased, setParentPurchased] = useState(0);
   const [familyUsed, setFamilyUsed] = useState(0);
+  const [baskets, setBaskets] = useState<FamilyBasket[]>([]);
+  const [selectedBasketId, setSelectedBasketId] = useState<string>('');
 
   useEffect(() => {
     async function checkCount() {
@@ -38,11 +40,19 @@ export default function AddChildPage() {
       }
       setChildrenCount(existing.length);
 
-      // คำนวณโควต้าตะกร้าครอบครัว
+      const courses = await store.getCourses();
+      const fb = getFamilyBaskets(user, existing, courses || []);
+      setBaskets(fb);
+      
       const purchased = user.purchased_hours || 6;
       const used = existing.reduce((sum, c) => sum + (c.total_hours || 0), 0);
       setParentPurchased(purchased);
       setFamilyUsed(used);
+      
+      const availableBaskets = fb.filter(b => b.remaining_hours > 0);
+      if (availableBaskets.length > 0) {
+        setSelectedBasketId(availableBaskets[0].id);
+      }
     }
     checkCount();
   }, [router]);
@@ -95,30 +105,32 @@ export default function AddChildPage() {
 
     const validDob = dob || '2020-05-05';
 
-    // ตรวจสอบโควต้าตะกร้าครอบครัว: โควต้าที่ยังเหลืออยู่ในตะกร้า
-    const latestChildren = await store.getChildren(user.id);
-    const latestUsed = latestChildren.reduce((sum, c) => sum + (c.total_hours || 0), 0);
-    const purchased = user.purchased_hours || 6;
-    const basketRemaining = purchased - latestUsed;
-    
-    // Default to remaining basket hours if not explicitly set
+    const targetBasket = baskets.find(b => b.id === selectedBasketId);
+    if (!targetBasket) {
+      showToast('⚠️ กรุณาเลือกตะกร้าคอร์สเรียนก่อนเพิ่มน้อง');
+      return null;
+    }
+
+    const basketRemaining = targetBasket.remaining_hours;
     const hoursToSet = selectedHours !== '' ? Number(selectedHours) : Math.max(0, basketRemaining);
 
     if (hoursToSet > basketRemaining) {
-      showToast(`⚠️ ไม่สามารถเพิ่มได้! โควต้าที่เหลือในตะกร้าครอบครัวมีเพียง ${basketRemaining} ครั้ง แต่ต้องการกำหนด ${hoursToSet} ครั้ง กรุณาแก้ไขจำนวนหรือติดต่อแอดมินเพื่อเติมโควต้า`);
-      setParentPurchased(purchased);
-      setFamilyUsed(latestUsed);
+      showToast(`⚠️ ไม่สามารถเพิ่มได้! โควต้าที่เหลือในตะกร้าคอร์สนี้มีเพียง ${basketRemaining} ครั้ง`);
       return null;
     }
 
     if (basketRemaining <= 0) {
-      showToast(`⚠️ โควต้าตะกร้าครอบครัวถูกใช้หมดแล้ว (${purchased} ครั้ง) กรุณาติดต่อแอดมินเพื่อเติมโควต้า`);
+      showToast(`⚠️ โควต้าตะกร้าคอร์สนี้ถูกใช้หมดแล้ว กรุณาติดต่อแอดมิน`);
       return null;
     }
 
     const pid = (user.id && user.id !== 'u_parent' && user.id !== 'parent')
       ? user.id
       : (user.user_id || user.email || user.name || user.phone || 'u_napaporn');
+
+    const pkgExpiryDate = new Date(targetBasket.created_at);
+    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + targetBasket.duration_months);
+    const expStr = `${String(pkgExpiryDate.getDate()).padStart(2, '0')}/${String(pkgExpiryDate.getMonth() + 1).padStart(2, '0')}/${pkgExpiryDate.getFullYear()}`;
 
     const newChild: Child = {
       id: 'c_' + Date.now() + Math.floor(Math.random() * 1000),
@@ -130,26 +142,19 @@ export default function AddChildPage() {
       avatar: gender.toLowerCase() === 'boy' ? 'boy' : 'girl',
       photo_url: photoDataUrl || null,
       status: 'approved',
-      course_name: 'Orca Cubs',
+      course_name: targetBasket.course_name,
       total_hours: hoursToSet,
       used_hours: 0,
-      expiry_date: (() => {
-        let months = 2;
-        const p = user.purchased_hours || 6;
-        if (p >= 48) months = 12;
-        else if (p >= 24) months = 6;
-        else if (p >= 12) months = 4;
-        const d = new Date(user.payment_datetime || user.created_at || new Date().toISOString().replace(' ', 'T'));
-        const validD = isNaN(d.getTime()) ? new Date() : d;
-        validD.setMonth(validD.getMonth() + months);
-        return `${String(validD.getDate()).padStart(2, '0')}/${String(validD.getMonth() + 1).padStart(2, '0')}/${validD.getFullYear()}`;
-      })()
+      expiry_date: expStr
     };
 
     await store.saveChild(newChild);
     // อัปเดตโควต้าใน state หลังบันทึก
-    setFamilyUsed(latestUsed);
-    setParentPurchased(purchased);
+    const currentUser = store.getCurrentUser();
+    const existing = await store.getChildren(currentUser!.id);
+    const courses = await store.getCourses();
+    setBaskets(getFamilyBaskets(currentUser, existing, courses || []));
+    
     return newChild;
   };
 
@@ -213,25 +218,6 @@ export default function AddChildPage() {
         {titleText}
       </h2>
 
-      {/* Family Basket Quota Banner */}
-      {parentPurchased > 0 && (
-        <div className={`mx-auto max-w-md mb-5 px-4 py-3 rounded-2xl border text-sm font-bold text-center flex items-center justify-center gap-2 ${
-          (parentPurchased - familyUsed) <= 0
-            ? 'bg-rose-50 border-rose-300 text-rose-700'
-            : (parentPurchased - familyUsed) <= 2
-            ? 'bg-amber-50 border-amber-300 text-amber-800'
-            : 'bg-sky-50 border-sky-200 text-sky-800'
-        }`}>
-          🛒 โควต้าตะกร้าครอบครัว:
-          <span className="text-lg font-extrabold">
-            {Math.max(0, parentPurchased - familyUsed)}
-          </span>
-          / {parentPurchased} ครั้ง ที่ยังไม่จัดสรร
-          {(parentPurchased - familyUsed) <= 0 && (
-            <span className="ml-1 text-rose-600">⚠️ หมดแล้ว!</span>
-          )}
-        </div>
-      )}
 
       {/* Photo Upload Circle Container */}
       <div className="relative w-24 h-24 mx-auto mb-6 cursor-pointer">
@@ -311,15 +297,33 @@ export default function AddChildPage() {
           </select>
         </div>
 
+        {/* Selected Course Basket Dropdown */}
+        <div className="mb-4 font-['Anuphan',sans-serif]">
+          <label className="block text-lg font-bold text-[#001a3a] mb-1">
+            เลือกตะกร้าคอร์สเรียน (Course Basket):
+          </label>
+          <select
+            value={selectedBasketId}
+            onChange={(e) => {
+              setSelectedBasketId(e.target.value);
+              setSelectedHours('');
+            }}
+            className="w-full h-11 px-4 border-[1.8px] border-[#486581] rounded-full text-[#102a43] focus:outline-none focus:border-[#001a3a] bg-white"
+            required
+          >
+            {baskets.length === 0 && <option value="">ไม่มีตะกร้าว่าง</option>}
+            {baskets.filter(b => b.remaining_hours > 0).map(b => (
+              <option key={b.id} value={b.id}>
+                {b.course_name} (เหลือ {b.remaining_hours} ครั้ง) - อายุ {b.duration_text}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Selected Course Hours Input */}
         <div className="mb-6 font-['Anuphan',sans-serif]">
           <label className="flex flex-wrap items-center gap-1 text-base font-bold text-[#001a3a] mb-1">
             จัดสรรจำนวนครั้ง/ชั่วโมงเรียนให้น้อง:
-            {parentPurchased > 0 && (
-              <span className="text-xs font-normal text-sky-700">
-                (เหลือในตะกร้า: <strong>{Math.max(0, parentPurchased - familyUsed)}</strong> ครั้ง)
-              </span>
-            )}
           </label>
           <input
             type="text"
@@ -329,21 +333,21 @@ export default function AddChildPage() {
             onChange={(e) => {
               const val = e.target.value.replace(/[^0-9]/g, '');
               const num = val === '' ? '' : Number(val);
-              const maxAllowed = Math.max(0, parentPurchased - familyUsed);
-              if (num !== '' && parentPurchased > 0 && Number(num) > maxAllowed) {
-                showToast(`⚠️ ใส่ได้สูงสุด ${maxAllowed} ครั้ง (โควต้าที่เหลือในตะกร้าครอบครัว)`);
+              const targetBasket = baskets.find(b => b.id === selectedBasketId);
+              const maxAllowed = targetBasket ? targetBasket.remaining_hours : 0;
+              if (num !== '' && Number(num) > maxAllowed) {
+                showToast(`⚠️ ใส่ได้สูงสุด ${maxAllowed} ครั้ง (โควต้าที่เหลือในตะกร้า)`);
                 setSelectedHours(maxAllowed);
               } else {
                 setSelectedHours(num);
               }
             }}
-            placeholder={parentPurchased > 0 ? `สูงสุด ${Math.max(0, parentPurchased - familyUsed)} ครั้ง` : 'โปรดระบุจำนวนครั้งที่ต้องการให้น้อง'}
+            placeholder="โปรดระบุจำนวนครั้งที่ต้องการให้น้อง"
             className="w-full h-11 px-4 border-[1.8px] border-[#486581] rounded-full text-[#102a43] font-bold text-sm bg-sky-50/50 focus:outline-none focus:border-[#001a3a] placeholder:text-slate-400 placeholder:font-normal"
             required
           />
           <p className="text-[11px] text-slate-500 font-normal mt-1 pl-2">
-            * ระบุจำนวนครั้งเรียนจากตะกร้าครอบครัวเพื่อจัดสรรให้เด็กคนนี้
-            {parentPurchased > 0 && ` (ใส่ได้สูงสุด ${Math.max(0, parentPurchased - familyUsed)} ครั้ง)`}
+            * ระบุจำนวนครั้งเรียนจากตะกร้าที่เลือกเพื่อจัดสรรให้เด็กคนนี้
           </p>
         </div>
 
