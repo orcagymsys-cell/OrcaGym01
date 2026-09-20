@@ -1186,7 +1186,7 @@ function AdminDashboardContent() {
   const totalParentsCount = parents.length;
   const newMembersThisMonth = children.filter(c => !c.created_at || c.created_at.startsWith(currentMonthStr)).length;
   const expiringStudentsList = children.filter(c => {
-    const parent = users.find(u => u.id === c.parent_id || u.user_id === c.parent_id);
+    const parent = parents.find(u => u.id === c.parent_id || u.user_id === c.parent_id);
     if (!parent) return false;
     
     const allKids = children.filter(k => k.parent_id === c.parent_id);
