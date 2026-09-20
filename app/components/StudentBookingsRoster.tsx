@@ -280,7 +280,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
             const theme = getThemeStyles(group.course);
             return (
               <div key={groupIdx} className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs print:shadow-none print:border-black print:overflow-visible print:mb-8 bg-white">
-                <div className="bg-[#001a3a] text-white p-3 sm:p-4 border-b border-blue-950 flex flex-wrap items-center justify-between gap-3 print:bg-slate-200 print:text-black print:border-black">
+                <div className="bg-[#001a3a] text-white p-3 sm:p-4 border-b border-blue-950 flex flex-wrap items-center justify-between gap-3 print:bg-slate-200 print:text-black print:border-black print:break-after-avoid">
                   <div className="flex items-center gap-3">
                     <span className="text-lg font-black bg-white/20 px-3 py-1 rounded-xl inline-flex items-center gap-2 print:bg-white print:border print:border-black">
                       <span>🗓️</span> {group.date}
@@ -307,8 +307,8 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                 </div>
                 
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 font-black print:bg-slate-100 print:border-black">
+                  <thead className="print:table-header-group">
+                    <tr className="bg-slate-50 border-b border-slate-200 font-black print:bg-slate-100 print:border-black print:break-inside-avoid">
                       <th className="p-3 sm:p-3.5 font-black whitespace-nowrap w-12 text-center">ลำดับ</th>
                       <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ชื่อนักเรียน</th>
                       <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ผู้ปกครอง & เบอร์โทร</th>
@@ -317,13 +317,13 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                       <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">จัดการ</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="print:table-row-group">
                     {group.bookings.map((b, index) => {
                       const child = childrenList.find(c => c.id === b.child_id);
                       const parent = child ? parentsList.find(u => u.id === child.parent_id || u.user_id === child.parent_id) : null;
 
                       return (
-                        <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300">
+                        <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300 print:break-inside-avoid">
                           <td className="p-3 sm:p-3.5 text-center font-bold text-slate-500">
                             {index + 1}
                           </td>
