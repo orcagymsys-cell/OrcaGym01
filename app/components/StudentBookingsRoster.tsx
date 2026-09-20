@@ -21,9 +21,17 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   }, []);
 
   // Merge unique courses from DB and legacy bookings
-  const bookedCourses = Array.from(new Set(allBookings.map(b => b.course_name).filter(Boolean)));
   const dbCourseNames = dbCourses.map(c => c.display_title);
-  const courses = Array.from(new Set([...dbCourseNames, ...bookedCourses]));
+  const rawBookedCourses = allBookings.map(b => b.course_name).filter(Boolean) as string[];
+  const uniqueCoursesMap = new Map<string, string>();
+  
+  dbCourseNames.forEach(c => uniqueCoursesMap.set(c.toLowerCase(), c));
+  rawBookedCourses.forEach(c => {
+    if (!uniqueCoursesMap.has(c.toLowerCase())) {
+      uniqueCoursesMap.set(c.toLowerCase(), c);
+    }
+  });
+  const courses = Array.from(uniqueCoursesMap.values());
 
   const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past'>('upcoming');
   const todayDate = new Date();
