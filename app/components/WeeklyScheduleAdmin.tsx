@@ -121,19 +121,23 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-[32px] border-4 border-slate-100 shadow-xl overflow-hidden">
+      <style>{`@media print { @page { size: landscape; margin: 1cm; } }`}</style>
+      <div className="bg-white rounded-[32px] border-4 border-slate-100 shadow-xl overflow-hidden print:border-none print:shadow-none print:rounded-none">
         
-        <div className="bg-[#001a3a] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+        <div className="bg-[#001a3a] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-white print:text-[#001a3a] print:bg-white print:border-b-2 print:border-slate-200">
           <div className="font-bold text-lg">{weekLabel}</div>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrevWeek} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">◀</button>
-            <button onClick={handleToday} className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer">สัปดาห์นี้</button>
-            <button onClick={handleNextWeek} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">▶</button>
+            <button onClick={() => window.print()} className="print:hidden text-xs font-bold text-[#001a3a] bg-white hover:bg-slate-100 px-4 py-2 rounded-xl border border-white shadow-sm transition-colors cursor-pointer flex items-center gap-2 mr-2">
+              <span>🖨️</span> Save PDF
+            </button>
+            <button onClick={handlePrevWeek} className="print:hidden bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">◀</button>
+            <button onClick={handleToday} className="print:hidden bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer">สัปดาห์นี้</button>
+            <button onClick={handleNextWeek} className="print:hidden bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors cursor-pointer">▶</button>
           </div>
         </div>
 
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-[900px] border-collapse bg-slate-50/30 table-fixed">
+        <div className="overflow-x-auto w-full print:overflow-visible">
+          <table className="w-full min-w-[900px] print:min-w-0 border-collapse bg-slate-50/30 table-fixed">
             <thead>
               <tr className="bg-slate-100/80 border-b-2 border-slate-200">
                 <th className="w-[100px] p-4 text-center font-black text-slate-500 text-sm border-r-2 border-slate-200">วัน / เวลา</th>
