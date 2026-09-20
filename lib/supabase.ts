@@ -851,9 +851,10 @@ export interface FamilyBasket {
   created_at: string;
   duration_months: number;
   duration_text: string;
+  start_date: string | null;
 }
 
-export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[]): FamilyBasket[] {
+export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[], familyBookings: any[] = []): FamilyBasket[] {
   if (!parentUser) return [];
 
   // 1. Calculate allocated and used hours per course from children
@@ -880,6 +881,18 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
   // Sort oldest first (FIFO)
   history.sort((a: any, b: any) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
 
+  // 3. Prepare bookings grouped by course for start_date calculation
+  const courseBookings: Record<string, any[]> = {};
+  familyBookings
+    .filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled')
+    .sort((a, b) => a.booking_date.localeCompare(b.booking_date))
+    .forEach(b => {
+      const cName = b.course_name || 'Orca Cubs';
+      if (!courseBookings[cName]) courseBookings[cName] = [];
+      courseBookings[cName].push(b);
+    });
+
+  const consumedBookingsCount: Record<string, number> = {};
   const baskets: FamilyBasket[] = [];
 
   for (const record of history) {
@@ -909,15 +922,26 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
 
     const expiryInfo = calculateDynamicExpiry(hours, courseConfig);
 
+    // Calculate start_date using FIFO bookings
+    const cBookings = courseBookings[cName] || [];
+    const startIndex = consumedBookingsCount[cName] || 0;
+    let startDate = null;
+    
+    if (startIndex < cBookings.length) {
+      startDate = cBookings[startIndex].booking_date;
+    }
+    consumedBookingsCount[cName] = startIndex + hours;
+
     baskets.push({
       id: record.id || `pay_${Math.random()}`,
       course_name: cName,
       original_hours: hours,
       remaining_hours: remaining,
-      used_hours: basketUsed, // ADDED
+      used_hours: basketUsed,
       created_at: record.created_at || new Date().toISOString(),
       duration_months: expiryInfo.months,
-      duration_text: expiryInfo.text
+      duration_text: expiryInfo.text,
+      start_date: startDate
     });
   }
 

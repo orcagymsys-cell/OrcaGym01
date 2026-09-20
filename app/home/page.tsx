@@ -304,10 +304,13 @@ export default function HomePage() {
         </div>
       ) : (
         familyBaskets.map((basket, idx) => {
-          const pkgExpiryDate = new Date(basket.created_at);
-          pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + basket.duration_months);
-          const expYearStr = pkgExpiryDate.getFullYear() + 543;
-          const fmtExp = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr.toString().substring(2)}`;
+          let fmtExp = 'รอจองคลาสแรก';
+          if (basket.start_date) {
+            const pkgExpiryDate = new Date(basket.start_date);
+            pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + basket.duration_months);
+            const expYearStr = pkgExpiryDate.getFullYear() + 543;
+            fmtExp = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr.toString().substring(2)}`;
+          }
           const pDate = new Date(basket.created_at);
           const pYearStr = pDate.getFullYear() + 543;
           const fmtPur = `${pDate.getDate()} ${monthShortNames[pDate.getMonth()]} ${pYearStr.toString().substring(2)}`;

@@ -232,60 +232,50 @@ export default function StudentDashboardPage() {
 
   const showProfileLowHoursAlert = isQuotaLow && activeBookings.length > 0 && isWithin5DaysOfLastClass;
 
-  // ⏳ Unbooked Course Package Near-Expiry Alert Banner (reads duration from Orca Classes & Pricing)
+  // ⏳ Unbooked Course Package Near-Expiry Alert Banner
   const totalPurchasedHours = parentPurchased || 6;
-
   const u = store.getCurrentUser();
-  const pkgStartDateStr = u?.payment_datetime || u?.created_at || new Date().toISOString();
-  const pkgStartDate = new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'));
-  const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
+  const allKids = store.getChildrenSync().filter(k => k.parent_id === child?.parent_id);
+  const familyBaskets = store.getFamilyBaskets(u, allKids, coursesFromDB, activeBookings);
+  
+  // Find the basket that this child is currently consuming
+  // Usually the earliest basket with remaining hours, or just the first basket for their course.
+  const childBasket = familyBaskets.find(b => b.course_name === child?.course_name && b.remaining_hours > 0) 
+    || familyBaskets.find(b => b.course_name === child?.course_name)
+    || familyBaskets[0];
 
-  const mainCourseNameForPricing = child?.course_name || 'Orca Cubs';
-  const mainCourseConfig = coursesFromDB.find(c =>
-    c.display_title?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) ||
-    c.internal_name?.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())
-  ) || coursesFromDB[0];
-  const pricingOpt = mainCourseConfig?.pricing_options?.find(po => Number(po.times) === totalPurchasedHours)
-    || (totalPurchasedHours === 2 ? mainCourseConfig?.pricing_options?.find(po => po.tag?.toLowerCase().includes('free trial') || po.tag?.toLowerCase().includes('free')) : undefined)
-    || (totalPurchasedHours === 2 ? coursesFromDB.flatMap(c => c.pricing_options || []).find(po => po.tag?.toLowerCase().includes('free trial')) : undefined);
-
-  const pkgExpiryDate = new Date(validPkgStartDate);
+  let pkgExpiryDate = new Date();
   let pkgDurationText = '';
   let pkgDurationMonths = 2;
+  let isNotStarted = true;
 
-  if (pricingOpt && pricingOpt.duration && pricingOpt.duration !== '-') {
-    const durStr = pricingOpt.duration;
-    const lower = durStr.toLowerCase();
-    const match = durStr.match(/(\d+)/);
-    const val = match ? parseInt(match[1], 10) : 0;
-    if (lower.includes('day') || lower.includes('วัน')) {
-      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val);
-      pkgDurationMonths = 0;
-      pkgDurationText = durStr;
-    } else if (lower.includes('week') || lower.includes('สัปดาห์')) {
-      pkgExpiryDate.setDate(pkgExpiryDate.getDate() + val * 7);
-      pkgDurationMonths = 0;
-      pkgDurationText = durStr;
-    } else {
-      pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + val);
-      pkgDurationMonths = val;
-      pkgDurationText = `${val} เดือน`;
+  if (childBasket) {
+    pkgDurationMonths = childBasket.duration_months;
+    pkgDurationText = childBasket.duration_text;
+    if (childBasket.start_date) {
+      isNotStarted = false;
+      pkgExpiryDate = new Date(childBasket.start_date);
+      pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
     }
   } else {
+    // Fallback if no basket
     if (totalPurchasedHours >= 48) pkgDurationMonths = 12;
     else if (totalPurchasedHours >= 24) pkgDurationMonths = 6;
     else if (totalPurchasedHours >= 12) pkgDurationMonths = 4;
-    pkgExpiryDate.setMonth(pkgExpiryDate.getMonth() + pkgDurationMonths);
     pkgDurationText = `${pkgDurationMonths} เดือน`;
   }
+  
+  const pkgStartDateStr = childBasket?.created_at || u?.payment_datetime || u?.created_at || new Date().toISOString();
+  const pkgStartDate = new Date(pkgStartDateStr.includes('T') ? pkgStartDateStr : pkgStartDateStr.replace(' ', 'T'));
+  const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
   const expiryDayDate = new Date(pkgExpiryDate);
   expiryDayDate.setHours(0, 0, 0, 0);
 
-  const daysUntilPkgExpiry = Math.ceil((expiryDayDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-  const isNearPkgExpiry = daysUntilPkgExpiry <= 5;
+  const daysUntilPkgExpiry = isNotStarted ? 999 : Math.ceil((expiryDayDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+  const isNearPkgExpiry = !isNotStarted && daysUntilPkgExpiry <= 5;
 
   const totalBookedCount = activeBookings.length;
   const unbookedClassesCount = Math.max(0, totalPurchasedHours - totalBookedCount);
@@ -306,8 +296,8 @@ export default function StudentDashboardPage() {
   const expYearStr = pkgExpiryDate.getFullYear() + 543;
   const pYearStr = validPkgStartDate.getFullYear() + 543;
 
-  const formattedPkgExpiryDate = `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
-  const fullPkgExpiryDateStr = `${pkgExpiryDate.getDate()} ${monthNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
+  const formattedPkgExpiryDate = isNotStarted ? 'รอจองคลาสแรก' : `${pkgExpiryDate.getDate()} ${monthShortNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
+  const fullPkgExpiryDateStr = isNotStarted ? 'รอจองคลาสแรก' : `${pkgExpiryDate.getDate()} ${monthNames[pkgExpiryDate.getMonth()]} ${expYearStr}`;
 
   const formattedPurchaseDate = `${validPkgStartDate.getDate()} ${monthShortNames[validPkgStartDate.getMonth()]} ${pYearStr}`;
   const fullPurchaseDateStr = `${validPkgStartDate.getDate()} ${monthNames[validPkgStartDate.getMonth()]} ${pYearStr}`;
