@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
+import { store, setupRealtimeSubscriptions, getFamilyBaskets } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { Child, Booking } from '@/lib/types';
 
@@ -253,7 +253,7 @@ export default function StudentDashboardPage() {
   const totalPurchasedHours = parentPurchased || 6;
   const u = store.getCurrentUser();
   const allKids = store.getChildrenSync().filter(k => k.parent_id === child?.parent_id);
-  const familyBaskets = store.getFamilyBaskets(u, allKids, coursesFromDB, activeBookings);
+  const familyBaskets = getFamilyBaskets(u, allKids, coursesFromDB, activeBookings);
   
   // Find the basket that this child is currently consuming
   // Usually the earliest basket with remaining hours, or just the first basket for their course.

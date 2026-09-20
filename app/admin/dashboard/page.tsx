@@ -1247,7 +1247,7 @@ function AdminDashboardContent() {
   const expiringParentsList = parents.flatMap(p => {
     const pChildren = children.filter(c => isChildOfParent(c, p));
     const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
-    const familyBaskets = store.getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
+    const familyBaskets = getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
     
     return familyBaskets.map(basket => {
       if (!basket.start_date || basket.remaining_hours <= 0) return null;
@@ -2158,7 +2158,7 @@ function AdminDashboardContent() {
                         const pChildrenCount = pChildren.length;
                         
                         const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
-                        const pBaskets = store.getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
+                        const pBaskets = getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
                         
                         // Calculate if any basket is expiring soon
                         const todayDate = new Date();
@@ -3761,7 +3761,7 @@ function AdminDashboardContent() {
           
           const allKids = children.filter(k => k.parent_id === c.parent_id);
           const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (allKids.some(k => k.id === b.child_id)));
-          const familyBaskets = store.getFamilyBaskets(p, allKids, coursesListGlobal, pBookings);
+          const familyBaskets = getFamilyBaskets(p, allKids, coursesListGlobal, pBookings);
           const cBasket = familyBaskets.find(b => b.course_name === c.course_name && b.remaining_hours > 0)
             || familyBaskets.find(b => b.course_name === c.course_name)
             || familyBaskets[0];
