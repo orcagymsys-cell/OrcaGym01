@@ -1191,7 +1191,7 @@ function AdminDashboardContent() {
     
     const allKids = children.filter(k => k.parent_id === c.parent_id);
     const familyBookings = allBookings.filter(b => allKids.some(k => k.id === b.child_id));
-    const familyBaskets = getFamilyBaskets(parent, allKids, courses, familyBookings);
+    const familyBaskets = getFamilyBaskets(parent, allKids, coursesListGlobal, familyBookings);
     
     const cBasket = familyBaskets.find(b => b.course_name === c.course_name && b.remaining_hours > 0)
       || familyBaskets.find(b => b.course_name === c.course_name)
