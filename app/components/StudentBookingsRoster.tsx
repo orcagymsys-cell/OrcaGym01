@@ -34,6 +34,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   const courses = Array.from(uniqueCoursesMap.values());
 
   const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('');
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
@@ -45,6 +46,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   });
 
   const filteredBookings = timeFilteredBookings.filter(b => {
+    if (selectedDateFilter && b.booking_date !== selectedDateFilter) return false;
     if (selectedCourseFilter !== 'All Courses' && b.course_name?.toLowerCase() !== selectedCourseFilter.toLowerCase()) return false;
     
     if (searchQuery) {
@@ -149,7 +151,25 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
             แสดงรายการจองเรียนทั้งหมดในระบบ สามารถค้นหา กรองตามคลาสเรียน หรือทำการยกเลิกการจองได้
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto shrink-0">
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto shrink-0">
+          <div className="flex items-center gap-2 print:hidden bg-white border border-slate-300 rounded-xl px-3 py-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <span className="text-sm">📅</span>
+            <input 
+              type="date"
+              value={selectedDateFilter}
+              onChange={(e) => setSelectedDateFilter(e.target.value)}
+              className="outline-none text-xs font-bold text-slate-700 bg-transparent cursor-pointer"
+            />
+            {selectedDateFilter && (
+              <button 
+                onClick={() => setSelectedDateFilter('')}
+                className="text-slate-400 hover:text-rose-500 transition-colors ml-1 font-bold flex items-center justify-center w-4 h-4"
+                title="ล้างวันที่"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <button onClick={() => window.print()} className="print:hidden text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl border border-blue-700 shadow-sm transition-colors cursor-pointer flex items-center gap-2">
             <span>🖨️</span> Save as PDF / พิมพ์
           </button>
