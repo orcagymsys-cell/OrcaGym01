@@ -580,7 +580,7 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-blue-900 bg-white px-2.5 py-0.5 rounded-xl text-xs font-black border border-sky-200 shadow-2xs">
-                        ใช้ไป {child.used_hours}/{child.total_hours} ครั้ง
+                        ใช้ไป {bookings.filter(b => b.child_id === child.id && b.status !== 'Cancelled' && b.status !== 'cancelled').length}/{child.total_hours} ครั้ง
                       </span>
                       {isApproved ? (
                         <span className="text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-emerald-300">

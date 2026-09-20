@@ -1784,7 +1784,9 @@ function AdminDashboardContent() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {expiringStudentsList.map((child) => {
-                    const remaining = child.total_hours - child.used_hours;
+                    const childActiveBookings = allBookings.filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+                    const dynamicUsedHours = childActiveBookings.length;
+                    const remaining = child.total_hours - dynamicUsedHours;
                     const parent = parents.find(p => isChildOfParent(child, p));
                     const isZero = remaining <= 0;
 
@@ -2511,7 +2513,9 @@ function AdminDashboardContent() {
                                         ) : (
                                           <div className="space-y-2">
                                             {pChildren.map((child) => {
-                                              const remaining = child.total_hours - child.used_hours;
+                                              const childActiveBookings = allBookings.filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+                                              const dynamicUsedHours = childActiveBookings.length;
+                                              const remaining = child.total_hours - dynamicUsedHours;
                                               return (
                                                 <div
                                                   key={child.id}
