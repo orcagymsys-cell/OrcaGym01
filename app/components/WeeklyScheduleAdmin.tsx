@@ -184,7 +184,11 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                 </div>
                               ) : (
                                 slotCourses.map((c, idx) => {
-                                  const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && b.time_slot === c.time);
+                                  const bookedForThisSlot = dayBookings.filter(b => {
+                                    const bCourse = (b.course_name || '').toLowerCase();
+                                    const cCourse = (c.course || '').toLowerCase();
+                                    return (bCourse === cCourse || bCourse.includes(cCourse.replace('orca ', ''))) && b.time_slot === c.time;
+                                  });
                                   
                                   const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
                                   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
