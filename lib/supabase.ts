@@ -868,7 +868,7 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
   });
 
   // 2. Extract purchase history
-  let history = parentUser.payment_history ? [...parentUser.payment_history] : [];
+  let history = Array.isArray(parentUser.payment_history) ? [...parentUser.payment_history] : [];
   if (history.length === 0 && parentUser.purchased_hours > 0) {
     history.push({
       id: 'legacy_init',
@@ -883,9 +883,9 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
 
   // 3. Prepare bookings grouped by course for start_date calculation
   const courseBookings: Record<string, any[]> = {};
-  familyBookings
+  (familyBookings || [])
     .filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled')
-    .sort((a, b) => a.booking_date.localeCompare(b.booking_date))
+    .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || ''))
     .forEach(b => {
       const cName = b.course_name || 'Orca Cubs';
       if (!courseBookings[cName]) courseBookings[cName] = [];
@@ -915,9 +915,9 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
       }
     }
 
-    const courseConfig = coursesListGlobal.find(c => 
-      c.display_title.toLowerCase().includes(cName.toLowerCase()) || 
-      c.internal_name.toLowerCase().includes(cName.toLowerCase())
+    const courseConfig = (coursesListGlobal || []).find(c => 
+      (c.display_title || '').toLowerCase().includes((cName || '').toLowerCase()) || 
+      (c.internal_name || '').toLowerCase().includes((cName || '').toLowerCase())
     );
 
     const expiryInfo = calculateDynamicExpiry(hours, courseConfig);

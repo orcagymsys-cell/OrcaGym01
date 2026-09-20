@@ -194,7 +194,7 @@ function AdminDashboardContent() {
     e.preventDefault();
     if (!adminBookingChild) return;
 
-    const remaining = (adminBookingChild.total_hours - allBookings.filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length);
+    const remaining = (adminBookingChild.total_hours - (allBookings || []).filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length);
     if (remaining <= 0) {
       showToast('⚠️ เด็กคนนี้จำนวนชั่วโมงเรียนหมดแล้ว กรุณาเติมชั่วโมงก่อนทำรายการ');
       return;
@@ -422,10 +422,10 @@ function AdminDashboardContent() {
   const handleSendEmailToParent = async (p: any) => {
     const parentEmail = p.email || `${p.user_id}@orcagym.com`;
     const parentName = p.name;
-    const parentChildren = children.filter(c => isChildOfParent(c, p));
+    const parentChildren = (children || []).filter(c => isChildOfParent(c, p));
     const lowHoursInfo = parentChildren
-      .filter(c => c.status === 'approved' && (c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length) <= 2)
-      .map(c => `${c.nickname} (เหลือ ${c.total_hours - allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length} ชม.)`)
+      .filter(c => c.status === 'approved' && (c.total_hours - (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length) <= 2)
+      .map(c => `${c.nickname} (เหลือ ${c.total_hours - (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length} ชม.)`)
       .join(', ');
 
     // Calculate expiration date
@@ -477,7 +477,7 @@ function AdminDashboardContent() {
     const formattedExpiryDate = `${dayStr}/${monthStr}/${yearStr}`;
 
     const pChildIds = parentChildren.map(c => c.id);
-    const pBookingsCount = allBookings.filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
+    const pBookingsCount = (allBookings || []).filter(b => b.status !== 'Cancelled' && (pChildIds.includes(b.child_id) || b.child_id === p.id || b.child_id === p.user_id)).length;
     const unbookedCount = Math.max(0, hoursNum - pBookingsCount);
     
     const isExpiringSoon = daysLeft <= 7 && daysLeft >= 0 && unbookedCount > 0;
@@ -558,7 +558,7 @@ function AdminDashboardContent() {
   };
 
   const handleApproveAllPending = async () => {
-    const pendingList = children.filter(c => c.status === 'pending');
+    const pendingList = (children || []).filter(c => c.status === 'pending');
     if (pendingList.length === 0) return;
     for (const c of pendingList) {
       await store.updateChild(c.id, { status: 'approved' });
@@ -760,7 +760,7 @@ function AdminDashboardContent() {
 
   const handleDeletePaymentHistory = async (parentId: string, historyId: string) => {
     if (confirm('คุณต้องการลบประวัติการทำรายการนี้ใช่หรือไม่?')) {
-      const parentUser = parents.find(p => p.id === parentId);
+      const parentUser = (parents || []).find(p => p.id === parentId);
       if (parentUser && parentUser.payment_history) {
         const deletedRecord = parentUser.payment_history.find((h: any) => h.id === historyId);
         const updatedHistory = parentUser.payment_history.filter((h: any) => h.id !== historyId);
@@ -804,7 +804,7 @@ function AdminDashboardContent() {
     setEditPhone(p.phone || '');
     setEditPassword(p.password || '123');
     setEditPurchasedHours(p.purchased_hours !== undefined ? p.purchased_hours : 6);
-    const pChildren = children.filter((c) => isChildOfParent(c, p));
+    const pChildren = (children || []).filter((c) => isChildOfParent(c, p));
     let childCourse = 'Orca Cubs';
     if (pChildren.length > 0 && pChildren[0].course_name) {
       childCourse = pChildren[0].course_name;
@@ -918,7 +918,7 @@ function AdminDashboardContent() {
     await store.saveUser(updatedParent);
 
     // Update course_name for all children of this parent
-    const pChildren = children.filter((c) => isChildOfParent(c, updatedParent));
+    const pChildren = (children || []).filter((c) => isChildOfParent(c, updatedParent));
     if (pChildren.length > 0 && editCourseName) {
       for (const child of pChildren) {
         if (child.course_name !== editCourseName) {
@@ -992,7 +992,7 @@ function AdminDashboardContent() {
     // Resolve the parent to update
     const parentUser = topUpParent
       ? topUpParent
-      : parents.find(p => isChildOfParent(topUpChild!, p) || p.id === topUpChild!.parent_id);
+      : (parents || []).find(p => isChildOfParent(topUpChild!, p) || p.id === topUpChild!.parent_id);
 
     if (parentUser) {
       const currentHistory: PaymentProofRecord[] = parentUser.payment_history ? [...parentUser.payment_history] : [];
@@ -1177,20 +1177,20 @@ function AdminDashboardContent() {
   const displayRevenueMonth = calcRevenueMonth;
 
   // Pending payments
-  const pendingChildrenList = children.filter(c => c.status === 'pending');
+  const pendingChildrenList = (children || []).filter(c => c.status === 'pending');
   const pendingPaymentsCount = pendingChildrenList.length;
   const pendingPaymentsAmount = pendingChildrenList.reduce((acc, c) => acc + (c.payment_amount || 0), 0);
 
   // 2. สถิติจำนวนสมาชิก (Member Statistics)
   const totalStudentsCount = children.length;
   const totalParentsCount = parents.length;
-  const newMembersThisMonth = children.filter(c => !c.created_at || c.created_at.startsWith(currentMonthStr)).length;
-  const expiringStudentsList = children.filter(c => {
-    const parent = parents.find(u => u.id === c.parent_id || u.user_id === c.parent_id);
+  const newMembersThisMonth = (children || []).filter(c => !c.created_at || c.created_at.startsWith(currentMonthStr)).length;
+  const expiringStudentsList = (children || []).filter(c => {
+    const parent = (parents || []).find(u => u.id === c.parent_id || u.user_id === c.parent_id);
     if (!parent) return false;
     
-    const allKids = children.filter(k => k.parent_id === c.parent_id);
-    const familyBookings = allBookings.filter(b => allKids.some(k => k.id === b.child_id));
+    const allKids = (children || []).filter(k => k.parent_id === c.parent_id);
+    const familyBookings = (allBookings || []).filter(b => allKids.some(k => k.id === b.child_id));
     const familyBaskets = getFamilyBaskets(parent, allKids, coursesListGlobal, familyBookings);
     
     const cBasket = familyBaskets.find(b => b.course_name === c.course_name && b.remaining_hours > 0)
@@ -1199,7 +1199,7 @@ function AdminDashboardContent() {
       
     if (!cBasket || !cBasket.start_date) return false; // รอจองคลาสแรก
     
-    const cActive = allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+    const cActive = (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
     const remaining = c.total_hours - cActive.length;
     if (remaining <= 0) return false;
     
@@ -1217,7 +1217,7 @@ function AdminDashboardContent() {
   const expiringMembersCount = expiringStudentsList.length;
 
   // 3. อัตราการจอง Class ที่นิยม & ช่วงเวลาที่นิยมมากที่สุด (Class & Slot Popularity)
-  const activeBookings = allBookings.filter(b => b.status !== 'Cancelled');
+  const activeBookings = (allBookings || []).filter(b => b.status !== 'Cancelled');
   
   const flipBookingsCount = activeBookings.filter(b => b.course_name?.toLowerCase().includes('flip')).length;
   const megaBookingsCount = activeBookings.filter(b => b.course_name?.toLowerCase().includes('mega')).length;
@@ -1244,9 +1244,9 @@ function AdminDashboardContent() {
   }, []);
 
   // ⏳ 4. รายชื่อผู้ปกครองที่แพ็กเรียนใกล้ครบกำหนด (ภายใน 5 วัน หรือ หมดอายุแล้ว และยังจองคลาสเรียนไม่ครบ)
-  const expiringParentsList = parents.flatMap(p => {
-    const pChildren = children.filter(c => isChildOfParent(c, p));
-    const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
+  const expiringParentsList = (parents || []).flatMap(p => {
+    const pChildren = (children || []).filter(c => isChildOfParent(c, p));
+    const pBookings = (allBookings || []).filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
     const familyBaskets = getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
     
     return familyBaskets.map(basket => {
@@ -1305,7 +1305,7 @@ function AdminDashboardContent() {
     if (!searchMatch) return false;
     if (parentStatusFilter === 'all') return true;
 
-    const pChildren = children.filter((c) => isChildOfParent(c, p));
+    const pChildren = (children || []).filter((c) => isChildOfParent(c, p));
     const mainCourseNameForPricing = pChildren[0]?.course_name || 'Orca Cubs';
     const mainCourseConfig = coursesListGlobal.find(c => c.display_title.toLowerCase().includes(mainCourseNameForPricing.toLowerCase()) || c.internal_name.toLowerCase().includes(mainCourseNameForPricing.toLowerCase())) || coursesListGlobal[0];
     
@@ -1784,10 +1784,10 @@ function AdminDashboardContent() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {expiringStudentsList.map((child) => {
-                    const childActiveBookings = allBookings.filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+                    const childActiveBookings = (allBookings || []).filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
                     const dynamicUsedHours = childActiveBookings.length;
                     const remaining = child.total_hours - dynamicUsedHours;
-                    const parent = parents.find(p => isChildOfParent(child, p));
+                    const parent = (parents || []).find(p => isChildOfParent(child, p));
                     const isZero = remaining <= 0;
 
                     return (
@@ -2100,7 +2100,7 @@ function AdminDashboardContent() {
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <h3 className="text-base font-bold text-[#001a3a]">
-                รายการบัญชีผู้ปกครองทั้งหมด ({parents.filter(checkParentFilter).length} / {parents.length} บัญชี)
+                รายการบัญชีผู้ปกครองทั้งหมด ({(parents || []).filter(checkParentFilter).length} / {parents.length} บัญชี)
               </h3>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -2154,10 +2154,10 @@ function AdminDashboardContent() {
                     {parents
                       .filter(checkParentFilter)
                       .map((p) => {
-                        const pChildren = children.filter((c) => isChildOfParent(c, p));
+                        const pChildren = (children || []).filter((c) => isChildOfParent(c, p));
                         const pChildrenCount = pChildren.length;
                         
-                        const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
+                        const pBookings = (allBookings || []).filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
                         const pBaskets = getFamilyBaskets(p, pChildren, coursesListGlobal, pBookings);
                         
                         // Calculate if any basket is expiring soon
@@ -2513,7 +2513,7 @@ function AdminDashboardContent() {
                                         ) : (
                                           <div className="space-y-2">
                                             {pChildren.map((child) => {
-                                              const childActiveBookings = allBookings.filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+                                              const childActiveBookings = (allBookings || []).filter(b => b.child_id === child.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
                                               const dynamicUsedHours = childActiveBookings.length;
                                               const remaining = child.total_hours - dynamicUsedHours;
                                               return (
@@ -2600,10 +2600,10 @@ function AdminDashboardContent() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-[#001a3a] flex items-center gap-2">
-                <span>👶 ข้อมูลนักเรียนทั้งหมดในระบบ ({children.filter((c) => {
+                <span>👶 ข้อมูลนักเรียนทั้งหมดในระบบ ({(children || []).filter((c) => {
                   if (!studentSearchQuery.trim()) return true;
                   const q = studentSearchQuery.toLowerCase().trim();
-                  const p = parents.find((parent) => isChildOfParent(c, parent));
+                  const p = (parents || []).find((parent) => isChildOfParent(c, parent));
                   const pName = p?.name?.toLowerCase() || '';
                   return (
                     c.full_name?.toLowerCase().includes(q) ||
@@ -2674,7 +2674,7 @@ function AdminDashboardContent() {
                     .filter((c) => {
                       if (!studentSearchQuery.trim()) return true;
                       const q = studentSearchQuery.toLowerCase().trim();
-                      const p = parents.find((parent) => isChildOfParent(c, parent));
+                      const p = (parents || []).find((parent) => isChildOfParent(c, parent));
                       const pName = p?.name?.toLowerCase() || '';
                       return (
                         c.full_name?.toLowerCase().includes(q) ||
@@ -2684,9 +2684,9 @@ function AdminDashboardContent() {
                       );
                     })
                     .map((c) => {
-                      const cActive = allBookings.filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
+                      const cActive = (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'cancelled' && b.status !== 'Cancelled');
   const remaining = c.total_hours - cActive.length;
-                      const parent = parents.find((p) => isChildOfParent(c, p));
+                      const parent = (parents || []).find((p) => isChildOfParent(c, p));
                       const ageText = calculateAge(c.dob);
                       return (
                         <tr key={c.id} className="hover:bg-slate-50/90 transition-colors border-b border-slate-100/80">
@@ -3747,8 +3747,8 @@ function AdminDashboardContent() {
       {/* View Details Modal */}
       {viewDetailsChild && (() => {
         const c = viewDetailsChild;
-        const p = parents.find(parent => isChildOfParent(c, parent));
-        const cBookings = allBookings.filter(b => b.child_id === c.id && b.status !== 'Cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+        const p = (parents || []).find(parent => isChildOfParent(c, parent));
+        const cBookings = (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'Cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
         
         let purchaseDateStr = '-';
         let expiryDateStr = '-';
@@ -3759,8 +3759,8 @@ function AdminDashboardContent() {
           const validPkgStartDate = isNaN(pkgStartDate.getTime()) ? new Date() : pkgStartDate;
           purchaseDateStr = formatThaiShortDate(validPkgStartDate, false);
           
-          const allKids = children.filter(k => k.parent_id === c.parent_id);
-          const pBookings = allBookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (allKids.some(k => k.id === b.child_id)));
+          const allKids = (children || []).filter(k => k.parent_id === c.parent_id);
+          const pBookings = (allBookings || []).filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (allKids.some(k => k.id === b.child_id)));
           const familyBaskets = getFamilyBaskets(p, allKids, coursesListGlobal, pBookings);
           const cBasket = familyBaskets.find(b => b.course_name === c.course_name && b.remaining_hours > 0)
             || familyBaskets.find(b => b.course_name === c.course_name)
@@ -3887,7 +3887,7 @@ function AdminDashboardContent() {
                 น้อง {adminBookingChild.nickname} ({adminBookingChild.full_name})
               </div>
               <div className="text-slate-600 font-normal">
-                คลาส: <strong>{adminBookingChild.course_name}</strong> | ชั่วโมงคงเหลือ: <strong className="text-blue-700">{(adminBookingChild.total_hours - allBookings.filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length)} ชม.</strong>
+                คลาส: <strong>{adminBookingChild.course_name}</strong> | ชั่วโมงคงเหลือ: <strong className="text-blue-700">{(adminBookingChild.total_hours - (allBookings || []).filter(b => b.child_id === adminBookingChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length)} ชม.</strong>
               </div>
               <div className="text-[11px] text-amber-800 font-bold mt-1">
                 ⚡ สิทธิ์ Admin: สามารถจองวันใดก็ได้ (รวมถึงวันนี้/วันพรุ่งนี้) โดยระบบจะตัด 1 ชม. จากตระกร้าครอบครัวอัตโนมัติ
@@ -3953,7 +3953,7 @@ function AdminDashboardContent() {
       )}
 
       {/* Floating Alert Toast for Pending Child Approvals (Bottom Right) */}
-      {children.filter(c => c.status === 'pending').length > 0 && !dismissPendingToast && (
+      {(children || []).filter(c => c.status === 'pending').length > 0 && !dismissPendingToast && (
         <div className="fixed bottom-6 right-6 z-50 max-w-md w-full sm:w-96 bg-white/95 backdrop-blur-md border-2 border-amber-400 rounded-3xl p-4 shadow-2xl transition-all duration-300 animate-bounce-short font-['Anuphan',sans-serif]">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -3964,7 +3964,7 @@ function AdminDashboardContent() {
                 <div className="flex items-center gap-2">
                   <h4 className="font-extrabold text-sm text-[#001a3a]">มีเด็กรอให้ Admin Approve!</h4>
                   <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                    {children.filter(c => c.status === 'pending').length} คน
+                    {(children || []).filter(c => c.status === 'pending').length} คน
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 mt-1 font-normal">
@@ -3984,7 +3984,7 @@ function AdminDashboardContent() {
 
           {/* List of Pending Children preview */}
           <div className="mt-3 max-h-32 overflow-y-auto space-y-1.5 bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/80">
-            {children.filter(c => c.status === 'pending').map((c) => (
+            {(children || []).filter(c => c.status === 'pending').map((c) => (
               <div key={c.id} className="text-xs text-[#001a3a] flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-1.5">
                     {c.photo_url ? (
