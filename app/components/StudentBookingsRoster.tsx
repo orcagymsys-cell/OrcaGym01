@@ -25,9 +25,18 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   const dbCourseNames = dbCourses.map(c => c.display_title);
   const courses = Array.from(new Set([...dbCourseNames, ...bookedCourses]));
 
-  const filteredBookings = allBookings.filter(b => {
-    // Exclude cancelled if preferred, or keep them. Let's keep them so admin can see, but maybe they want to see active only?
-    // The previous implementation kept them and showed status.
+  const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+
+  const timeFilteredBookings = allBookings.filter(b => {
+    const bDate = new Date(b.booking_date);
+    bDate.setHours(0, 0, 0, 0);
+    if (timeFilter === 'upcoming') return bDate.getTime() >= todayDate.getTime();
+    return bDate.getTime() < todayDate.getTime();
+  });
+
+  const filteredBookings = timeFilteredBookings.filter(b => {
     if (selectedCourseFilter !== 'All Courses' && b.course_name?.toLowerCase() !== selectedCourseFilter.toLowerCase()) return false;
     
     if (searchQuery) {
@@ -43,7 +52,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
       return matchChildName || matchParent || matchCourse || matchDate;
     }
     return true;
-  }).sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
+  });
 
   const handleCancelBooking = async (booking: Booking) => {
     if (!confirm(`คุณแน่ใจหรือไม่ที่จะยกเลิกการจองของน้อง ${booking.child_nickname} ในวันที่ ${booking.booking_date}?`)) return;
@@ -107,7 +116,13 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   }, {} as Record<string, { date: string, time: string, course: string, bookings: Booking[] }>);
 
   const sortedGroups = Object.values(groupedBookings).sort((a, b) => {
-    if (a.date !== b.date) return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (a.date !== b.date) {
+      if (timeFilter === 'upcoming') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime(); // ASCENDING: Closest upcoming date first
+      } else {
+        return new Date(b.date).getTime() - new Date(a.date).getTime(); // DESCENDING: Most recent past date first
+      }
+    }
     if (a.time !== b.time) return a.time.localeCompare(b.time);
     return a.course.localeCompare(b.course);
   });
@@ -134,8 +149,27 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
             ทั้งหมด {filteredBookings.length} รายการ
           </div>
         </div>
-        <div className="hidden text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-300 self-start sm:self-auto shrink-0">
-          ทั้งหมด {filteredBookings.length} รายการ
+        <div className="hidden sm:flex text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-300 self-start shrink-0 items-center justify-center">
+          ทั้งหมด {sortedGroups.reduce((sum, g) => sum + g.bookings.length, 0)} รายการ
+        </div>
+      </div>
+
+      <div className="print:hidden border-b border-slate-200 pb-2">
+        <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+          <button 
+            type="button"
+            onClick={() => setTimeFilter('upcoming')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === 'upcoming' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            รายการจองที่จะมาถึง (Upcoming)
+          </button>
+          <button 
+            type="button"
+            onClick={() => setTimeFilter('past')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === 'past' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            ประวัติการจองที่ผ่านมา (Past)
+          </button>
         </div>
       </div>
 
