@@ -110,6 +110,10 @@ function AdminDashboardContent() {
   const [parents, setParents] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
+  useEffect(() => {
+    store.getCourses().then(c => setCoursesListGlobal(c || []));
+  }, []);
   const [dayBookings, setDayBookings] = useState<Booking[]>([]);
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [showCreateParentModal, setShowCreateParentModal] = useState(false);
@@ -1238,12 +1242,7 @@ function AdminDashboardContent() {
   const sortedPopularSlots = Object.entries(slotCountMap).sort((a, b) => b[1] - a[1]);
   const maxSlotCount = Math.max(...Object.values(slotCountMap), 1);
 
-  const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
-  useEffect(() => {
-    store.getCourses().then(c => setCoursesListGlobal(c || []));
-  }, []);
-
-  // ⏳ 4. รายชื่อผู้ปกครองที่แพ็กเรียนใกล้ครบกำหนด (ภายใน 5 วัน หรือ หมดอายุแล้ว และยังจองคลาสเรียนไม่ครบ)
+// ⏳ 4. รายชื่อผู้ปกครองที่แพ็กเรียนใกล้ครบกำหนด (ภายใน 5 วัน หรือ หมดอายุแล้ว และยังจองคลาสเรียนไม่ครบ)
   const expiringParentsList = (parents || []).flatMap(p => {
     const pChildren = (children || []).filter(c => isChildOfParent(c, p));
     const pBookings = (allBookings || []).filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled' && (pChildren.some(c => c.id === b.child_id)));
