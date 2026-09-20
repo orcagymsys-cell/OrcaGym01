@@ -175,6 +175,23 @@ export default function StudentDashboardPage() {
     router.push(`/student/${child.id}/book`);
   };
 
+  const getGoogleCalendarUrl = (booking: Booking, childNickname: string) => {
+    if (!booking) return '#';
+    const dateStr = booking.booking_date.replace(/-/g, '');
+    let startTime = '103000';
+    let endTime = '120000';
+    if (booking.time_slot) {
+      const parts = booking.time_slot.split('-');
+      if (parts.length === 2) {
+        startTime = parts[0].replace(':', '') + '00';
+        endTime = parts[1].replace(':', '') + '00';
+      }
+    }
+    const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childNickname}`);
+    const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${booking.time_slot}`);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
+  };
+
   const handleDeleteChild = async () => {
     if (!child) return;
     if (confirm(`คุณต้องการลบข้อมูลของ "น้อง ${child.nickname}" ออกจากระบบใช่หรือไม่?\n\n⚠️ การลบจะไม่สามารถย้อนกลับได้`)) {
@@ -849,6 +866,23 @@ function MyCourseWeeklyMatrix({
               ];
               const color = isPast ? { bg: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600' } : colors[idx % colors.length];
 
+              const getGoogleCalendarUrl = (booking: Booking, childNickname: string) => {
+                if (!booking) return '#';
+                const dateStr = booking.booking_date.replace(/-/g, '');
+                let startTime = '103000';
+                let endTime = '120000';
+                if (booking.time_slot) {
+                  const parts = booking.time_slot.split('-');
+                  if (parts.length === 2) {
+                    startTime = parts[0].replace(':', '') + '00';
+                    endTime = parts[1].replace(':', '') + '00';
+                  }
+                }
+                const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childNickname}`);
+                const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${booking.time_slot}`);
+                return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
+              };
+
               return (
                 <div key={b.id} className={`bg-white border ${isPast ? 'border-slate-200 opacity-70' : 'border-[#001a3a]/10'} rounded-2xl p-4 sm:p-5 shadow-sm relative overflow-hidden flex justify-between items-center transition-all hover:shadow-md`}>
                   <div className={`absolute top-0 left-0 w-2 h-full ${color.bg}`}></div>
@@ -865,7 +899,19 @@ function MyCourseWeeklyMatrix({
                     </div>
                   </div>
                   
-                  {onCancelBooking && !isPast && (
+                  <div className="flex items-center gap-2 shrink-0 ml-4">
+                    {!isPast && (
+                      <a
+                        href={getGoogleCalendarUrl(b, child.nickname)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-bold text-slate-600 bg-white border border-slate-300 px-2 py-2 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-1 shadow-sm"
+                        title="เพิ่มลงปฏิทิน"
+                      >
+                        <span className="text-sm">📅</span>
+                      </a>
+                    )}
+                    {onCancelBooking && !isPast && (
                     <button
                       type="button"
                       onClick={() => onCancelBooking(b.id)}
@@ -876,7 +922,8 @@ function MyCourseWeeklyMatrix({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
                       </svg>
                     </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })

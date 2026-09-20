@@ -233,6 +233,50 @@ export default function HomePage() {
   // Check if ANY basket is low
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
 
+  // New: Family Upcoming Schedule Logic
+  const activeBookingsList = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled');
+  const futureBookings = activeBookingsList.filter(b => {
+    const bDate = new Date(b.booking_date);
+    bDate.setHours(0, 0, 0, 0);
+    return bDate.getTime() >= todayDate.getTime();
+  }).sort((a, b) => {
+    const timeA = new Date(a.booking_date).getTime();
+    const timeB = new Date(b.booking_date).getTime();
+    if (timeA !== timeB) return timeA - timeB;
+    return (a.time_slot || '').localeCompare(b.time_slot || '');
+  });
+
+  const upcomingLimit = 3;
+  const upcomingToDisplay = futureBookings.slice(0, upcomingLimit);
+
+  let urgentAlertBooking: any = null;
+  if (futureBookings.length > 0) {
+    const firstBookingDate = new Date(futureBookings[0].booking_date);
+    firstBookingDate.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((firstBookingDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0 || diffDays === 1) {
+      urgentAlertBooking = { ...futureBookings[0], diffDays };
+    }
+  }
+
+  const getGoogleCalendarUrl = (booking: any) => {
+    if (!booking) return '#';
+    const dateStr = booking.booking_date.replace(/-/g, '');
+    let startTime = '103000';
+    let endTime = '120000';
+    if (booking.time_slot) {
+      const parts = booking.time_slot.split('-');
+      if (parts.length === 2) {
+        startTime = parts[0].replace(':', '') + '00';
+        endTime = parts[1].replace(':', '') + '00';
+      }
+    }
+    const childObj = children.find(c => c.id === booking.child_id);
+    const childName = childObj?.nickname || booking.child_nickname || booking.child_full_name || '';
+    const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childName}`);
+    const details = encodeURIComponent(`คลาส ${booking.course_name} เวลา ${booking.time_slot}`);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
+  };
 
   if (loading) {
     return (
@@ -296,6 +340,36 @@ export default function HomePage() {
           <div className="home-badge-header">HOME</div>
         </div>
       </div>
+
+      {urgentAlertBooking && (
+        <div className="mb-4 bg-gradient-to-r from-rose-500 to-rose-600 rounded-3xl p-4 shadow-md border border-rose-400 text-white animate-pulse-slow">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🚨</span>
+              <div className="flex flex-col">
+                <span className="font-black text-lg">
+                  {urgentAlertBooking.diffDays === 0 ? 'วันนี้มีเรียน!' : 'พรุ่งนี้มีเรียน!'}
+                </span>
+                <span className="text-sm font-semibold opacity-90">
+                  น้อง {children.find(c => c.id === urgentAlertBooking.child_id)?.nickname || 'ไม่ระบุชื่อ'} คลาส {urgentAlertBooking.course_name}
+                </span>
+                <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-lg w-max mt-1">
+                  ⏰ เวลา {urgentAlertBooking.time_slot}
+                </span>
+              </div>
+            </div>
+            <a
+              href={getGoogleCalendarUrl(urgentAlertBooking)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white text-rose-600 px-4 py-2 rounded-xl text-sm font-black shadow-sm hover:bg-rose-50 transition-all flex items-center gap-2"
+            >
+              <span>📅</span>
+              <span>เพิ่มลงปฏิทิน</span>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Multiple Family Baskets Render */}
       {familyBaskets.length === 0 ? (
@@ -475,6 +549,66 @@ export default function HomePage() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Family Schedule */}
+      {upcomingToDisplay.length > 0 && (
+        <div className="mb-6 bg-white border border-slate-200 rounded-3xl p-5 shadow-xs">
+          <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+            <span className="text-xl">📅</span>
+            <h3 className="text-sm font-black text-[#001a3a]">
+              ตารางเรียนที่กำลังจะมาถึง (Family Schedule)
+            </h3>
+          </div>
+          <div className="flex flex-col gap-3">
+            {upcomingToDisplay.map((booking: any, idx: number) => {
+              const bDate = new Date(booking.booking_date);
+              bDate.setHours(0, 0, 0, 0);
+              const isToday = bDate.getTime() === todayDate.getTime();
+              const isTomorrow = bDate.getTime() === todayDate.getTime() + 86400000;
+              let dayBadge = null;
+              if (isToday) dayBadge = <span className="bg-rose-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black">วันนี้</span>;
+              else if (isTomorrow) dayBadge = <span className="bg-amber-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black">พรุ่งนี้</span>;
+
+              const cObj = children.find(c => c.id === booking.child_id);
+              const cName = cObj?.nickname || booking.child_nickname || booking.child_full_name || '';
+
+              return (
+                <div key={booking.id || idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs border-2 border-blue-200 shrink-0">
+                      น้อง
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="text-xs font-black text-[#001a3a] flex items-center gap-1.5">
+                        น้อง {cName}
+                        {dayBadge}
+                      </div>
+                      <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                        <span>🗓️ {booking.booking_date}</span>
+                        <span>|</span>
+                        <span>⏰ {booking.time_slot}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-bold text-sky-800 bg-sky-100 px-2 py-1 rounded-lg border border-sky-200">
+                      {booking.course_name}
+                    </span>
+                    <a
+                      href={getGoogleCalendarUrl(booking)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-slate-600 bg-white border border-slate-300 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-1"
+                    >
+                      <span>📅</span> เพิ่ม
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
