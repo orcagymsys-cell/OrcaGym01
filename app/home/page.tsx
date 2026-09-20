@@ -186,7 +186,7 @@ export default function HomePage() {
   let unbookedClassesCount = 0;
   let pkgDurationText = '';
   let totalPurchased = 0;
-  let activeBookingsCount = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled').length;
+  let activeBookingsCount = (bookings || []).filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled').length;
 
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
@@ -234,7 +234,10 @@ export default function HomePage() {
   const showLowHoursAlert = showUnbookedNearExpiryBanner || isBasketLow;
 
   // New: Family Upcoming Schedule Logic
-  const activeBookingsList = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled');
+  const safeBookings = bookings || [];
+  const safeChildren = children || [];
+
+  const activeBookingsList = safeBookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled');
   const futureBookings = activeBookingsList.filter(b => {
     const bDate = new Date(b.booking_date);
     bDate.setHours(0, 0, 0, 0);
@@ -271,7 +274,7 @@ export default function HomePage() {
         endTime = parts[1].replace(':', '') + '00';
       }
     }
-    const childObj = children.find(c => c.id === booking.child_id);
+    const childObj = (children || []).find(c => c.id === booking.child_id);
     const childName = childObj?.nickname || booking.child_nickname || booking.child_full_name || '';
     const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childName}`);
     const details = encodeURIComponent(`คลาส ${booking.course_name} เวลา ${booking.time_slot}`);
@@ -351,7 +354,7 @@ export default function HomePage() {
                   {urgentAlertBooking.diffDays === 0 ? 'วันนี้มีเรียน!' : 'พรุ่งนี้มีเรียน!'}
                 </span>
                 <span className="text-sm font-semibold opacity-90">
-                  น้อง {children.find(c => c.id === urgentAlertBooking.child_id)?.nickname || 'ไม่ระบุชื่อ'} คลาส {urgentAlertBooking.course_name}
+                  น้อง {(children || []).find(c => c.id === urgentAlertBooking.child_id)?.nickname || 'ไม่ระบุชื่อ'} คลาส {urgentAlertBooking.course_name}
                 </span>
                 <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-lg w-max mt-1">
                   ⏰ เวลา {urgentAlertBooking.time_slot}
@@ -572,7 +575,7 @@ export default function HomePage() {
               if (isToday) dayBadge = <span className="bg-rose-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black">วันนี้</span>;
               else if (isTomorrow) dayBadge = <span className="bg-amber-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black">พรุ่งนี้</span>;
 
-              const cObj = children.find(c => c.id === booking.child_id);
+              const cObj = (children || []).find(c => c.id === booking.child_id);
               const cName = cObj?.nickname || booking.child_nickname || booking.child_full_name || '';
 
               return (
@@ -637,7 +640,7 @@ export default function HomePage() {
             ยังไม่มีข้อมูลเด็กในระบบ กรุณากด "Add Family Member" ด้านบนเพื่อเพิ่มข้อมูล
           </div>
         ) : (
-          children.map((child) => {
+          (children || []).map((child) => {
             const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
             const remaining = child.total_hours - child.used_hours;
             const isApproved = child.status === 'approved';
@@ -714,7 +717,7 @@ export default function HomePage() {
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-blue-900 bg-white px-2.5 py-0.5 rounded-xl text-xs font-black border border-sky-200 shadow-2xs">
-                        ใช้ไป {bookings.filter(b => b.child_id === child.id && b.status !== 'Cancelled' && b.status !== 'cancelled').length}/{child.total_hours} ครั้ง
+                        ใช้ไป {(bookings || []).filter(b => b.child_id === child.id && b.status !== 'Cancelled' && b.status !== 'cancelled').length}/{child.total_hours} ครั้ง
                       </span>
                       {isApproved ? (
                         <span className="text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-emerald-300">
