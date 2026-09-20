@@ -28,7 +28,7 @@ const MONTH_NAMES = [
 function getMinParentBookingDate(): string {
   const target = new Date();
   target.setDate(target.getDate() + 1); // Cannot book today (at least 1 day in advance)
-  return target.toISOString().split('T')[0];
+  return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
 }
 
 export const runtime = 'edge';
@@ -41,7 +41,8 @@ export default function BookingCalendarPage() {
 
   const requestRef = useRef(0);
   const minParentDate = getMinParentBookingDate();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const resolvedChildId = decodeURIComponent(childId || '').trim();
 
   const [child, setChild] = useState<Child | null>(() => {
@@ -261,22 +262,67 @@ export default function BookingCalendarPage() {
     c.display_title?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs') ||
     c.internal_name?.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs')
   );
-  let dynWd: string[] = [];
-  let dynWe: string[] = [];
-  if (activeCourse && activeCourse.schedule_groups) {
-    const wd = activeCourse.schedule_groups.find((g: any) => g.day_label?.toLowerCase().includes('week') || g.day_label?.toLowerCase().includes('tue'));
-    const we = activeCourse.schedule_groups.find((g: any) => g.day_label?.toLowerCase().includes('end') || g.day_label?.toLowerCase().includes('sat'));
-    if (wd) dynWd = wd.time_slots || [];
-    if (we) dynWe = we.time_slots || [];
+
+  let customSlots: string[] = [];
+  let useCustom = false;
+  
+  if (activeCourse && activeCourse.schedule_groups && activeCourse.schedule_groups.length > 0) {
+    useCustom = true;
+    activeCourse.schedule_groups.forEach((g: any) => {
+      if (!g.day_label || !g.time_slots) return;
+      const lbl = g.day_label.toLowerCase();
+      let isMatch = false;
+      
+      if (lbl.includes('everyday')) isMatch = true;
+      else if (lbl.includes('weekend') && (dayOfWeek === 0 || dayOfWeek === 6)) isMatch = true;
+      else if (lbl.includes('weekday') && dayOfWeek >= 1 && dayOfWeek <= 5) isMatch = true;
+      else {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        let matchFound = false;
+        
+        const parts = lbl.split('-').map((s: string) => s.trim());
+        if (parts.length === 2) {
+          const startIdx = days.findIndex(d => parts[0].includes(d)) !== -1 
+            ? days.findIndex(d => parts[0].includes(d))
+            : shortDays.findIndex(d => parts[0].includes(d));
+            
+          const endIdx = days.findIndex(d => parts[1].includes(d)) !== -1
+            ? days.findIndex(d => parts[1].includes(d))
+            : shortDays.findIndex(d => parts[1].includes(d));
+            
+          if (startIdx !== -1 && endIdx !== -1) {
+            matchFound = true;
+            let curr = startIdx;
+            while (true) {
+              if (dayOfWeek === curr) { isMatch = true; break; }
+              if (curr === endIdx) break;
+              curr = (curr + 1) % 7;
+            }
+          }
+        }
+        
+        if (!matchFound) {
+          if (days[dayOfWeek] && lbl.includes(days[dayOfWeek])) isMatch = true;
+          if (shortDays[dayOfWeek] && lbl.includes(shortDays[dayOfWeek])) isMatch = true;
+        }
+      }
+      
+      if (isMatch) {
+        customSlots.push(...g.time_slots);
+      }
+    });
   }
-  const finalWeekday = dynWd.length > 0 ? dynWd : scheduleConfig.weekday;
-  const finalWeekend = dynWe.length > 0 ? dynWe : scheduleConfig.weekend;
+
+  customSlots = Array.from(new Set(customSlots)).sort((a, b) => a.localeCompare(b));
 
   const availableSlots = isMonday
     ? []
+    : (useCustom && customSlots.length > 0)
+    ? customSlots
     : isWeekend
-    ? finalWeekend
-    : finalWeekday;
+    ? scheduleConfig.weekend
+    : scheduleConfig.weekday;
 
   // Calendar render math
   const firstDayIndex = new Date(year, month, 1).getDay();
@@ -378,7 +424,7 @@ export default function BookingCalendarPage() {
             ClassTime (เลือกรอบเวลาเรียนคลาส {child.course_name}):
           </label>
           <span className="text-xs text-sky-800 font-bold bg-sky-100 px-3 py-1 rounded-full">
-            {isWeekend ? '📅 รอบวันเสาร์ - อาทิตย์' : '📅 รอบวันอังคาร - ศุกร์'}
+            📅 รอบ{['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'][new Date(selectedDate).getDay()]}
           </span>
         </div>
 

@@ -36,9 +36,13 @@ function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
     if (colIndex === 2) return [{ course: 'Orca Cubs', time: '16:00-17:30' }];
     if (colIndex === 3) {
       const res = [
-        { course: 'Orca Cubs', time: '17:30-19:30' },
         { course: 'Mega Orca', time: '17:30-19:30' }
       ];
+      if (dayKey === 2 || dayKey === 3) { // Tuesday or Wednesday
+        res.push({ course: 'Orca Cubs', time: '17:30-19:00' });
+      } else {
+        res.push({ course: 'Orca Cubs', time: '17:30-19:30' }); // fallback
+      }
       if (dayKey === 4 || dayKey === 5) { // Thursday or Friday
         res.push({ course: 'ORCA FLIP', time: '17:30-19:00' });
       }
@@ -290,7 +294,7 @@ export default function SchedulePage() {
                   const offset = dayConfig.key === 0 ? 6 : dayConfig.key - 1;
                   currentDate.setDate(currentDate.getDate() + offset);
                   
-                  const dateStr = currentDate.toISOString().split('T')[0];
+                  const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
                   const dayBookings = allBookings.filter(b => b.booking_date === dateStr && b.status !== 'cancelled' && b.status !== 'Cancelled');
 
                   const isMonday = dayConfig.key === 1;

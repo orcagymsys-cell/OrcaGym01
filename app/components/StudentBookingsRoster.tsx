@@ -54,6 +54,11 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
       await store.cancelBooking(booking.id);
       
+      if (child) {
+        const updatedUsed = Math.max(0, child.used_hours - 1);
+        await store.updateChild(child.id, { used_hours: updatedUsed });
+      }
+      
       const adminUser = store.getCurrentUser();
       const adminName = adminUser?.name || 'Admin';
       
