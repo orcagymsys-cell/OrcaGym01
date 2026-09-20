@@ -177,7 +177,7 @@ export default function StudentDashboardPage() {
 
   const getGoogleCalendarUrl = (booking: Booking, childNickname: string) => {
     if (!booking) return '#';
-    const dateStr = booking.booking_date.replace(/-/g, '');
+    const dateStr = (booking.booking_date || '').replace(/-/g, '');
     let startTime = '103000';
     let endTime = '120000';
     if (booking.time_slot) {
@@ -868,7 +868,7 @@ function MyCourseWeeklyMatrix({
 
               const getGoogleCalendarUrl = (booking: Booking, childNickname: string) => {
                 if (!booking) return '#';
-                const dateStr = booking.booking_date.replace(/-/g, '');
+                const dateStr = (booking.booking_date || '').replace(/-/g, '');
                 let startTime = '103000';
                 let endTime = '120000';
                 if (booking.time_slot) {
