@@ -99,6 +99,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
   }, []);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
+  const [printDateFilter, setPrintDateFilter] = useState('');
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; course: string; time: string; bookings: Booking[]; maxQuota: number } | null>(null);
 
   const handlePrevWeek = () => {
@@ -127,6 +128,28 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
         <div className="bg-[#001a3a] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-white print:text-[#001a3a] print:bg-white print:border-b-2 print:border-slate-200">
           <div className="font-bold text-lg">{weekLabel}</div>
           <div className="flex items-center gap-2">
+            <div className="print:hidden flex items-center bg-white rounded-xl overflow-hidden mr-2 border border-white shadow-sm">
+              <input 
+                type="date"
+                className="text-xs font-bold text-[#001a3a] bg-white px-3 py-2 outline-none cursor-pointer"
+                value={printDateFilter}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPrintDateFilter(val);
+                  if (val) setCurrentWeekStart(getStartOfWeek(new Date(val)));
+                }}
+                title="เลือกวันที่เพื่อแสดงตารางแค่วันเดียว"
+              />
+              {printDateFilter && (
+                <button 
+                  onClick={() => setPrintDateFilter('')}
+                  className="px-3 py-2 text-rose-500 hover:bg-slate-100 text-xs font-bold transition-colors"
+                  title="ล้างตัวกรองวันที่"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button onClick={() => window.print()} className="print:hidden text-xs font-bold text-[#001a3a] bg-white hover:bg-slate-100 px-4 py-2 rounded-xl border border-white shadow-sm transition-colors cursor-pointer flex items-center gap-2 mr-2">
               <span>🖨️</span> Save PDF
             </button>
@@ -149,7 +172,14 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
               </tr>
             </thead>
             <tbody>
-              {DAY_CONFIG.map((dayConfig) => {
+              {DAY_CONFIG.filter((dayConfig) => {
+                if (!printDateFilter) return true;
+                const tmpDate = new Date(currentWeekStart);
+                const tmpOffset = dayConfig.key === 0 ? 6 : dayConfig.key - 1;
+                tmpDate.setDate(tmpDate.getDate() + tmpOffset);
+                const tmpStr = `${tmpDate.getFullYear()}-${String(tmpDate.getMonth() + 1).padStart(2, '0')}-${String(tmpDate.getDate()).padStart(2, '0')}`;
+                return tmpStr === printDateFilter;
+              }).map((dayConfig) => {
                 const currentDate = new Date(currentWeekStart);
                 const offset = dayConfig.key === 0 ? 6 : dayConfig.key - 1;
                 currentDate.setDate(currentDate.getDate() + offset);
