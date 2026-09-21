@@ -316,6 +316,9 @@ export default function AuditPage() {
                 filteredLogs.map((log) => {
                   const isCreateParent = log.action_type === 'create_parent' || log.note?.includes('สร้างบัญชี');
                   const isApprove = log.action_type === 'approve_course' || log.action_type === 'topup_hours' || log.note?.includes('อนุมัติ') || log.note?.includes('เติมโควต้า') || log.note?.includes('ซื้อคอร์ส');
+                  const isCancelBooking = log.note?.includes('ยกเลิก');
+                  const isEdit = log.note?.includes('แก้ไข');
+                  const isDelete = log.note?.includes('ลบ');
                   
                   const tsFromId = log.id.startsWith('audit_curr') ? null : (log.id.startsWith('audit_') ? parseInt(log.id.replace('audit_', '')) : null);
                   const validTs = tsFromId && !isNaN(tsFromId) ? new Date(tsFromId).toISOString() : null;
@@ -342,10 +345,25 @@ export default function AuditPage() {
                             <span>👤</span>
                             <span>สร้างบัญชีผู้ปกครอง</span>
                           </span>
+                        ) : isCancelBooking ? (
+                          <span className="bg-rose-50 text-rose-700 border border-rose-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
+                            <span>❌</span>
+                            <span>ยกเลิกคลาส/คืนโควต้า</span>
+                          </span>
+                        ) : isDelete ? (
+                          <span className="bg-red-50 text-red-700 border border-red-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
+                            <span>🗑️</span>
+                            <span>ลบข้อมูล</span>
+                          </span>
+                        ) : isEdit ? (
+                          <span className="bg-amber-50 text-amber-700 border border-amber-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
+                            <span>✏️</span>
+                            <span>แก้ไขข้อมูล</span>
+                          </span>
                         ) : (
-                          <span className="bg-sky-50 text-sky-700 border border-sky-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
-                            <span>➕</span>
-                            <span>เติมชั่วโมงเรียน</span>
+                          <span className="bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
+                            <span>ℹ️</span>
+                            <span>บันทึกระบบ</span>
                           </span>
                         )}
                       </td>
