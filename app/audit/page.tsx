@@ -376,7 +376,7 @@ export default function AuditPage() {
                       {/* Parent / Child */}
                       <td className="p-3.5 sm:p-4">
                         <div className="font-bold text-[#001a3a] text-xs">
-                          {log.parent_name || 'ผู้ปกครอง'}
+                          {log.parent_name || '-'}
                         </div>
                         {log.child_name && log.child_name !== '-' && (
                           <div className="text-[11px] font-bold text-amber-900 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200 inline-flex items-center gap-1 mt-1 shadow-2xs">

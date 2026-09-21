@@ -82,6 +82,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
       
       const adminUser = store.getCurrentUser();
       const adminName = adminUser?.name || 'Admin';
+      const parent = child ? parentsList.find(p => p.id === child.parent_id || p.user_id === child.parent_id) : null;
       
       // Attempt to log to audit
       try {
@@ -89,6 +90,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
           id: `audit_${Date.now()}`,
           admin_name: adminName,
           action_type: 'cancel_booking',
+          parent_name: parent?.name,
           child_id: booking.child_id,
           child_name: childNameForAudit,
           course_name: booking.course_name,

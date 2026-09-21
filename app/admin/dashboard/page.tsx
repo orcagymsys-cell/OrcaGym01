@@ -254,9 +254,11 @@ function AdminDashboardContent() {
     await store.updateChild(adminBookingChild.id, { used_hours: newUsed });
 
     const user = store.getCurrentUser();
+    const parent = (parents || []).find(p => isChildOfParent(adminBookingChild, p) || p.id === adminBookingChild.parent_id);
     const newLog: AuditLog = {
       id: 'audit_' + Date.now(),
       admin_name: user?.name || 'แอดมิน Orca',
+      parent_name: parent?.name,
       child_id: adminBookingChild.id,
       child_name: `${adminBookingChild.full_name} (${adminBookingChild.nickname})`,
       hours_added: 0,
