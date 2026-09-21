@@ -16,8 +16,8 @@ export async function POST(request: Request) {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email.trim())
-      .eq('phone_number', phone_number.trim())
+      .eq('email', String(email).trim())
+      .eq('phone_number', String(phone_number).trim())
       .single();
 
     if (userError || !user) {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'OrcaGym <onboarding@resend.dev>',
-      to: email.trim(),
+      to: String(email).trim(),
       subject: 'รหัสผ่านใหม่สำหรับการเข้าสู่ระบบ ORCA GYMNASTICS',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">

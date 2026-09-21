@@ -34,14 +34,14 @@ export async function POST(request: Request) {
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('username', username.trim())
+      .eq('username', String(username).trim())
       .single();
 
     if (error || !user) {
       return NextResponse.json({ error: 'ไม่พบชื่อผู้ใช้งานนี้ในระบบ (User not found)' }, { status: 401 });
     }
 
-    if (password && user.password && password.trim() !== user.password) {
+    if (!password || String(password).trim() !== String(user.password || '').trim()) {
       return NextResponse.json({ error: 'รหัสผ่านไม่ถูกต้อง (Invalid password)' }, { status: 401 });
     }
 
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (e: any) {
+    console.error("Login API Error:", e);
     return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
