@@ -376,8 +376,7 @@ function AdminDashboardContent() {
 
     const cleanupRealtime = setupRealtimeSubscriptions(fetchDataBackground);
 
-    // Fallback: poll every 15 seconds in case Supabase Realtime is disabled on the project
-    const pollInterval = setInterval(fetchDataBackground, 15000);
+    
 
     let syncChannel: BroadcastChannel | null = null;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -388,7 +387,7 @@ function AdminDashboardContent() {
     return () => {
       if (cleanupRealtime) cleanupRealtime();
       if (syncChannel) syncChannel.close();
-      clearInterval(pollInterval);
+      
     };
   }, [router, selectedDate]);
 

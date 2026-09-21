@@ -144,11 +144,11 @@ export default function HomePage() {
       loadData();
     });
 
-    const pollInterval = setInterval(loadData, 15000);
+    
 
     return () => {
       if (cleanupRealtime) cleanupRealtime();
-      clearInterval(pollInterval);
+      
     };
   }, []);
 
