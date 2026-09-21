@@ -685,6 +685,18 @@ function AdminDashboardContent() {
       payment_bank: selectedBank || undefined,
       payment_datetime: paymentDateTime || undefined,
       payment_slip: paymentSlipFile || undefined,
+      payment_history: [{
+        id: 'init_' + Date.now(),
+        purchased_hours: Number(hoursToAdd),
+        course_name: courseName,
+        payment_amount: paymentAmount ? Number(paymentAmount) : undefined,
+        payment_ref_no: paymentRefNo.trim() || undefined,
+        payment_payer_name: paymentPayerName.trim() || undefined,
+        payment_bank: selectedBank || undefined,
+        payment_datetime: paymentDateTime || undefined,
+        payment_slip: paymentSlipFile || undefined,
+        created_at: new Date().toISOString(),
+      }],
       created_at: new Date().toISOString(),
     };
 
