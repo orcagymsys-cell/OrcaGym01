@@ -1001,6 +1001,20 @@ function AdminDashboardContent() {
       return;
     }
 
+    const mainCourseConfig = coursesListGlobal.find(c => 
+      c.display_title.toLowerCase().includes(courseName.toLowerCase()) || 
+      c.internal_name.toLowerCase().includes(courseName.toLowerCase())
+    );
+    const pricingOpt = mainCourseConfig?.pricing_options?.find((po: any) => Number(po.times) === Number(hoursToAdd));
+    const isFreeTrial = pricingOpt?.tag?.toLowerCase().includes('free trial') || pricingOpt?.tag?.toLowerCase().includes('free');
+    
+    if (!isFreeTrial && hoursToAdd) {
+      if (!topUpPaymentAmount) {
+        showToast('กรุณากรอก ยอดเงินที่โอน (หากเป็นคลาสฟรี กรุณาเลือกตัวเลือกโควต้าที่มีคำว่า ฟรี)');
+        return;
+      }
+    }
+
     const adminUser = store.getCurrentUser();
     const selectedBank = topUpPaymentBank === 'อื่นๆ (ระบุ)' ? (topUpPaymentBankOther ? `อื่นๆ (${topUpPaymentBankOther})` : 'อื่นๆ') : topUpPaymentBank;
 
