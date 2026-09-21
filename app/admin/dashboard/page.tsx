@@ -650,6 +650,15 @@ function AdminDashboardContent() {
       if (!confirmed) return;
     }
 
+    const confirmMsg = `โปรดตรวจสอบข้อมูลก่อนบันทึก (สร้างบัญชีใหม่):
+- ชื่อผู้ปกครอง: ${newParentName}
+- คลาส: ${courseName}
+- โควต้า: ${hoursToAdd} ครั้ง
+- ยอดเงินโอน: ${paymentAmount ? '฿' + Number(paymentAmount).toLocaleString() : '0 บาท'}
+
+ยืนยันการสร้างบัญชีผู้ปกครองใหม่หรือไม่?`;
+    if (!window.confirm(confirmMsg)) return;
+
     let autoUsername = getAutoUsername(newParentEmail);
     
     // Check for duplicate username and auto-increment if needed (e.g. napaporn -> napaporn01)
@@ -942,10 +951,21 @@ function AdminDashboardContent() {
       }
     }
 
-    const adminUser = store.getCurrentUser();
     const oldHours = editingParent.purchased_hours || 0;
     const newHours = editPurchasedHours !== '' ? Number(editPurchasedHours) : 0;
     const quotaChanged = oldHours !== newHours;
+
+    if (quotaChanged || (editPaymentAmount && Number(editPaymentAmount) !== Number(editingParent.payment_history?.[0]?.payment_amount))) {
+      const confirmMsg = `โปรดตรวจสอบข้อมูลก่อนบันทึก (แก้ไขข้อมูล):
+- ชื่อผู้ปกครอง: ${editName}
+- โควต้าเดิม: ${oldHours} ครั้ง -> โควต้าใหม่: ${newHours} ครั้ง
+- ยอดเงิน: ${editPaymentAmount ? '฿' + Number(editPaymentAmount).toLocaleString() : 'ไม่ได้ระบุ'}
+
+ยืนยันการบันทึกข้อมูลหรือไม่?`;
+      if (!window.confirm(confirmMsg)) return;
+    }
+
+    const adminUser = store.getCurrentUser();
 
     let noteMsg = 'แก้ไขข้อมูลผู้ปกครอง/ตะกร้าครอบครัว';
     let addedHrs = 0;
@@ -1014,6 +1034,18 @@ function AdminDashboardContent() {
         return;
       }
     }
+    const confirmTargetName = topUpChild 
+      ? `น้อง ${topUpChild.nickname} (ผู้ปกครอง: ${topUpParent?.name || 'ไม่ระบุ'})` 
+      : `ผู้ปกครอง: ${topUpParent?.name}`;
+    
+    const confirmMsg = `โปรดตรวจสอบข้อมูลก่อนบันทึก (เติมโควต้า):
+- เป้าหมาย: ${confirmTargetName}
+- คลาส: ${courseName}
+- โควต้า: ${hoursToAdd} ครั้ง
+- ยอดเงินโอน: ${topUpPaymentAmount ? '฿' + Number(topUpPaymentAmount).toLocaleString() : '0 บาท'}
+
+ยืนยันการบันทึกข้อมูลหรือไม่?`;
+    if (!window.confirm(confirmMsg)) return;
 
     const adminUser = store.getCurrentUser();
     const selectedBank = topUpPaymentBank === 'อื่นๆ (ระบุ)' ? (topUpPaymentBankOther ? `อื่นๆ (${topUpPaymentBankOther})` : 'อื่นๆ') : topUpPaymentBank;
