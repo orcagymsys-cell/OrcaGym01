@@ -44,6 +44,7 @@ export default function BookingCalendarPage() {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const resolvedChildId = decodeURIComponent(childId || '').trim();
+  const isAdmin = typeof window !== 'undefined' ? store.getCurrentUser()?.role === 'admin' : false;
 
   const [child, setChild] = useState<Child | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -126,7 +127,7 @@ export default function BookingCalendarPage() {
       return;
     }
 
-    if (selectedDate < minParentDate) {
+    if (!isAdmin && selectedDate < minParentDate) {
       setAlertModalText(
         '⚠️ การจองคลาสเรียนผ่านระบบออนไลน์ต้องจองล่วงหน้าอย่างน้อย 1 วัน (ไม่สามารถจองคลาสของวันนี้หรือวันพรุ่งนี้ได้)\n\nหากต้องการจองคลาสเรียนฉุกเฉิน กรุณาติดต่อ Admin เท่านั้น'
       );
@@ -374,7 +375,7 @@ export default function BookingCalendarPage() {
             const dayNum = idx + 1;
             const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
             const isSelected = dStr === selectedDate;
-            const isTooEarly = dStr < minParentDate;
+            const isTooEarly = !isAdmin && dStr < minParentDate;
 
             return (
               <button
