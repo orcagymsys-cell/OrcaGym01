@@ -319,6 +319,7 @@ export default function AuditPage() {
                   const isCancelBooking = log.note?.includes('ยกเลิก');
                   const isEdit = log.note?.includes('แก้ไข');
                   const isDelete = log.note?.includes('ลบ');
+                  const isAdminBook = log.note?.includes('จองเรียนรอบ') || log.note?.includes('จองคลาส');
                   
                   const tsFromId = log.id.startsWith('audit_curr') ? null : (log.id.startsWith('audit_') ? parseInt(log.id.replace('audit_', '')) : null);
                   const validTs = tsFromId && !isNaN(tsFromId) ? new Date(tsFromId).toISOString() : null;
@@ -359,6 +360,11 @@ export default function AuditPage() {
                           <span className="bg-amber-50 text-amber-700 border border-amber-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
                             <span>✏️</span>
                             <span>แก้ไขข้อมูล</span>
+                          </span>
+                        ) : isAdminBook ? (
+                          <span className="bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
+                            <span>📅</span>
+                            <span>จองคลาสแทน</span>
                           </span>
                         ) : (
                           <span className="bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 shadow-2xs">
