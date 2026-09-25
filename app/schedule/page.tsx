@@ -328,7 +328,7 @@ export default function SchedulePage() {
                                   </div>
                                 ) : (
                                   slotCourses.map((c, idx) => {
-                                    const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && b.time_slot === c.time);
+                                    const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && (b.time_slot || '').replace(/:/g, '.') === (c.time || '').replace(/:/g, '.'));
                                     
                                     if (bookedForThisSlot.length > 0) {
                                       return bookedForThisSlot.map((b, bIdx) => {
