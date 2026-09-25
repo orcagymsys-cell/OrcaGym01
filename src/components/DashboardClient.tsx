@@ -487,11 +487,16 @@ export default function DashboardClient({
                       };
 
                       const startTimesMatchLocal = (slotTime: string, matrixTime: string) => {
-                        const normSlot = (slotTime || '').replace(/\./g, ':').trim();
-                        const normMatrix = (matrixTime || '').replace(/\./g, ':').trim();
+                        const normSlot = (slotTime || '').replace(/\./g, ':').replace(/\s+/g, '');
+                        const normMatrix = (matrixTime || '').replace(/\./g, ':').replace(/\s+/g, '');
                         if (!normSlot || !normMatrix) return false;
+                        
+                        const pad = (t: string) => t.length === 4 && t.charAt(1) === ':' ? '0' + t : t;
                         if (normSlot === normMatrix) return true;
-                        return normSlot.split('-')[0].trim() === normMatrix.split('-')[0].trim();
+                        
+                        const slotStart = normSlot.split('-')[0];
+                        const matrixStart = normMatrix.split('-')[0];
+                        return pad(slotStart) === pad(matrixStart);
                       };
 
                       const getBookingsForCell = (dayCode: string, timeSlot: string) => {

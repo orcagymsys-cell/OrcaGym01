@@ -35,18 +35,21 @@ function formatDisplayDate(dateStr: string): string {
 
 function normalizeTime(t?: string): string {
   if (!t) return '';
-  return t.replace(/\./g, ':').trim();
+  return t.replace(/\./g, ':').replace(/\s+/g, '');
 }
 
 function startTimesMatch(slotTime: string, matrixTime: string): boolean {
   const normSlot = normalizeTime(slotTime);
   const normMatrix = normalizeTime(matrixTime);
   if (!normSlot || !normMatrix) return false;
+  
+  const pad = (t: string) => t.length === 4 && t.charAt(1) === ':' ? '0' + t : t;
+
   if (normSlot === normMatrix) return true;
 
-  const slotStart = normSlot.split('-')[0].trim();
-  const matrixStart = normMatrix.split('-')[0].trim();
-  return slotStart === matrixStart;
+  const slotStart = normSlot.split('-')[0];
+  const matrixStart = normMatrix.split('-')[0];
+  return pad(slotStart) === pad(matrixStart);
 }
 
 export default function ParentScheduleView({
