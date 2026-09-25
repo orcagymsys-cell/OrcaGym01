@@ -56,7 +56,7 @@ export interface GymClassPricing {
 export interface GymClassScheduleRow {
   id: string;
   label: string; // e.g. "Tuesday - Friday"
-  slots: string[]; // e.g. ["10:30-12:00", "14:30-16:00"]
+  slots: string[]; // e.g. ["10.30-12.00", "14.30-16.00"]
   tag?: string; // e.g. "Tue-Wed" under a slot
   tagIndex?: number; // Which slot index has the tag
 }

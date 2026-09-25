@@ -167,7 +167,7 @@ export default function AdminScheduleMatrix({
   };
 
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-  const timeslots = ['09:00-10:30', '10:30-12:00', '12:00-13:30', '13:00-14:30', '14:30-16:00', '16:00-17:00', '17:30-19:30'];
+  const timeslots = ['09.00-10.30', '10.30-12.00', '12.00-13.30', '13.00-14.30', '14.30-16.00', '16.00-17.00', '17.30-19.30'];
 
   const getClassesForCell = (day: string, time: string) => {
     const matchedMap = new Map<string, { gymClass: GymClass, tag?: string }>();
@@ -202,7 +202,7 @@ export default function AdminScheduleMatrix({
 
     // Fallback to legacy schedules table if scheduleGrid matched nothing
     if (matchedMap.size === 0) {
-      const [start] = time.split('-');
+      const [start] = normalizeTime(time).split('-');
       const sch = schedules.find(s => s.day_of_week === day && s.start_time === start);
       if (sch) {
         const cls = classes.find(c => c.id === sch.class_id);
@@ -638,7 +638,7 @@ export default function AdminScheduleMatrix({
                       const child = childrenData.find(c => c.id === bk.child_id);
                       const parent = parents.find(p => p.id === child?.parent_id);
                       const gymClass = classes.find(c => c.id === (bk as any).class_id || c.id === bk.schedule_id) || classes[0];
-                      const timeSlot = (bk as any).time_slot || (bk as any).timeSlot || '10:30-12:00';
+                      const timeSlot = (bk as any).time_slot || (bk as any).timeSlot || '10.30-12.00';
 
                       let displayDateStr = bk.date;
                       if (bk.date && bk.date.includes('-')) {

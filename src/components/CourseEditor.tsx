@@ -226,7 +226,7 @@ export default function CourseEditor({ initialData }: { initialData?: any }) {
                 <div className="flex flex-wrap gap-2 items-center">
                   {row.slots.map((slot, sIndex) => (
                     <div key={sIndex} className="flex items-center space-x-1 bg-white p-1 rounded border">
-                      <input type="text" placeholder="Time (e.g. 10:30-12:00)" value={slot} onChange={e => updateSlot(rIndex, sIndex, e.target.value)} className="w-32 p-1 text-sm outline-none" />
+                      <input type="text" placeholder="Time (e.g. 10.30-12.00)" value={slot} onChange={e => updateSlot(rIndex, sIndex, e.target.value)} className="w-32 p-1 text-sm outline-none" />
                       <button type="button" onClick={() => removeSlot(rIndex, sIndex)} className="text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
                     </div>
                   ))}

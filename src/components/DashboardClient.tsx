@@ -469,13 +469,13 @@ export default function DashboardClient({
                       ];
 
                       const timeslots = [
-                        '09:00-10:30',
-                        '10:30-12:00',
-                        '12:00-13:30',
-                        '13:00-14:30',
-                        '14:30-16:00',
-                        '16:00-17:00',
-                        '17:30-19:30'
+                        '09.00-10.30',
+                        '10.30-12.00',
+                        '12.00-13.30',
+                        '13.00-14.30',
+                        '14.30-16.00',
+                        '16.00-17.00',
+                        '17.30-19.30'
                       ];
 
                       const parseDayCodeLocal = (dateStr: string) => {
@@ -603,7 +603,7 @@ export default function DashboardClient({
                               <div className="divide-y divide-slate-100">
                                 {childBookings.map(bk => {
                                   const gymClass = classes.find(c => c.id === (bk as any).class_id || c.id === bk.schedule_id) || classes[0];
-                                  const slotTime = (bk as any).time_slot || (bk as any).timeSlot || '10:30-12:00';
+                                  const slotTime = (bk as any).time_slot || (bk as any).timeSlot || '10.30-12.00';
                                   
                                   let displayDateStr = bk.date;
                                   if (bk.date && bk.date.includes('-')) {

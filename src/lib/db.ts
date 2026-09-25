@@ -49,8 +49,8 @@ const defaultDb: DbSchema = {
         { id: 'p4', times: '24', fees: '14,400 THB (600)', duration: '6 Months', tag: 'free 2' },
       ],
       scheduleGrid: [
-        { id: 's1', label: 'Tuesday - Friday', slots: ['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'], tag: 'Tue-Wed', tagIndex: 3 },
-        { id: 's2', label: 'Saturday - Sunday', slots: ['9:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00'] },
+        { id: 's1', label: 'Tuesday - Friday', slots: ['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'], tag: 'Tue-Wed', tagIndex: 3 },
+        { id: 's2', label: 'Saturday - Sunday', slots: ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00'] },
       ]
     },
     { 
@@ -70,8 +70,8 @@ const defaultDb: DbSchema = {
         { id: 'm4', times: '24', fees: '15,600 THB (650)', duration: '6 Months', tag: 'free 2' },
       ],
       scheduleGrid: [
-        { id: 'ms1', label: 'Monday - Friday', slots: ['10:30-12:30', '17:30-19:30', '', ''] },
-        { id: 'ms2', label: 'Saturday - Sunday', slots: ['10:30-12:30', '16:00-18:00', '', ''] },
+        { id: 'ms1', label: 'Monday - Friday', slots: ['10.30-12.30', '17.30-19.30', '', ''] },
+        { id: 'ms2', label: 'Saturday - Sunday', slots: ['10.30-12.30', '16.00-18.00', '', ''] },
       ]
     }
   ],

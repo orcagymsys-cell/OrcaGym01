@@ -80,13 +80,13 @@ export default function ParentScheduleView({
   ];
 
   const timeslots = [
-    '09:00-10:30',
-    '10:30-12:00',
-    '12:00-13:30',
-    '13:00-14:30',
-    '14:30-16:00',
-    '16:00-17:00',
-    '17:30-19:30'
+    '09.00-10.30',
+    '10.30-12.00',
+    '12.00-13.30',
+    '13.00-14.30',
+    '14.30-16.00',
+    '16.00-17.00',
+    '17.30-19.30'
   ];
 
   const activeChild = childrenData.find(c => c.id === selectedChildId);
@@ -102,15 +102,15 @@ export default function ParentScheduleView({
 
       if (isCubs) {
         if ([2, 3, 4, 5].includes(targetDayNum)) {
-          return ['10:30-12:00', '14:30-16:00', '16:00-17:00'].some(t => startTimesMatch(t, timeSlot));
+          return ['10.30-12.00', '14.30-16.00', '16.00-17.00'].some(t => startTimesMatch(t, timeSlot));
         } else if ([6, 0].includes(targetDayNum)) {
-          return ['09:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00'].some(t => startTimesMatch(t, timeSlot));
+          return ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00'].some(t => startTimesMatch(t, timeSlot));
         }
       } else if (isMega) {
         if ([1, 2, 3, 4, 5].includes(targetDayNum)) {
-          return ['10:30-12:00', '17:30-19:30'].some(t => startTimesMatch(t, timeSlot));
+          return ['10.30-12.00', '17.30-19.30'].some(t => startTimesMatch(t, timeSlot));
         } else if ([6, 0].includes(targetDayNum)) {
-          return ['10:30-12:00', '16:00-17:00', '17:30-19:30'].some(t => startTimesMatch(t, timeSlot));
+          return ['10.30-12.00', '16.00-17.00', '17.30-19.30'].some(t => startTimesMatch(t, timeSlot));
         }
       } else {
         const openTimes = (cls as any).pricing_plans?.[0]?.times || [];
@@ -489,7 +489,7 @@ export default function ParentScheduleView({
             {filteredBookings.map(bk => {
               const child = childrenData.find(c => c.id === bk.child_id);
               const gymClass = classes.find(c => c.id === (bk as any).class_id || c.id === bk.schedule_id) || classes[0];
-              const slotTime = (bk as any).time_slot || (bk as any).timeSlot || '10:30-12:00';
+              const slotTime = (bk as any).time_slot || (bk as any).timeSlot || '10.30-12.00';
               return (
                 <div key={bk.id} className="py-3 flex items-center justify-between flex-wrap gap-2 hover:bg-slate-50 px-2 rounded-xl">
                   <div className="flex items-center space-x-3">
