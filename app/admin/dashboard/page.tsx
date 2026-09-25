@@ -176,7 +176,7 @@ function AdminDashboardContent() {
   const [quotaCourse, setQuotaCourse] = useState('Orca Cubs');
   const [quotaDayType, setQuotaDayType] = useState<string>('Tuesday');
   const [quotaSpecificDate, setQuotaSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [quotaSlot, setQuotaSlot] = useState('10:30-12:00');
+  const [quotaSlot, setQuotaSlot] = useState('10.30-12.00');
   const [quotaNumber, setQuotaNumber] = useState(10);
   const [quotas, setQuotas] = useState<Record<string, number>>({});
 
@@ -192,7 +192,7 @@ function AdminDashboardContent() {
   // Admin Booking Override Modal State
   const [adminBookingChild, setAdminBookingChild] = useState<Child | null>(null);
   const [adminBookingDate, setAdminBookingDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [adminBookingSlot, setAdminBookingSlot] = useState<string>('10:30-12:00');
+  const [adminBookingSlot, setAdminBookingSlot] = useState<string>('10.30-12.00');
 
   const handleAdminBookSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1295,7 +1295,7 @@ function AdminDashboardContent() {
   // Group by time slot
   const slotCountMap: Record<string, number> = {};
   activeBookings.forEach(b => {
-    const slot = b.time_slot || '10:30-12:00';
+    const slot = b.time_slot || '10.30-12.00';
     slotCountMap[slot] = (slotCountMap[slot] || 0) + 1;
   });
   const sortedPopularSlots = Object.entries(slotCountMap).sort((a, b) => b[1] - a[1]);
@@ -2614,7 +2614,7 @@ function AdminDashboardContent() {
                                                       onClick={() => {
                                                         setAdminBookingChild(child);
                                                         setAdminBookingSlot(
-                                                          child.course_name?.includes('Mega') ? '10:00-12:00' : '10:30-12:00'
+                                                          child.course_name?.includes('Mega') ? '10:00-12:00' : '10.30-12.00'
                                                         );
                                                       }}
                                                       className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer"
@@ -2969,7 +2969,7 @@ function AdminDashboardContent() {
                     if (newCourse === 'Mega Orca') {
                       setQuotaSlot('10:00-12:00');
                     } else {
-                      setQuotaSlot('10:30-12:00');
+                      setQuotaSlot('10.30-12.00');
                     }
                   }}
                   className="w-full h-11 px-4 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
@@ -2994,16 +2994,16 @@ function AdminDashboardContent() {
                     <>
                       <option value="10:00-12:00">10:00 - 12:00 น. (รอบเช้า Mega)</option>
                       <option value="14:00-16:00">14:00 - 16:00 น. (รอบบ่ายเสาร์-อาทิตย์ Mega)</option>
-                      <option value="17:30-19:30">17:30 - 19:30 น. (รอบค่ำ Mega)</option>
+                      <option value="17.30-19.30">17:30 - 19:30 น. (รอบค่ำ Mega)</option>
                     </>
                   ) : (
                     <>
-                      <option value="10:30-12:00">10:30 - 12:00 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="14:30-16:00">14:30 - 16:00 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="16:00-17:30">16:00 - 17:30 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="17:30-19:30">17:30 - 19:30 น. (รอบ 2 ชม. Cubs)</option>
-                      <option value="09:00-10:30">09:00 - 10:30 น. (รอบเช้าเสาร์-อาทิตย์)</option>
-                      <option value="13:00-14:30">13:00 - 14:30 น. (รอบบ่ายเสาร์-อาทิตย์)</option>
+                      <option value="10.30-12.00">10:30 - 12:00 น. (รอบ 1.5 ชม. Cubs)</option>
+                      <option value="14.30-16.00">14:30 - 16:00 น. (รอบ 1.5 ชม. Cubs)</option>
+                      <option value="16.00-17.30">16:00 - 17:30 น. (รอบ 1.5 ชม. Cubs)</option>
+                      <option value="17.30-19.30">17:30 - 19:30 น. (รอบ 2 ชม. Cubs)</option>
+                      <option value="09.00-10.30">09:00 - 10:30 น. (รอบเช้าเสาร์-อาทิตย์)</option>
+                      <option value="13.00-14.30">13:00 - 14:30 น. (รอบบ่ายเสาร์-อาทิตย์)</option>
                       <option value="10:00-12:00">10:00 - 12:00 น.</option>
                     </>
                   )}
@@ -3065,7 +3065,7 @@ function AdminDashboardContent() {
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'].map(slot => {
+                      {['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'].map(slot => {
                         const val = quotas[`Everyday_Orca Cubs_${slot}`]
                           ?? quotas[`Orca Cubs_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
@@ -3092,7 +3092,7 @@ function AdminDashboardContent() {
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['10:00-12:00', '14:00-16:00', '17:30-19:30'].map(slot => {
+                      {['10:00-12:00', '14:00-16:00', '17.30-19.30'].map(slot => {
                         const val = quotas[`Everyday_Mega Orca_${slot}`]
                           ?? quotas[`Mega Orca_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
@@ -3119,7 +3119,7 @@ function AdminDashboardContent() {
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['13:00-14:30', '17:30-19:00'].map(slot => {
+                      {['13.00-14.30', '17:30-19:00'].map(slot => {
                         const defaultFlipQuota = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10;
                         const val = quotas[`Everyday_ORCA FLIP_${slot}`]
                           ?? quotas[`ORCA FLIP_${slot}`]
@@ -3975,16 +3975,16 @@ function AdminDashboardContent() {
                     <>
                       <option value="10:00-12:00">10:00-12:00 (Mega Orca)</option>
                       <option value="14:00-16:00">14:00-16:00 (เสาร์-อาทิตย์)</option>
-                      <option value="17:30-19:30">17:30-19:30 (อังคาร-ศุกร์)</option>
+                      <option value="17.30-19.30">17.30-19.30 (อังคาร-ศุกร์)</option>
                     </>
                   ) : (
                     <>
-                      <option value="09:00-10:30">09:00-10:30 (เสาร์-อาทิตย์)</option>
-                      <option value="10:30-12:00">10:30-12:00</option>
-                      <option value="13:00-14:30">13:00-14:30 (เสาร์-อาทิตย์)</option>
-                      <option value="14:30-16:00">14:30-16:00</option>
-                      <option value="16:00-17:30">16:00-17:30</option>
-                      <option value="17:30-19:30">17:30-19:30</option>
+                      <option value="09.00-10.30">09.00-10.30 (เสาร์-อาทิตย์)</option>
+                      <option value="10.30-12.00">10.30-12.00</option>
+                      <option value="13.00-14.30">13.00-14.30 (เสาร์-อาทิตย์)</option>
+                      <option value="14.30-16.00">14.30-16.00</option>
+                      <option value="16.00-17.30">16.00-17.30</option>
+                      <option value="17.30-19.30">17.30-19.30</option>
                     </>
                   )}
                 </select>

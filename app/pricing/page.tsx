@@ -236,14 +236,14 @@ export default function PricingPage() {
       {
         id: 'sg_1',
         day_label: 'Tuesday - Friday',
-        time_slots: ['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'],
+        time_slots: ['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'],
         highlight_tag: 'Tue-Wed',
         highlight_slot_no: 4
       },
       {
         id: 'sg_2',
         day_label: 'Saturday - Sunday',
-        time_slots: ['9:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00'],
+        time_slots: ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00'],
         highlight_tag: '',
         highlight_slot_no: ''
       }
@@ -279,14 +279,14 @@ export default function PricingPage() {
             {
               id: 'sg_1',
               day_label: 'Tuesday - Friday',
-              time_slots: ['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'],
+              time_slots: ['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'],
               highlight_tag: 'Tue-Wed',
               highlight_slot_no: 4
             },
             {
               id: 'sg_2',
               day_label: 'Saturday - Sunday',
-              time_slots: ['9:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00'],
+              time_slots: ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00'],
               highlight_tag: '',
               highlight_slot_no: ''
             }
@@ -323,7 +323,7 @@ export default function PricingPage() {
       {
         id: 'sg_' + Date.now() + Math.random(),
         day_label: 'Tuesday - Friday',
-        time_slots: ['10:30-12:00'],
+        time_slots: ['10.30-12.00'],
         highlight_tag: '',
         highlight_slot_no: ''
       }
@@ -609,14 +609,14 @@ export default function PricingPage() {
                     {
                       id: 'sg_cubs_1',
                       day_label: 'Tuesday - Friday',
-                      time_slots: ['10:30-12:00', '14:30-16:00', '16:00-17:30', '17:30-19:30'],
+                      time_slots: ['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'],
                       highlight_tag: 'Tue-Wed',
                       highlight_slot_no: 4
                     },
                     {
                       id: 'sg_cubs_2',
                       day_label: 'Saturday - Sunday',
-                      time_slots: ['9:00-10:30', '10:30-12:00', '13:00-14:30', '14:30-16:00']
+                      time_slots: ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00']
                     }
                   ];
 
@@ -624,12 +624,12 @@ export default function PricingPage() {
                     {
                       id: 'sg_mega_1',
                       day_label: 'Tuesday - Friday',
-                      time_slots: ['10:30-12:30', '17:30-19:30', '', '']
+                      time_slots: ['10.30-12.30', '17.30-19.30', '', '']
                     },
                     {
                       id: 'sg_mega_2',
                       day_label: 'Saturday - Sunday',
-                      time_slots: ['10:30-12:30', '16:00-18:00', '', '']
+                      time_slots: ['10.30-12.30', '16.00-18.00', '', '']
                     }
                   ];
 
@@ -918,7 +918,7 @@ export default function PricingPage() {
                               value={slot}
                               onChange={(e) => handleTimeSlotValueChange(group.id!, sIdx, e.target.value)}
                               className="w-24 sm:w-28 text-xs font-bold text-[#001a3a] outline-none bg-transparent"
-                              placeholder="10:30-12:00"
+                              placeholder="10.30-12.00"
                             />
                             <button
                               type="button"

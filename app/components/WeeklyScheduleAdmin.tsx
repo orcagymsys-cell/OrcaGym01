@@ -27,18 +27,18 @@ function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
   if (!isWeekend) {
     if (colIndex === 0) return [
       { course: 'Mega Orca', time: '10:00-12:00' },
-      { course: 'Orca Cubs', time: '10:30-12:00' }
+      { course: 'Orca Cubs', time: '10.30-12.00' }
     ];
-    if (colIndex === 1) return [{ course: 'Orca Cubs', time: '14:30-16:00' }];
-    if (colIndex === 2) return [{ course: 'Orca Cubs', time: '16:00-17:30' }];
+    if (colIndex === 1) return [{ course: 'Orca Cubs', time: '14.30-16.00' }];
+    if (colIndex === 2) return [{ course: 'Orca Cubs', time: '16.00-17.30' }];
     if (colIndex === 3) {
       const res = [
-        { course: 'Mega Orca', time: '17:30-19:30' }
+        { course: 'Mega Orca', time: '17.30-19.30' }
       ];
       if (dayKey === 2 || dayKey === 3) { // Tuesday or Wednesday
         res.push({ course: 'Orca Cubs', time: '17:30-19:00' });
       } else {
-        res.push({ course: 'Orca Cubs', time: '17:30-19:30' }); // fallback
+        res.push({ course: 'Orca Cubs', time: '17.30-19.30' }); // fallback
       }
       if (dayKey === 4 || dayKey === 5) { // Thursday or Friday
         res.push({ course: 'ORCA FLIP', time: '17:30-19:00' });
@@ -47,15 +47,15 @@ function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
     }
   } else {
     if (colIndex === 0) return [
-      { course: 'Orca Cubs', time: '09:00-10:30' },
+      { course: 'Orca Cubs', time: '09.00-10.30' },
       { course: 'Mega Orca', time: '10:00-12:00' },
-      { course: 'Orca Cubs', time: '10:30-12:00' }
+      { course: 'Orca Cubs', time: '10.30-12.00' }
     ];
     if (colIndex === 1) return [
-      { course: 'Orca Cubs', time: '13:00-14:30' },
-      { course: 'ORCA FLIP', time: '13:00-14:30' },
+      { course: 'Orca Cubs', time: '13.00-14.30' },
+      { course: 'ORCA FLIP', time: '13.00-14.30' },
       { course: 'Mega Orca', time: '14:00-16:00' },
-      { course: 'Orca Cubs', time: '14:30-16:00' }
+      { course: 'Orca Cubs', time: '14.30-16.00' }
     ];
     if (colIndex === 2) return [];
     if (colIndex === 3) return [];
