@@ -328,7 +328,7 @@ export default function SchedulePage() {
                                   </div>
                                 ) : (
                                   slotCourses.map((c, idx) => {
-                                    const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && (b.time_slot || '').replace(/:/g, '.') === (c.time || '').replace(/:/g, '.'));
+                                    const bookedForThisSlot = dayBookings.filter(b => b.course_name === c.course && (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (c.time || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.'));
                                     
                                     if (bookedForThisSlot.length > 0) {
                                       return bookedForThisSlot.map((b, bIdx) => {

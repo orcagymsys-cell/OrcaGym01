@@ -169,7 +169,7 @@ export default function BookingCalendarPage() {
       );
       const defaultCourseCapacity = matchedCourse?.max_capacity || 10;
 
-      const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && (b.time_slot || '').replace(/:/g, '.') === (selectedSlot || '').replace(/:/g, '.') && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
+      const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (selectedSlot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
       
       const courseKeyName = freshChild.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -456,7 +456,7 @@ export default function BookingCalendarPage() {
                 ?? quotas[`${courseKeyName}_${slot}`]
                 ?? quotas[`${selectedDate}_${slot}`]
                 ?? defaultCourseCapacity;
-              const currentBookedCount = dateBookings.filter(b => (b.time_slot || '').replace(/:/g, '.') === (slot || '').replace(/:/g, '.') && b.status !== 'Cancelled').length;
+              const currentBookedCount = dateBookings.filter(b => (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') && b.status !== 'Cancelled').length;
               const isFull = currentBookedCount >= customQuota;
               const isSelected = selectedSlot === slot;
 

@@ -207,7 +207,7 @@ function AdminDashboardContent() {
     const existingDayBookings = await store.getBookings(undefined, adminBookingDate);
     
     // Check double booking for the specific child
-    const childAlreadyBooked = existingDayBookings.some(b => b.child_id === adminBookingChild.id && (b.time_slot || '').replace(/:/g, '.') === (adminBookingSlot || '').replace(/:/g, '.') && b.status !== 'Cancelled');
+    const childAlreadyBooked = existingDayBookings.some(b => b.child_id === adminBookingChild.id && (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (adminBookingSlot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') && b.status !== 'Cancelled');
     if (childAlreadyBooked) {
       showToast('⚠️ เด็กคนนี้ถูกจองในรอบเวลานี้ไปแล้ว ไม่สามารถจองซ้ำได้');
       return;
@@ -230,7 +230,7 @@ function AdminDashboardContent() {
       quotas[`${courseKeyName}_${adminBookingSlot}`] ??
       quotas[`${adminBookingDate}_${adminBookingSlot}`] ??
       defaultMaxCapacity;
-    const currentBooked = existingDayBookings.filter(b => (b.time_slot || '').replace(/:/g, '.') === (adminBookingSlot || '').replace(/:/g, '.') && b.status !== 'Cancelled').length;
+    const currentBooked = existingDayBookings.filter(b => (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (adminBookingSlot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') && b.status !== 'Cancelled').length;
 
     if (currentBooked >= maxQuota) {
       showToast(`🔒 รอบเวลา ${adminBookingSlot} ในวันที่ ${adminBookingDate} ที่นั่งเต็มแล้ว (${currentBooked}/${maxQuota})`);
