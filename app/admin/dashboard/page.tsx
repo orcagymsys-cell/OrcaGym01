@@ -3905,7 +3905,7 @@ function AdminDashboardContent() {
                             <div className="text-xs text-slate-500">{b.course_name}</div>
                           </div>
                           <div className="bg-blue-50 text-blue-800 font-bold px-3 py-1 rounded-lg text-xs whitespace-nowrap">
-                            {b.time_slot}
+                            {(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}
                           </div>
                         </div>
                       ))}

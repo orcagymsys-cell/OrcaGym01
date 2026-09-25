@@ -573,7 +573,7 @@ export default function BookingCalendarPage() {
               .map((b) => (
                 <div key={b.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
                   <div>
-                    <span className="text-emerald-700 font-extrabold">{b.booking_date}</span> | <span className="text-slate-800">{b.time_slot}</span>
+                    <span className="text-emerald-700 font-extrabold">{b.booking_date}</span> | <span className="text-slate-800">{(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}</span>
                     <div className="text-slate-500 font-normal">{b.course_name} {b.booked_by_role === 'admin' && '(Admin จองให้)'}</div>
                   </div>
 

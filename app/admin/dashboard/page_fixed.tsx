@@ -2314,7 +2314,7 @@ function AdminDashboardContent() {
                 <div key={b.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center text-sm border border-slate-200">
                   <div>
                     <span className="font-bold text-[#001a3a]">{b.child_nickname}</span> ({b.child_full_name})
-                    <div className="text-xs text-slate-500 font-normal mt-0.5">เธฃเธญเธเน€วลา: <strong>{b.time_slot}</strong> | เธลาส: {b.course_name}</div>
+                    <div className="text-xs text-slate-500 font-normal mt-0.5">เธฃเธญเธเน€วลา: <strong>{(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}</strong> | เธลาส: {b.course_name}</div>
                   </div>
                   <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-300">
                     โ… เธเธญเธเธชเธดเธ—เธเธดเนเนเธฅเนว

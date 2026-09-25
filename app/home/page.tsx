@@ -270,14 +270,14 @@ export default function HomePage() {
     if (booking.time_slot) {
       const parts = booking.time_slot.split('-');
       if (parts.length === 2) {
-        startTime = parts[0].replace(':', '') + '00';
-        endTime = parts[1].replace(':', '') + '00';
+        startTime = parts[0].replace(/[:.]/g, '').padStart(4, '0') + '00';
+        endTime = parts[1].replace(/[:.]/g, '').padStart(4, '0') + '00';
       }
     }
     const childObj = (children || []).find(c => c.id === booking.child_id);
     const childName = childObj?.nickname || booking.child_nickname || booking.child_full_name || '';
     const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childName}`);
-    const details = encodeURIComponent(`คลาส ${booking.course_name} เวลา ${booking.time_slot}`);
+    const details = encodeURIComponent(`คลาส ${booking.course_name} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}`);
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
   };
 
@@ -357,7 +357,7 @@ export default function HomePage() {
                   น้อง {(children || []).find(c => c.id === urgentAlertBooking.child_id)?.nickname || 'ไม่ระบุชื่อ'} คลาส {urgentAlertBooking.course_name}
                 </span>
                 <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-lg w-max mt-1">
-                  ⏰ เวลา {urgentAlertBooking.time_slot}
+                  ⏰ เวลา {(urgentAlertBooking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}
                 </span>
               </div>
             </div>
@@ -592,7 +592,7 @@ export default function HomePage() {
                       <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
                         <span>🗓️ {booking.booking_date}</span>
                         <span>|</span>
-                        <span>⏰ {booking.time_slot}</span>
+                        <span>⏰ {(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}</span>
                       </div>
                     </div>
                   </div>

@@ -207,7 +207,7 @@ export default function PricingPage() {
   }, []);
 
   const handleCancelBooking = async (b: Booking) => {
-    if (confirm(`คุณต้องการยกเลิกการจองเรียนของ "${b.child_nickname}" (วันที่ ${b.booking_date} เวลา ${b.time_slot}) ใช่หรือไม่?`)) {
+    if (confirm(`คุณต้องการยกเลิกการจองเรียนของ "${b.child_nickname}" (วันที่ ${b.booking_date} เวลา ${(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}) ใช่หรือไม่?`)) {
       await store.cancelBooking(b.id);
       showToast(`✅ ยกเลิกรายการจองของ ${b.child_nickname} เรียบร้อยแล้ว`);
       const bData = await store.getBookings();

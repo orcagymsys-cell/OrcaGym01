@@ -183,12 +183,12 @@ export default function StudentDashboardPage() {
     if (booking.time_slot) {
       const parts = booking.time_slot.split('-');
       if (parts.length === 2) {
-        startTime = parts[0].replace(':', '') + '00';
-        endTime = parts[1].replace(':', '') + '00';
+        startTime = parts[0].replace(/[:.]/g, '').padStart(4, '0') + '00';
+        endTime = parts[1].replace(/[:.]/g, '').padStart(4, '0') + '00';
       }
     }
     const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childNickname}`);
-    const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${booking.time_slot}`);
+    const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}`);
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
   };
 
@@ -879,7 +879,7 @@ function MyCourseWeeklyMatrix({
                   }
                 }
                 const text = encodeURIComponent(`คลาสเรียนยิมนาสติก - น้อง ${childNickname}`);
-                const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${booking.time_slot}`);
+                const details = encodeURIComponent(`คลาส ${booking.course_name || child.course_name} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}`);
                 return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
               };
 
@@ -892,7 +892,7 @@ function MyCourseWeeklyMatrix({
                       {isPast && <span className="ml-2 text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-black">เรียนแล้ว</span>}
                     </div>
                     <div className={`font-black text-lg sm:text-xl mb-1.5 ${isPast ? 'text-slate-600' : 'text-[#001a3a]'}`}>
-                      {b.time_slot}
+                      {(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}
                     </div>
                     <div className={`inline-block ${color.badge} text-xs px-2 py-0.5 rounded-md font-bold`}>
                       คลาส: {b.course_name || child.course_name}

@@ -94,7 +94,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
           child_id: booking.child_id,
           child_name: childNameForAudit,
           course_name: booking.course_name,
-          note: `ยกเลิกการจองเรียนวันที่ ${booking.booking_date} เวลา ${booking.time_slot} โดย Admin`
+          note: `ยกเลิกการจองเรียนวันที่ ${booking.booking_date} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} โดย Admin`
         });
       } catch (err) {
         console.error('Failed to log audit:', err);
@@ -116,7 +116,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   };
 
   const groupedBookings = filteredBookings.reduce((acc, b) => {
-    const key = `${b.booking_date} | ${b.time_slot} | ${b.course_name || 'Orca Cubs'}`;
+    const key = `${b.booking_date} | ${(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} | ${b.course_name || 'Orca Cubs'}`;
     if (!acc[key]) {
       acc[key] = {
         date: b.booking_date,
