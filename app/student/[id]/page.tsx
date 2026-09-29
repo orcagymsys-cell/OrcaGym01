@@ -211,7 +211,7 @@ export default function StudentDashboardPage() {
   );
   }
 
-  const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
+  const activeBookings = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled');
   const remaining = child.total_hours - activeBookings.length;
   const isCourseApproved = child.status === 'approved';
   const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
@@ -768,7 +768,7 @@ function MyCourseWeeklyMatrix({
   onClose?: () => void;
   onCancelBooking?: (id: string) => void;
 }) {
-  const activeBookings = bookings.filter(b => b.status !== 'Cancelled');
+  const activeBookings = bookings.filter(b => b.status !== 'Cancelled' && b.status !== 'cancelled');
   const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
 
   // Sort bookings chronologically

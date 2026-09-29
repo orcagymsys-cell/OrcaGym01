@@ -3806,7 +3806,7 @@ function AdminDashboardContent() {
       {viewDetailsChild && (() => {
         const c = viewDetailsChild;
         const p = (parents || []).find(parent => isChildOfParent(c, parent));
-        const cBookings = (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'Cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
+        const cBookings = (allBookings || []).filter(b => b.child_id === c.id && b.status !== 'Cancelled' && b.status !== 'cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
         
         let purchaseDateStr = '-';
         let expiryDateStr = '-';
