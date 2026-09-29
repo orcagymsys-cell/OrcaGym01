@@ -479,8 +479,8 @@ export default function HomePage() {
       {/* Notification Detail Modal */}
       {showNotificationModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl font-['Anuphan',sans-serif]">
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+          <div className="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl font-['Anuphan',sans-serif] max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 shrink-0">
               <h3 className="text-lg font-bold text-[#001a3a] flex items-center gap-2">
                 <span>🔔</span>
                 <span>รายละเอียดการแจ้งเตือนแพ็ก</span>
@@ -494,7 +494,7 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
               {familyBaskets.map((basket, bIdx) => {
                 const bExpiry = new Date(basket.created_at);
                 bExpiry.setMonth(bExpiry.getMonth() + basket.duration_months);
@@ -534,7 +534,8 @@ export default function HomePage() {
                 <div>คงเหลือครอบครัว: <strong className="text-blue-700">{familyBaskets.reduce((acc, b) => acc + b.remaining_hours, 0)} ครั้ง</strong></div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              </div>
+                <div className="flex gap-3 pt-4 mt-4 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowNotificationModal(false)}
