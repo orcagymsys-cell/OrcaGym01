@@ -2340,7 +2340,7 @@ function AdminDashboardContent() {
                                             <span>{basket.course_name.toUpperCase()}</span>
                                             <span className="text-slate-300">|</span>
                                             <span className="font-bold text-blue-700">
-                                              {basket.used_hours}/{basket.original_hours} ครั้ง ({basket.duration_text})
+                                              {basket.original_hours - basket.remaining_hours}/{basket.original_hours} ครั้ง ({basket.duration_text})
                                             </span>
                                           </span>
                                           <div className="text-[10px] text-slate-600 font-semibold pl-1">
