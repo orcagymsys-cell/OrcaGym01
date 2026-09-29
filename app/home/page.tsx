@@ -637,6 +637,7 @@ export default function HomePage() {
             const avatarSrc = child.photo_url || (child.avatar === 'boy' ? '🧒🏼' : '👧🏻');
             const remaining = child.total_hours - child.used_hours;
             const isApproved = child.status === 'approved';
+            const childBookings = (bookings || []).filter(b => b.child_id === child.id && b.status !== 'Cancelled' && b.status !== 'cancelled').sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
             let formattedDob = child.dob;
             if (child.dob && child.dob.includes('-')) {
@@ -709,9 +710,39 @@ export default function HomePage() {
                       👶 สิทธิ์ชั่วโมงเรียนของ {child.nickname}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-blue-900 bg-white px-2.5 py-0.5 rounded-xl text-xs font-black border border-sky-200 shadow-2xs">
-                        ใช้ไป {(bookings || []).filter(b => b.child_id === child.id && b.status !== 'Cancelled' && b.status !== 'cancelled').length}/{child.total_hours} ครั้ง
-                      </span>
+                      <div className="relative group flex items-center justify-center">
+                        <span className="text-blue-900 bg-white px-2.5 py-0.5 rounded-xl text-xs font-black border border-sky-200 shadow-2xs cursor-default">
+                          ใช้ไป {childBookings.length}/{child.total_hours} ครั้ง
+                        </span>
+                        
+                        {childBookings.length > 0 && (
+                          <div className="absolute bottom-full mb-2 right-0 hidden group-hover:block z-50 w-56 bg-[#001a3a] text-white p-3 rounded-2xl shadow-xl border border-blue-900">
+                            <div className="font-bold text-[11px] mb-2 border-b border-blue-800 pb-1 text-sky-200 flex justify-between items-center">
+                              <span>ประวัติการใช้โควต้า</span>
+                              <span className="bg-blue-800 text-white px-1.5 py-0.5 rounded-md text-[9px]">{childBookings.length} ครั้ง</span>
+                            </div>
+                            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
+                              {childBookings.map((bk, i) => {
+                                const bd = new Date(bk.booking_date);
+                                const bdStr = bd.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit'});
+                                const tm = (bk.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                                return (
+                                  <div key={bk.id} className="flex justify-between items-center text-[10px]">
+                                    <div className="flex gap-1.5 items-center">
+                                      <span className="text-slate-500 font-bold w-3">{i + 1}.</span>
+                                      <span>{bdStr}</span>
+                                    </div>
+                                    <span className="font-bold text-emerald-300">
+                                      {tm}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="absolute -bottom-1 right-8 w-3 h-3 bg-[#001a3a] rotate-45 border-r border-b border-blue-900"></div>
+                          </div>
+                        )}
+                      </div>
                       {isApproved ? (
                         <span className="text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-emerald-300">
                           ✅ อนุมัติแล้ว
