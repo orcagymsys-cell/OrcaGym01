@@ -543,14 +543,7 @@ export default function HomePage() {
                 >
                   ปิดหน้าต่าง
                 </button>
-                <a
-                  href="https://line.me"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-3 bg-[#06C755] hover:bg-[#05b34c] text-white text-center font-bold text-xs rounded-full shadow-md cursor-pointer flex items-center justify-center gap-1"
-                >
-                  💬 ติดต่อแอดมินทาง LINE
-                </a>
+                
               </div>
             </div>
         </div>
