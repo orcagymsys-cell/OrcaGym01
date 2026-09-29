@@ -67,7 +67,16 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   });
 
   const handleCancelBooking = async (booking: Booking) => {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะยกเลิกการจองของน้อง ${booking.child_nickname} ในวันที่ ${booking.booking_date}?`)) return;
+    const bDate = new Date(booking.booking_date);
+    bDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (bDate.getTime() < today.getTime()) {
+      if (!confirm(`⚠️ คำเตือน: คลาสนี้เป็นคลาสในอดีต (วันที่ ${booking.booking_date}) ซึ่งเด็กอาจจะเข้าเรียนไปแล้ว\n\nการยกเลิกจะทำให้เด็กได้เครดิตคืนกลับไปในตะกร้า\n\nคุณแน่ใจจริงๆ หรือไม่ว่าต้องการยกเลิกคลาสนี้?`)) return;
+    } else {
+      if (!confirm(`คุณแน่ใจหรือไม่ที่จะยกเลิกการจองของน้อง ${booking.child_nickname} ในวันที่ ${booking.booking_date}?`)) return;
+    }
 
     try {
       const child = childrenList.find(c => c.id === booking.child_id);
