@@ -167,7 +167,7 @@ export default function AdminScheduleMatrix({
   };
 
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-  const timeslots = ['09.00-10.30', '10.30-12.00', '12.00-13.30', '13.00-14.30', '14.30-16.00', '16.00-17.00', '17.30-19.30'];
+  const timeslots = ['09.00-10.30', '10.30-12.00', '12.00-13.30', '13.00-14.30', '14.30-16.00', '16.00-17.00', '16.30-18.30', '17.30-19.30'];
 
   const getClassesForCell = (day: string, time: string) => {
     const matchedMap = new Map<string, { gymClass: GymClass, tag?: string }>();

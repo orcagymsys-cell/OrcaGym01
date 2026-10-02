@@ -86,6 +86,7 @@ export default function ParentScheduleView({
     '13.00-14.30',
     '14.30-16.00',
     '16.00-17.00',
+    '16.30-18.30',
     '17.30-19.30'
   ];
 
@@ -107,10 +108,10 @@ export default function ParentScheduleView({
           return ['09.00-10.30', '10.30-12.00', '13.00-14.30', '14.30-16.00'].some(t => startTimesMatch(t, timeSlot));
         }
       } else if (isMega) {
-        if ([1, 2, 3, 4, 5].includes(targetDayNum)) {
-          return ['10.30-12.00', '17.30-19.30'].some(t => startTimesMatch(t, timeSlot));
+        if ([2, 3, 4, 5].includes(targetDayNum)) {
+          return ['10.30-12.30', '17.30-19.30'].some(t => startTimesMatch(t, timeSlot));
         } else if ([6, 0].includes(targetDayNum)) {
-          return ['10.30-12.00', '16.00-17.00', '17.30-19.30'].some(t => startTimesMatch(t, timeSlot));
+          return ['14.30-16.30', '16.30-18.30'].some(t => startTimesMatch(t, timeSlot));
         }
       } else {
         const openTimes = (cls as any).pricing_plans?.[0]?.times || [];
