@@ -207,7 +207,71 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                       </td>
                     ) : (
                       COLUMNS.map(col => {
-                        const staticCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
+                        let staticCourses: {course: string, time: string}[] = [];
+                        const hasAnySchedule = courses.some(c => c.schedule_groups && c.schedule_groups.length > 0);
+                        
+                        if (!hasAnySchedule) {
+                          staticCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
+                        } else {
+                          courses.forEach(c => {
+                            if (c.schedule_groups && c.schedule_groups.length > 0) {
+                              c.schedule_groups.forEach((g: any) => {
+                                if (!g.day_label || !g.time_slots) return;
+                                const lbl = g.day_label.toLowerCase();
+                                const dayOfWeek = dayConfig.key;
+                                let isMatch = false;
+                                
+                                if (lbl.includes('everyday')) isMatch = true;
+                                else if (lbl.includes('weekend') && (dayOfWeek === 0 || dayOfWeek === 6)) isMatch = true;
+                                else if (lbl.includes('weekday') && dayOfWeek >= 1 && dayOfWeek <= 5) isMatch = true;
+                                else {
+                                  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                                  const shortDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                                  let matchFound = false;
+                                  
+                                  const parts = lbl.split('-').map((s: string) => s.trim());
+                                  if (parts.length === 2) {
+                                    const startIdx = days.findIndex(d => parts[0].includes(d)) !== -1 
+                                      ? days.findIndex(d => parts[0].includes(d)) : shortDays.findIndex(d => parts[0].includes(d));
+                                    const endIdx = days.findIndex(d => parts[1].includes(d)) !== -1
+                                      ? days.findIndex(d => parts[1].includes(d)) : shortDays.findIndex(d => parts[1].includes(d));
+                                      
+                                    if (startIdx !== -1 && endIdx !== -1) {
+                                      matchFound = true;
+                                      let curr = startIdx;
+                                      while (true) {
+                                        if (dayOfWeek === curr) { isMatch = true; break; }
+                                        if (curr === endIdx) break;
+                                        curr = (curr + 1) % 7;
+                                      }
+                                    }
+                                  }
+                                  if (!matchFound) {
+                                    if (days[dayOfWeek] && lbl.includes(days[dayOfWeek])) isMatch = true;
+                                    if (shortDays[dayOfWeek] && lbl.includes(shortDays[dayOfWeek])) isMatch = true;
+                                  }
+                                }
+
+                                if (isMatch) {
+                                  g.time_slots.forEach((t: string) => {
+                                    if (!t) return;
+                                    const hourMatch = t.match(/^0?(\d+)/);
+                                    const hour = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+                                    let targetCol = -1;
+                                    if (hour < 13) targetCol = 0;
+                                    else if (hour >= 13 && hour < 16) targetCol = 1;
+                                    else if (hour === 16) targetCol = 2;
+                                    else if (hour >= 17) targetCol = 3;
+                                    
+                                    if (targetCol === col.id) {
+                                      staticCourses.push({ course: c.display_title, time: t });
+                                    }
+                                  });
+                                }
+                              });
+                            }
+                          });
+                        }
                         const dynamicCourses = dayBookings
                           .filter(b => {
                             const hourMatch = (b.time_slot || '').match(/^0?(\d+)/);
