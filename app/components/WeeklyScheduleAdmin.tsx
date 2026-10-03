@@ -207,7 +207,42 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                       </td>
                     ) : (
                       COLUMNS.map(col => {
-                        const slotCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
+                        const staticCourses = getCoursesForLogicalSlot(col.id, dayConfig.key);
+                        const dynamicCourses = dayBookings
+                          .filter(b => {
+                            const hourMatch = (b.time_slot || '').match(/^0?(\d+)/);
+                            const hour = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+                            if (col.id === 0) return hour < 13;
+                            if (col.id === 1) return hour >= 13 && hour < 16;
+                            if (col.id === 2) return hour === 16;
+                            if (col.id === 3) return hour >= 17;
+                            return false;
+                          })
+                          .map(b => {
+                            let cName = b.course_name || 'Orca Cubs';
+                            if (cName.toLowerCase().includes('mega')) cName = 'Mega Orca';
+                            else if (cName.toLowerCase().includes('flip')) cName = 'ORCA FLIP';
+                            else if (cName.toLowerCase().includes('cubs')) cName = 'Orca Cubs';
+
+                            const dbCourse = courses.find(crs => crs.display_title.toLowerCase() === cName.toLowerCase());
+                            if (dbCourse) cName = dbCourse.display_title;
+
+                            return { 
+                              course: cName, 
+                              time: (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') 
+                            };
+                          });
+
+                        const mergedMap = new Map();
+                        staticCourses.forEach(c => {
+                          let cName = c.course;
+                          const dbCourse = courses.find(crs => crs.display_title.toLowerCase() === cName.toLowerCase());
+                          if (dbCourse) cName = dbCourse.display_title;
+                          const t = c.time.replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                          mergedMap.set(`${cName}|${t}`, { course: cName, time: t });
+                        });
+                        dynamicCourses.forEach(c => mergedMap.set(`${c.course}|${c.time}`, c));
+                        const slotCourses = Array.from(mergedMap.values()).sort((a, b) => a.time.localeCompare(b.time));
                         
                         return (
                           <td key={col.id} className="p-2 border-r-2 border-slate-100 last:border-r-0 align-top">
