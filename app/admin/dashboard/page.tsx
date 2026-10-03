@@ -2994,6 +2994,7 @@ function AdminDashboardContent() {
                     <>
                       <option value="10:00-12:00">10:00 - 12:00 น. (รอบเช้า Mega)</option>
                       <option value="14:00-16:00">14:00 - 16:00 น. (รอบบ่ายเสาร์-อาทิตย์ Mega)</option>
+                      <option value="16.30-18.30">16:30 - 18:30 น. (รอบเย็นเสาร์-อาทิตย์ Mega)</option>
                       <option value="17.30-19.30">17:30 - 19:30 น. (รอบค่ำ Mega)</option>
                     </>
                   ) : (
@@ -3092,7 +3093,7 @@ function AdminDashboardContent() {
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['10:00-12:00', '14:00-16:00', '17.30-19.30'].map(slot => {
+                      {['10:00-12:00', '14:00-16:00', '16.30-18.30', '17.30-19.30'].map(slot => {
                         const val = quotas[`Everyday_Mega Orca_${slot}`]
                           ?? quotas[`Mega Orca_${slot}`]
                           ?? quotas[`Everyday_${slot}`]
@@ -3990,6 +3991,7 @@ function AdminDashboardContent() {
                     <>
                       <option value="10:00-12:00">10:00-12:00 (Mega Orca)</option>
                       <option value="14:00-16:00">14:00-16:00 (เสาร์-อาทิตย์)</option>
+                      <option value="16.30-18.30">16.30-18.30 (เสาร์-อาทิตย์)</option>
                       <option value="17.30-19.30">17.30-19.30 (อังคาร-ศุกร์)</option>
                     </>
                   ) : (

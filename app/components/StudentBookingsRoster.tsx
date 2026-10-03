@@ -124,13 +124,19 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
       : { badgeBgColor: '#fdf4ff', badgeTextColor: '#a21caf', badgeBorderColor: '#fbcfe8' };
   };
 
+  const getNormalizedCourseName = (courseName?: string) => {
+    const raw = courseName || 'Orca Cubs';
+    return uniqueCoursesMap.get(raw.toLowerCase()) || raw;
+  };
+
   const groupedBookings = filteredBookings.reduce((acc, b) => {
-    const key = `${b.booking_date} | ${(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} | ${b.course_name || 'Orca Cubs'}`;
+    const normCourse = getNormalizedCourseName(b.course_name);
+    const key = `${b.booking_date} | ${(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} | ${normCourse}`;
     if (!acc[key]) {
       acc[key] = {
         date: b.booking_date,
         time: b.time_slot,
-        course: b.course_name || 'Orca Cubs',
+        course: normCourse,
         bookings: []
       };
     }

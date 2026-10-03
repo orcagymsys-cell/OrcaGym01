@@ -13,7 +13,7 @@ const COURSE_SCHEDULES: Record<string, { weekday: string[]; weekend: string[] }>
   },
   'Mega Orca': {
     weekday: ['10:00-12:00', '17.30-19.30'],
-    weekend: ['10:00-12:00', '14:00-16:00']
+    weekend: ['10:00-12:00', '14:00-16:00', '16.30-18.30']
   }
 };
 
