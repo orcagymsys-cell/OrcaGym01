@@ -26,6 +26,12 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
   const uniqueCoursesMap = new Map<string, string>();
   
   dbCourseNames.forEach(c => uniqueCoursesMap.set(c.toLowerCase(), c));
+  
+  // Hardcode official fallbacks in case DB is completely empty on first render (matches Pricing Page / WeeklyScheduleAdmin)
+  if (!uniqueCoursesMap.has('orca cubs')) uniqueCoursesMap.set('orca cubs', 'Orca Cubs');
+  if (!uniqueCoursesMap.has('mega orca')) uniqueCoursesMap.set('mega orca', 'Mega Orca');
+  if (!uniqueCoursesMap.has('orca flip')) uniqueCoursesMap.set('orca flip', 'ORCA FLIP');
+
   rawBookedCourses.forEach(c => {
     if (!uniqueCoursesMap.has(c.toLowerCase())) {
       uniqueCoursesMap.set(c.toLowerCase(), c);
@@ -131,11 +137,12 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
   const groupedBookings = filteredBookings.reduce((acc, b) => {
     const normCourse = getNormalizedCourseName(b.course_name);
-    const key = `${b.booking_date} | ${(b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} | ${normCourse}`;
+    const timeKey = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+    const key = `${b.booking_date} | ${timeKey} | ${normCourse}`;
     if (!acc[key]) {
       acc[key] = {
         date: b.booking_date,
-        time: b.time_slot,
+        time: timeKey,
         course: normCourse,
         bookings: []
       };
@@ -322,7 +329,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                       {group.course}
                     </span>
                     <span className="text-sm font-bold bg-blue-800 px-3 py-1.5 rounded-full print:bg-white print:text-black print:border print:border-black">
-                      👥 {group.bookings.length} คน
+                      👥 {group.bookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled').length} คน
                     </span>
                   </div>
                 </div>
