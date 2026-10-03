@@ -1990,9 +1990,11 @@ function AdminDashboardContent() {
                       onChange={(e) => setCourseName(e.target.value)}
                       className="flex-1 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
-                      <option value="Orca Cubs">Orca Cubs (4-10 ปี)</option>
-                      <option value="Orca Flip">Orca Flip (6-15+ ปี)</option>
-                      <option value="Mega Orca">Mega Orca (5-15 ปี)</option>
+                      {coursesListGlobal.map(c => (
+                        <option key={c.id} value={c.display_title}>
+                          {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
+                        </option>
+                      ))}
                     </select>
                     <select
                       value={hoursToAdd}
@@ -2974,8 +2976,11 @@ function AdminDashboardContent() {
                   }}
                   className="w-full h-11 px-4 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
                 >
-                  <option value="Orca Cubs">🐳 Orca Cubs (สำหรับน้องๆ อายุ 4-10 ปี)</option>
-                  <option value="Mega Orca">⚡ Mega Orca (สำหรับเลเวล 1 ขึ้นไป อายุ 5-15 ปี)</option>
+                  {coursesListGlobal.map(c => (
+                    <option key={c.id} value={c.display_title}>
+                      {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
+                    </option>
+                  ))}
                   <option value="All Courses">🌐 ทุกคลาสเรียน (All Courses)</option>
                 </select>
               </div>
@@ -2990,24 +2995,32 @@ function AdminDashboardContent() {
                   onChange={(e) => setQuotaSlot(e.target.value)}
                   className="w-full h-11 px-4 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
                 >
-                  {quotaCourse === 'Mega Orca' ? (
-                    <>
-                      <option value="10:00-12:00">10:00 - 12:00 น. (รอบเช้า Mega)</option>
-                      <option value="14:00-16:00">14:00 - 16:00 น. (รอบบ่ายเสาร์-อาทิตย์ Mega)</option>
-                      <option value="16.30-18.30">16:30 - 18:30 น. (รอบเย็นเสาร์-อาทิตย์ Mega)</option>
-                      <option value="17.30-19.30">17:30 - 19:30 น. (รอบค่ำ Mega)</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="10.30-12.00">10:30 - 12:00 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="14.30-16.00">14:30 - 16:00 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="16.00-17.30">16:00 - 17:30 น. (รอบ 1.5 ชม. Cubs)</option>
-                      <option value="17.30-19.30">17:30 - 19:30 น. (รอบ 2 ชม. Cubs)</option>
-                      <option value="09.00-10.30">09:00 - 10:30 น. (รอบเช้าเสาร์-อาทิตย์)</option>
-                      <option value="13.00-14.30">13:00 - 14:30 น. (รอบบ่ายเสาร์-อาทิตย์)</option>
-                      <option value="10:00-12:00">10:00 - 12:00 น.</option>
-                    </>
-                  )}
+                  {(() => {
+                    const allSlots = new Set<string>();
+                    if (quotaCourse === 'All Courses') {
+                      coursesListGlobal.forEach(c => {
+                        c.schedule_groups?.forEach((g: any) => {
+                          g.time_slots?.forEach((t: string) => allSlots.add(t));
+                        });
+                      });
+                    } else {
+                      const course = coursesListGlobal.find(c => c.display_title === quotaCourse);
+                      if (course && course.schedule_groups) {
+                        course.schedule_groups.forEach((g: any) => {
+                          g.time_slots?.forEach((t: string) => allSlots.add(t));
+                        });
+                      }
+                    }
+                    
+                    const sortedSlots = Array.from(allSlots).sort((a,b) => a.localeCompare(b));
+                    if (sortedSlots.length === 0) {
+                      return <option value="">(ไม่มีรอบเวลาในระบบ)</option>;
+                    }
+                    
+                    return sortedSlots.map(slot => (
+                      <option key={slot} value={slot}>{slot.replace(/\./g, ':')} น.</option>
+                    ));
+                  })()}
                 </select>
               </div>
 
@@ -3054,87 +3067,44 @@ function AdminDashboardContent() {
 
                 {/* Quota Cards for Orca Cubs & Mega Orca */}
                 <div className="space-y-3">
-                  {/* Orca Cubs Quota summary */}
-                  <div className="p-4 bg-sky-50/80 rounded-2xl border border-sky-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-extrabold text-sky-950">
-                      <span className="flex items-center gap-1.5">
-                        <span>🐳</span>
-                        <span>คลาส Orca Cubs (อายุ 4-10 ปี)</span>
-                      </span>
-                      <span className="bg-sky-200 text-sky-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('cubs'))?.max_capacity || 10} คน/รอบ
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['10.30-12.00', '14.30-16.00', '16.00-17.30', '17.30-19.30'].map(slot => {
-                        const val = quotas[`Everyday_Orca Cubs_${slot}`]
-                          ?? quotas[`Orca Cubs_${slot}`]
-                          ?? quotas[`Everyday_${slot}`]
-                          ?? defaultCubsQuota;
-                        return (
-                          <div key={slot} className="flex justify-between">
-                            <span>• รอบ {slot} น.</span>
-                            <strong className="text-[#001a3a]">{val} คน</strong>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {coursesListGlobal.map(c => {
+                    const allSlots = new Set<string>();
+                    if (c.schedule_groups && c.schedule_groups.length > 0) {
+                      c.schedule_groups.forEach((g: any) => {
+                        g.time_slots?.forEach((t: string) => allSlots.add(t));
+                      });
+                    }
+                    const sortedSlots = Array.from(allSlots).sort((a,b) => a.localeCompare(b));
+                    if (sortedSlots.length === 0) return null;
 
-                  {/* Mega Orca Quota summary */}
-                  <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-extrabold text-indigo-950">
-                      <span className="flex items-center gap-1.5">
-                        <span>⚡</span>
-                        <span>คลาส Mega Orca (อายุ 5-15 ปี)</span>
-                      </span>
-                      <span className="bg-indigo-200 text-indigo-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('mega'))?.max_capacity || 10} คน/รอบ
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['10:00-12:00', '14:00-16:00', '16.30-18.30', '17.30-19.30'].map(slot => {
-                        const val = quotas[`Everyday_Mega Orca_${slot}`]
-                          ?? quotas[`Mega Orca_${slot}`]
-                          ?? quotas[`Everyday_${slot}`]
-                          ?? defaultMegaQuota;
-                        return (
-                          <div key={slot} className="flex justify-between">
-                            <span>• รอบ {slot} น.</span>
-                            <strong className="text-[#001a3a]">{val} คน</strong>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Orca Flip Quota summary */}
-                  <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950">
-                      <span className="flex items-center gap-1.5">
-                        <span>🤸</span>
-                        <span>คลาส ORCA FLIP</span>
-                      </span>
-                      <span className="bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full text-[11px]">
-                        โควต้าตั้งต้น: {coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10} คน/รอบ
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 space-y-1 font-medium">
-                      {['13.00-14.30', '17:30-19:00'].map(slot => {
-                        const defaultFlipQuota = coursesListGlobal.find(c => c.display_title.toLowerCase().includes('flip'))?.max_capacity || 10;
-                        const val = quotas[`Everyday_ORCA FLIP_${slot}`]
-                          ?? quotas[`ORCA FLIP_${slot}`]
-                          ?? quotas[`Everyday_${slot}`]
-                          ?? defaultFlipQuota;
-                        return (
-                          <div key={slot} className="flex justify-between">
-                            <span>• รอบ {slot} น.</span>
-                            <strong className="text-[#001a3a]">{val} คน</strong>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    return (
+                      <div key={c.id} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-extrabold text-slate-900">
+                          <span className="flex items-center gap-1.5">
+                            <span>📘</span>
+                            <span>คลาส {c.display_title} {c.age_range ? `(${c.age_range})` : ''}</span>
+                          </span>
+                          <span className="bg-slate-200 text-slate-800 px-2.5 py-0.5 rounded-full text-[11px]">
+                            โควต้าตั้งต้น: {c.max_capacity || 10} คน/รอบ
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 space-y-1 font-medium">
+                          {sortedSlots.map(slot => {
+                            const val = quotas[`Everyday_${c.display_title}_${slot}`]
+                              ?? quotas[`${c.display_title}_${slot}`]
+                              ?? quotas[`Everyday_${slot}`]
+                              ?? c.max_capacity ?? 10;
+                            return (
+                              <div key={slot} className="flex justify-between">
+                                <span>• รอบ {slot} น.</span>
+                                <strong className="text-[#001a3a]">{val} คน</strong>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -3243,9 +3213,11 @@ function AdminDashboardContent() {
                     onChange={(e) => setCourseName(e.target.value)}
                     className="w-full h-11 px-3 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
                   >
-                    <option value="Orca Cubs">Orca Cubs (อายุ 4-10 ปี)</option>
-                    <option value="Orca Flip">Orca Flip (อายุ 6-15+ ปี)</option>
-                    <option value="Mega Orca">Mega Orca (อายุ 5-15 ปี)</option>
+                    {coursesListGlobal.map(c => (
+                      <option key={c.id} value={c.display_title}>
+                        {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
