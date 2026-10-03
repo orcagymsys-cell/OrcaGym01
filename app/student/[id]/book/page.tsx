@@ -171,7 +171,7 @@ export default function BookingCalendarPage() {
 
       const currentBookedCount = allSlotBookings.filter(b => b.booking_date === selectedDate && (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (selectedSlot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') && b.status !== 'Cancelled' && b.status !== 'cancelled').length;
       
-      const courseKeyName = freshChild.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
+      const courseKeyName = freshChild.course_name || 'Orca Cubs';
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const currentDayName = dayNames[new Date(selectedDate).getDay()];
       const customQuota = quotas[`${selectedDate}_${freshChild.course_name}_${selectedSlot}`]
@@ -319,7 +319,7 @@ export default function BookingCalendarPage() {
 
   const availableSlots = isMonday
     ? []
-    : (useCustom && customSlots.length > 0)
+    : useCustom
     ? customSlots
     : isWeekend
     ? scheduleConfig.weekend
@@ -436,7 +436,7 @@ export default function BookingCalendarPage() {
         ) : (
           <div className="space-y-2.5">
             {availableSlots.map((slot) => {
-              const courseKeyName = child.course_name?.includes('Mega') ? 'Mega Orca' : 'Orca Cubs';
+              const courseKeyName = child.course_name || 'Orca Cubs';
               const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
               const currentDayName = dayNames[new Date(selectedDate).getDay()];
               const matchedCourse = coursesListGlobal.find((c: any) => 
