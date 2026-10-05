@@ -1,0 +1,21 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/register/page": "/register",
+  "/page": "/",
+  "/login/page": "/login",
+  "/(parent)/about/page": "/about",
+  "/(parent)/child/[id]/page": "/child/[id]",
+  "/(parent)/dashboard/page": "/dashboard",
+  "/(parent)/schedule/page": "/schedule",
+  "/(parent)/classes/page": "/classes",
+  "/(parent)/family/add/page": "/family/add",
+  "/admin/login/page": "/admin/login",
+  "/admin/(auth)/about/page": "/admin/about",
+  "/admin/(auth)/classes/[id]/page": "/admin/classes/[id]",
+  "/admin/(auth)/audit/page": "/admin/audit",
+  "/admin/(auth)/dashboard/page": "/admin/dashboard",
+  "/admin/(auth)/classes/page": "/admin/classes",
+  "/admin/(auth)/members/page": "/admin/members",
+  "/admin/(auth)/schedule/page": "/admin/schedule"
+}

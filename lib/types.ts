@@ -28,6 +28,7 @@ export interface UserProfile {
   payment_slip?: string;
   payment_history?: PaymentProofRecord[];
   purchased_hours?: number;
+  course_name?: string;
   created_at?: string;
   pdpa_accepted?: boolean;
   media_consent?: boolean;

@@ -276,6 +276,7 @@ export const store = {
 
     if (isSupabaseConfigured && supabase) {
       const dbUser = { ...user };
+      delete dbUser.course_name;
       // delete (dbUser as any).payment_history;
       const { error } = await supabase.from('profiles').upsert([dbUser]);
       if (error) console.error('Failed to save profile', error);
@@ -873,7 +874,7 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
     history.push({
       id: 'legacy_init',
       purchased_hours: parentUser.purchased_hours,
-      course_name: 'Orca Cubs',
+      course_name: parentUser.course_name || 'Orca Cubs',
       created_at: parentUser.created_at || new Date().toISOString()
     });
   }

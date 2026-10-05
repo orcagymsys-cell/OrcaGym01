@@ -161,7 +161,7 @@ function AdminDashboardContent() {
   // Top Up / Approve Modal State
   const [topUpChild, setTopUpChild] = useState<Child | null>(null);
   const [topUpParent, setTopUpParent] = useState<UserProfile | null>(null);
-  const [courseName, setCourseName] = useState('Orca Cubs');
+  const [courseName, setCourseName] = useState('');
   const [hoursToAdd, setHoursToAdd] = useState<number | string>('');
   const [topUpNote, setTopUpNote] = useState('');
   const [topUpPaymentAmount, setTopUpPaymentAmount] = useState('');
@@ -690,6 +690,7 @@ function AdminDashboardContent() {
       password: autoPassword,
       role: 'parent' as const,
       purchased_hours: Number(hoursToAdd),
+      course_name: courseName,
       payment_amount: paymentAmount ? Number(paymentAmount) : undefined,
       payment_ref_no: paymentRefNo.trim() || undefined,
       payment_payer_name: paymentPayerName.trim() || undefined,
@@ -1990,6 +1991,7 @@ function AdminDashboardContent() {
                       onChange={(e) => setCourseName(e.target.value)}
                       className="flex-1 h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none"
                     >
+                      <option value="" disabled>- เลือกคลาส -</option>
                       {coursesListGlobal.map(c => (
                         <option key={c.id} value={c.display_title}>
                           {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
@@ -3213,6 +3215,7 @@ function AdminDashboardContent() {
                     onChange={(e) => setCourseName(e.target.value)}
                     className="w-full h-11 px-3 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
                   >
+                    <option value="" disabled>- เลือกคลาส -</option>
                     {coursesListGlobal.map(c => (
                       <option key={c.id} value={c.display_title}>
                         {c.display_title} {c.age_range ? `(${c.age_range})` : ''}

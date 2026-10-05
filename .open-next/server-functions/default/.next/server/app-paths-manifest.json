@@ -1,0 +1,21 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/register/page": "app/register/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/(parent)/about/page": "app/(parent)/about/page.js",
+  "/(parent)/child/[id]/page": "app/(parent)/child/[id]/page.js",
+  "/(parent)/dashboard/page": "app/(parent)/dashboard/page.js",
+  "/(parent)/schedule/page": "app/(parent)/schedule/page.js",
+  "/(parent)/classes/page": "app/(parent)/classes/page.js",
+  "/(parent)/family/add/page": "app/(parent)/family/add/page.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/admin/(auth)/about/page": "app/admin/(auth)/about/page.js",
+  "/admin/(auth)/classes/[id]/page": "app/admin/(auth)/classes/[id]/page.js",
+  "/admin/(auth)/audit/page": "app/admin/(auth)/audit/page.js",
+  "/admin/(auth)/dashboard/page": "app/admin/(auth)/dashboard/page.js",
+  "/admin/(auth)/classes/page": "app/admin/(auth)/classes/page.js",
+  "/admin/(auth)/members/page": "app/admin/(auth)/members/page.js",
+  "/admin/(auth)/schedule/page": "app/admin/(auth)/schedule/page.js"
+}

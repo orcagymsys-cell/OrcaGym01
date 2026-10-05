@@ -64,8 +64,7 @@ export default function HomePage() {
       return;
     }
     if (user.role === 'admin') {
-      setMounted(true);
-      setLoading(false);
+      window.location.replace('/admin/dashboard');
       return;
     }
     // Load from cache instantly — always show content, never block on spinner
@@ -280,6 +279,10 @@ export default function HomePage() {
     const details = encodeURIComponent(`คลาส ${booking.course_name} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')}`);
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dateStr}T${startTime}/${dateStr}T${endTime}&details=${details}`;
   };
+
+  if (store.getCurrentUser()?.role === 'admin') {
+    return null;
+  }
 
   if (loading) {
     return (
