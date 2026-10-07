@@ -1296,7 +1296,15 @@ function AdminDashboardContent() {
   // Group by time slot
   const slotCountMap: Record<string, number> = {};
   activeBookings.forEach(b => {
-    const slot = b.time_slot || '10.30-12.00';
+    let slot = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') || '10.30-12.00';
+    const cName = b.course_name?.toLowerCase() || '';
+    if (cName.includes('mega')) {
+      if (slot.startsWith('10')) slot = '10.30-12.30';
+      else if (slot.startsWith('14')) slot = '14.30-16.30';
+      else if (slot.startsWith('16')) slot = '16.00-18.00';
+    } else if (cName.includes('cubs') || cName.includes('flip')) {
+      if (slot.startsWith('17')) slot = '17.30-19.00';
+    }
     slotCountMap[slot] = (slotCountMap[slot] || 0) + 1;
   });
   const sortedPopularSlots = Object.entries(slotCountMap).sort((a, b) => b[1] - a[1]);
@@ -2617,9 +2625,20 @@ function AdminDashboardContent() {
                                                       type="button"
                                                       onClick={() => {
                                                         setAdminBookingChild(child);
-                                                        setAdminBookingSlot(
-                                                          child.course_name?.includes('Mega') ? '10.30-12.30' : '10.30-12.00'
+                                                        const course = coursesListGlobal.find(c => 
+                                                          c.display_title.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs') ||
+                                                          c.internal_name.toLowerCase().includes(child.course_name?.toLowerCase() || 'cubs')
                                                         );
+                                                        let firstSlot = '';
+                                                        if (course && course.schedule_groups) {
+                                                          for (const g of course.schedule_groups) {
+                                                            if (g.time_slots && g.time_slots.length > 0) {
+                                                              firstSlot = g.time_slots[0];
+                                                              break;
+                                                            }
+                                                          }
+                                                        }
+                                                        setAdminBookingSlot(firstSlot || '10.30-12.00');
                                                       }}
                                                       className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer"
                                                     >
@@ -2970,11 +2989,28 @@ function AdminDashboardContent() {
                   onChange={(e) => {
                     const newCourse = e.target.value;
                     setQuotaCourse(newCourse);
-                    if (newCourse === 'Mega Orca') {
-                      setQuotaSlot('10.30-12.30');
+                    let firstSlot = '';
+                    if (newCourse === 'All Courses') {
+                      for (const c of coursesListGlobal) {
+                        if (c.schedule_groups && c.schedule_groups.length > 0) {
+                          if (c.schedule_groups[0].time_slots && c.schedule_groups[0].time_slots.length > 0) {
+                            firstSlot = c.schedule_groups[0].time_slots[0];
+                            break;
+                          }
+                        }
+                      }
                     } else {
-                      setQuotaSlot('10.30-12.00');
+                      const course = coursesListGlobal.find(c => c.display_title === newCourse);
+                      if (course && course.schedule_groups) {
+                        for (const g of course.schedule_groups) {
+                          if (g.time_slots && g.time_slots.length > 0) {
+                            firstSlot = g.time_slots[0];
+                            break;
+                          }
+                        }
+                      }
                     }
+                    setQuotaSlot(firstSlot || '10.30-12.00');
                   }}
                   className="w-full h-11 px-4 bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
                 >
@@ -3962,23 +3998,25 @@ function AdminDashboardContent() {
                   onChange={(e) => setAdminBookingSlot(e.target.value)}
                   className="w-full h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none focus:border-blue-500"
                 >
-                  {adminBookingChild.course_name?.includes('Mega') ? (
-                    <>
-                      <option value="10.30-12.30">10.30-12.30 (Mega Orca)</option>
-                      <option value="14.30-16.30">14.30-16.30 (เสาร์-อาทิตย์)</option>
-                      <option value="16.00-18.00">16.00-18.00 (เสาร์-อาทิตย์)</option>
-                      <option value="17.30-19.30">17.30-19.30 (อังคาร-ศุกร์)</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="09.00-10.30">09.00-10.30 (เสาร์-อาทิตย์)</option>
-                      <option value="10.30-12.00">10.30-12.00</option>
-                      <option value="13.00-14.30">13.00-14.30 (เสาร์-อาทิตย์)</option>
-                      <option value="14.30-16.00">14.30-16.00</option>
-                      <option value="16.00-17.30">16.00-17.30</option>
-                      <option value="17.30-19.00">17.30-19.00 (เย็นวันธรรมดา)</option>
-                    </>
-                  )}
+                  {(() => {
+                    const allSlots = new Set<string>();
+                    const course = coursesListGlobal.find(c => 
+                      c.display_title.toLowerCase().includes(adminBookingChild?.course_name?.toLowerCase() || 'cubs') ||
+                      c.internal_name.toLowerCase().includes(adminBookingChild?.course_name?.toLowerCase() || 'cubs')
+                    );
+                    if (course && course.schedule_groups) {
+                      course.schedule_groups.forEach((g: any) => {
+                        g.time_slots?.forEach((t: string) => allSlots.add(t));
+                      });
+                    }
+                    const sortedSlots = Array.from(allSlots).sort((a,b) => a.localeCompare(b));
+                    if (sortedSlots.length === 0) {
+                      return <option value="">(ไม่มีรอบเวลาในระบบ)</option>;
+                    }
+                    return sortedSlots.map(slot => (
+                      <option key={slot} value={slot}>{slot}</option>
+                    ));
+                  })()}
                 </select>
               </div>
 

@@ -137,7 +137,18 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
   const groupedBookings = filteredBookings.reduce((acc, b) => {
     const normCourse = getNormalizedCourseName(b.course_name);
-    const timeKey = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+    let timeKey = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+    
+    // Normalize times to merge split classes
+    const cNameLower = normCourse.toLowerCase();
+    if (cNameLower === 'mega orca') {
+      if (timeKey.startsWith('10')) timeKey = '10.30-12.30';
+      else if (timeKey.startsWith('14')) timeKey = '14.30-16.30';
+      else if (timeKey.startsWith('16')) timeKey = '16.00-18.00';
+    } else if (cNameLower === 'orca cubs' || cNameLower === 'orca flip') {
+      if (timeKey.startsWith('17')) timeKey = '17.30-19.00';
+    }
+    
     const key = `${b.booking_date} | ${timeKey} | ${normCourse}`;
     if (!acc[key]) {
       acc[key] = {
