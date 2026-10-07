@@ -2618,7 +2618,7 @@ function AdminDashboardContent() {
                                                       onClick={() => {
                                                         setAdminBookingChild(child);
                                                         setAdminBookingSlot(
-                                                          child.course_name?.includes('Mega') ? '10:00-12:00' : '10.30-12.00'
+                                                          child.course_name?.includes('Mega') ? '10.30-12.30' : '10.30-12.00'
                                                         );
                                                       }}
                                                       className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-2xs cursor-pointer"
@@ -2971,7 +2971,7 @@ function AdminDashboardContent() {
                     const newCourse = e.target.value;
                     setQuotaCourse(newCourse);
                     if (newCourse === 'Mega Orca') {
-                      setQuotaSlot('10:00-12:00');
+                      setQuotaSlot('10.30-12.30');
                     } else {
                       setQuotaSlot('10.30-12.00');
                     }
@@ -3964,9 +3964,9 @@ function AdminDashboardContent() {
                 >
                   {adminBookingChild.course_name?.includes('Mega') ? (
                     <>
-                      <option value="10:00-12:00">10:00-12:00 (Mega Orca)</option>
-                      <option value="14:00-16:00">14:00-16:00 (เสาร์-อาทิตย์)</option>
-                      <option value="16.30-18.30">16.30-18.30 (เสาร์-อาทิตย์)</option>
+                      <option value="10.30-12.30">10.30-12.30 (Mega Orca)</option>
+                      <option value="14.30-16.30">14.30-16.30 (เสาร์-อาทิตย์)</option>
+                      <option value="16.00-18.00">16.00-18.00 (เสาร์-อาทิตย์)</option>
                       <option value="17.30-19.30">17.30-19.30 (อังคาร-ศุกร์)</option>
                     </>
                   ) : (

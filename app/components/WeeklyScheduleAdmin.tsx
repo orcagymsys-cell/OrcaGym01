@@ -291,9 +291,16 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                             const dbCourse = courses.find(crs => crs.display_title.toLowerCase() === cName.toLowerCase());
                             if (dbCourse) cName = dbCourse.display_title;
 
+                            let t = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                            if (cName.toLowerCase() === 'mega orca') {
+                              if (t.startsWith('10')) t = '10.30-12.30';
+                              else if (t.startsWith('14')) t = '14.30-16.30';
+                              else if (t.startsWith('16')) t = '16.00-18.00';
+                            }
+
                             return { 
                               course: cName, 
-                              time: (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') 
+                              time: t
                             };
                           });
 
@@ -302,7 +309,12 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                           let cName = c.course;
                           const dbCourse = courses.find(crs => crs.display_title.toLowerCase() === cName.toLowerCase());
                           if (dbCourse) cName = dbCourse.display_title;
-                          const t = c.time.replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                          let t = c.time.replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                          if (cName.toLowerCase() === 'mega orca') {
+                            if (t.startsWith('10')) t = '10.30-12.30';
+                            else if (t.startsWith('14')) t = '14.30-16.30';
+                            else if (t.startsWith('16')) t = '16.00-18.00';
+                          }
                           mergedMap.set(`${cName}|${t}`, { course: cName, time: t });
                         });
                         dynamicCourses.forEach(c => mergedMap.set(`${c.course}|${c.time}`, c));
@@ -320,7 +332,14 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                   const bookedForThisSlot = dayBookings.filter(b => {
                                     const bCourse = (b.course_name || '').toLowerCase();
                                     const cCourse = (c.course || '').toLowerCase();
-                                    return (bCourse === cCourse || bCourse.includes(cCourse.replace('orca ', ''))) && (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.') === (c.time || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                                    let bTime = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                                    if (cCourse === 'mega orca') {
+                                      if (bTime.startsWith('10')) bTime = '10.30-12.30';
+                                      else if (bTime.startsWith('14')) bTime = '14.30-16.30';
+                                      else if (bTime.startsWith('16')) bTime = '16.00-18.00';
+                                    }
+                                    let cTime = (c.time || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
+                                    return (bCourse === cCourse || bCourse.includes(cCourse.replace('orca ', ''))) && bTime === cTime;
                                   });
                                   
                                   const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
