@@ -173,7 +173,7 @@ export default function HomePage() {
   const basePurchased = (currentUser && currentUser.purchased_hours !== undefined && currentUser.purchased_hours > 0)
     ? currentUser.purchased_hours
     : 6;
-  const familyBaskets = currentUser ? getFamilyBaskets(currentUser, children, coursesFromDB) : [];
+  const familyBaskets = currentUser ? getFamilyBaskets(currentUser, children, coursesFromDB, bookings) : [];
   
   // Backwards compatibility for unused single-basket references (e.g. notifications)
   // We just pick the most prominent basket for the global alert if there's any.

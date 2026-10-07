@@ -855,7 +855,7 @@ export interface FamilyBasket {
   start_date: string | null;
 }
 
-export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[], familyBookings: any[] = []): FamilyBasket[] {
+export function getFamilyBaskets(parentUser: any, children: any[], coursesListGlobal: any[], familyBookings?: any[]): FamilyBasket[] {
   if (!parentUser) return [];
 
   // 1. Calculate allocated and used hours per course from children
@@ -865,8 +865,21 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
   children.forEach(c => {
     const cName = c.course_name || 'Orca Cubs';
     allocated[cName] = (allocated[cName] || 0) + (c.total_hours || 0);
-    used[cName] = (used[cName] || 0) + (c.used_hours || 0);
   });
+
+  if (familyBookings !== undefined) {
+    (familyBookings || []).forEach(b => {
+      if (b.status !== 'cancelled' && b.status !== 'Cancelled') {
+        const cName = b.course_name || 'Orca Cubs';
+        used[cName] = (used[cName] || 0) + 1;
+      }
+    });
+  } else {
+    children.forEach(c => {
+      const cName = c.course_name || 'Orca Cubs';
+      used[cName] = (used[cName] || 0) + (c.used_hours || 0);
+    });
+  }
 
   // 2. Extract purchase history
   let history = Array.isArray(parentUser.payment_history) ? [...parentUser.payment_history] : [];
