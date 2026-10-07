@@ -3976,7 +3976,7 @@ function AdminDashboardContent() {
                       <option value="13.00-14.30">13.00-14.30 (เสาร์-อาทิตย์)</option>
                       <option value="14.30-16.00">14.30-16.00</option>
                       <option value="16.00-17.30">16.00-17.30</option>
-                      <option value="17.30-19.30">17.30-19.30</option>
+                      <option value="17.30-19.00">17.30-19.00 (เย็นวันธรรมดา)</option>
                     </>
                   )}
                 </select>

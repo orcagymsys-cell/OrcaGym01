@@ -296,6 +296,8 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                               if (t.startsWith('10')) t = '10.30-12.30';
                               else if (t.startsWith('14')) t = '14.30-16.30';
                               else if (t.startsWith('16')) t = '16.00-18.00';
+                            } else if (cName.toLowerCase() === 'orca cubs' || cName.toLowerCase() === 'orca flip') {
+                              if (t.startsWith('17')) t = '17.30-19.00';
                             }
 
                             return { 
@@ -314,6 +316,8 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                             if (t.startsWith('10')) t = '10.30-12.30';
                             else if (t.startsWith('14')) t = '14.30-16.30';
                             else if (t.startsWith('16')) t = '16.00-18.00';
+                          } else if (cName.toLowerCase() === 'orca cubs' || cName.toLowerCase() === 'orca flip') {
+                            if (t.startsWith('17')) t = '17.30-19.00';
                           }
                           mergedMap.set(`${cName}|${t}`, { course: cName, time: t });
                         });
@@ -337,6 +341,8 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                       if (bTime.startsWith('10')) bTime = '10.30-12.30';
                                       else if (bTime.startsWith('14')) bTime = '14.30-16.30';
                                       else if (bTime.startsWith('16')) bTime = '16.00-18.00';
+                                    } else if (cCourse === 'orca cubs' || cCourse === 'orca flip') {
+                                      if (bTime.startsWith('17')) bTime = '17.30-19.00';
                                     }
                                     let cTime = (c.time || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
                                     return (bCourse === cCourse || bCourse.includes(cCourse.replace('orca ', ''))) && bTime === cTime;
