@@ -1301,7 +1301,7 @@ function AdminDashboardContent() {
     if (cName.includes('mega')) {
       if (slot.startsWith('10')) slot = '10.30-12.30';
       else if (slot.startsWith('14')) slot = '14.30-16.30';
-      else if (slot.startsWith('16')) slot = '16.00-18.00';
+      else if (slot.startsWith('16')) slot = '16.30-18.30';
     } else if (cName.includes('cubs') || cName.includes('flip')) {
       if (slot.startsWith('17')) slot = '17.30-19.00';
     }

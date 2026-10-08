@@ -629,7 +629,7 @@ export default function PricingPage() {
                     {
                       id: 'sg_mega_2',
                       day_label: 'Saturday - Sunday',
-                      time_slots: ['10.30-12.30', '16.00-18.00', '', '']
+                      time_slots: ['10.30-12.30', '16.30-18.30', '', '']
                     }
                   ];
 

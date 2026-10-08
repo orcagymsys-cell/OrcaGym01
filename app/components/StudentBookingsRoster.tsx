@@ -144,7 +144,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
     if (cNameLower === 'mega orca') {
       if (timeKey.startsWith('10')) timeKey = '10.30-12.30';
       else if (timeKey.startsWith('14')) timeKey = '14.30-16.30';
-      else if (timeKey.startsWith('16')) timeKey = '16.00-18.00';
+      else if (timeKey.startsWith('16')) timeKey = '16.30-18.30';
     } else if (cNameLower === 'orca cubs' || cNameLower === 'orca flip') {
       if (timeKey.startsWith('17')) timeKey = '17.30-19.00';
     }

@@ -26,7 +26,7 @@ function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
   const isWeekend = dayKey === 0 || dayKey === 6;
   if (!isWeekend) {
     if (colIndex === 0) return [
-      { course: 'Mega Orca', time: '10:00-12:00' },
+      { course: 'Mega Orca', time: '10.30-12.30' },
       { course: 'Orca Cubs', time: '10.30-12.00' }
     ];
     if (colIndex === 1) return [{ course: 'Orca Cubs', time: '14.30-16.00' }];
@@ -48,16 +48,16 @@ function getCoursesForLogicalSlot(colIndex: number, dayKey: number) {
   } else {
     if (colIndex === 0) return [
       { course: 'Orca Cubs', time: '09.00-10.30' },
-      { course: 'Mega Orca', time: '10:00-12:00' },
+      { course: 'Mega Orca', time: '10.30-12.30' },
       { course: 'Orca Cubs', time: '10.30-12.00' }
     ];
     if (colIndex === 1) return [
       { course: 'Orca Cubs', time: '13.00-14.30' },
       { course: 'ORCA FLIP', time: '13.00-14.30' },
-      { course: 'Mega Orca', time: '14:00-16:00' },
+      { course: 'Mega Orca', time: '14.30-16.30' },
       { course: 'Orca Cubs', time: '14.30-16.00' }
     ];
-    if (colIndex === 2) return [];
+    if (colIndex === 2) return [{ course: 'Mega Orca', time: '16.30-18.30' }];
     if (colIndex === 3) return [];
   }
   return [];
@@ -295,7 +295,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                             if (cName.toLowerCase() === 'mega orca') {
                               if (t.startsWith('10')) t = '10.30-12.30';
                               else if (t.startsWith('14')) t = '14.30-16.30';
-                              else if (t.startsWith('16')) t = '16.00-18.00';
+                              else if (t.startsWith('16')) t = '16.30-18.30';
                             } else if (cName.toLowerCase() === 'orca cubs' || cName.toLowerCase() === 'orca flip') {
                               if (t.startsWith('17')) t = '17.30-19.00';
                             }
@@ -315,7 +315,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                           if (cName.toLowerCase() === 'mega orca') {
                             if (t.startsWith('10')) t = '10.30-12.30';
                             else if (t.startsWith('14')) t = '14.30-16.30';
-                            else if (t.startsWith('16')) t = '16.00-18.00';
+                            else if (t.startsWith('16')) t = '16.30-18.30';
                           } else if (cName.toLowerCase() === 'orca cubs' || cName.toLowerCase() === 'orca flip') {
                             if (t.startsWith('17')) t = '17.30-19.00';
                           }
@@ -340,7 +340,7 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                                     if (cCourse === 'mega orca') {
                                       if (bTime.startsWith('10')) bTime = '10.30-12.30';
                                       else if (bTime.startsWith('14')) bTime = '14.30-16.30';
-                                      else if (bTime.startsWith('16')) bTime = '16.00-18.00';
+                                      else if (bTime.startsWith('16')) bTime = '16.30-18.30';
                                     } else if (cCourse === 'orca cubs' || cCourse === 'orca flip') {
                                       if (bTime.startsWith('17')) bTime = '17.30-19.00';
                                     }
