@@ -1,8 +1,8 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { Booking, Child, UserProfile } from '@/lib/types';
-import { store } from '@/lib/supabase';
-import { showToast } from '@/components/Toast';
+"use client";
+import { useState, useEffect } from "react";
+import { Booking, Child, UserProfile } from "@/lib/types";
+import { store } from "@/lib/supabase";
+import { showToast } from "@/components/Toast";
 
 type Props = {
   allBookings: Booking[];
@@ -11,40 +11,51 @@ type Props = {
   onBookingCancelled?: () => void;
 };
 
-export default function StudentBookingsRoster({ allBookings, childrenList, parentsList, onBookingCancelled }: Props) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCourseFilter, setSelectedCourseFilter] = useState('All Courses');
+export default function StudentBookingsRoster({
+  allBookings,
+  childrenList,
+  parentsList,
+  onBookingCancelled,
+}: Props) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourseFilter, setSelectedCourseFilter] =
+    useState("All Courses");
 
   const [dbCourses, setDbCourses] = useState<any[]>([]);
   useEffect(() => {
-    store.getCourses().then(c => setDbCourses(c || []));
+    store.getCourses().then((c) => setDbCourses(c || []));
   }, []);
 
   // Merge unique courses from DB and legacy bookings
-  const dbCourseNames = dbCourses.map(c => c.display_title);
-  const rawBookedCourses = allBookings.map(b => b.course_name).filter(Boolean) as string[];
+  const dbCourseNames = dbCourses.map((c) => c.display_title);
+  const rawBookedCourses = allBookings
+    .map((b) => b.course_name)
+    .filter(Boolean) as string[];
   const uniqueCoursesMap = new Map<string, string>();
-  
-  dbCourseNames.forEach(c => uniqueCoursesMap.set(c.toLowerCase(), c));
-  
-  // Hardcode official fallbacks in case DB is completely empty on first render (matches Pricing Page / WeeklyScheduleAdmin)
-  if (!uniqueCoursesMap.has('orca cubs')) uniqueCoursesMap.set('orca cubs', 'Orca Cubs');
-  if (!uniqueCoursesMap.has('mega orca')) uniqueCoursesMap.set('mega orca', 'Mega Orca');
-  if (!uniqueCoursesMap.has('orca flip')) uniqueCoursesMap.set('orca flip', 'ORCA FLIP');
 
-  rawBookedCourses.forEach(c => {
+  dbCourseNames.forEach((c) => uniqueCoursesMap.set(c.toLowerCase(), c));
+
+  // Hardcode official fallbacks in case DB is completely empty on first render (matches Pricing Page / WeeklyScheduleAdmin)
+  if (!uniqueCoursesMap.has("orca cubs"))
+    uniqueCoursesMap.set("orca cubs", "Orca Cubs");
+  if (!uniqueCoursesMap.has("mega orca"))
+    uniqueCoursesMap.set("mega orca", "Mega Orca");
+  if (!uniqueCoursesMap.has("orca flip"))
+    uniqueCoursesMap.set("orca flip", "ORCA FLIP");
+
+  rawBookedCourses.forEach((c) => {
     if (!uniqueCoursesMap.has(c.toLowerCase())) {
       uniqueCoursesMap.set(c.toLowerCase(), c);
     }
   });
   const courses = Array.from(uniqueCoursesMap.values());
 
-  const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past'>('upcoming');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState<"upcoming" | "past">("upcoming");
+  const [selectedDateFilter, setSelectedDateFilter] = useState("");
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
 
-  const filteredBookings = allBookings.filter(b => {
+  const filteredBookings = allBookings.filter((b) => {
     // If a specific date is selected, ignore timeFilter and just match the date
     if (selectedDateFilter) {
       if (b.booking_date !== selectedDateFilter) return false;
@@ -52,21 +63,35 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
       // If no specific date, apply timeFilter
       const bDate = new Date(b.booking_date);
       bDate.setHours(0, 0, 0, 0);
-      if (timeFilter === 'upcoming' && bDate.getTime() < todayDate.getTime()) return false;
-      if (timeFilter === 'past' && bDate.getTime() >= todayDate.getTime()) return false;
+      if (timeFilter === "upcoming" && bDate.getTime() < todayDate.getTime())
+        return false;
+      if (timeFilter === "past" && bDate.getTime() >= todayDate.getTime())
+        return false;
     }
-    if (selectedCourseFilter !== 'All Courses' && b.course_name?.toLowerCase() !== selectedCourseFilter.toLowerCase()) return false;
-    
+    if (
+      selectedCourseFilter !== "All Courses" &&
+      b.course_name?.toLowerCase() !== selectedCourseFilter.toLowerCase()
+    )
+      return false;
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const child = childrenList.find(c => c.id === b.child_id);
-      const parent = child ? parentsList.find(p => p.id === child.parent_id || p.user_id === child.parent_id) : null;
-      
-      const matchChildName = b.child_nickname?.toLowerCase().includes(q) || b.child_full_name?.toLowerCase().includes(q) || child?.full_name?.toLowerCase().includes(q);
-      const matchParent = parent?.name?.toLowerCase().includes(q) || parent?.phone?.includes(q);
+      const child = childrenList.find((c) => c.id === b.child_id);
+      const parent = child
+        ? parentsList.find(
+            (p) => p.id === child.parent_id || p.user_id === child.parent_id,
+          )
+        : null;
+
+      const matchChildName =
+        b.child_nickname?.toLowerCase().includes(q) ||
+        b.child_full_name?.toLowerCase().includes(q) ||
+        child?.full_name?.toLowerCase().includes(q);
+      const matchParent =
+        parent?.name?.toLowerCase().includes(q) || parent?.phone?.includes(q);
       const matchCourse = b.course_name?.toLowerCase().includes(q);
       const matchDate = b.booking_date?.includes(q);
-      
+
       return matchChildName || matchParent || matchCourse || matchDate;
     }
     return true;
@@ -79,92 +104,130 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
     today.setHours(0, 0, 0, 0);
 
     if (bDate.getTime() < today.getTime()) {
-      if (!confirm(`⚠️ คำเตือน: คลาสนี้เป็นคลาสในอดีต (วันที่ ${booking.booking_date}) ซึ่งเด็กอาจจะเข้าเรียนไปแล้ว\n\nการยกเลิกจะทำให้เด็กได้เครดิตคืนกลับไปในตะกร้า\n\nคุณแน่ใจจริงๆ หรือไม่ว่าต้องการยกเลิกคลาสนี้?`)) return;
+      if (
+        !confirm(
+          `⚠️ คำเตือน: คลาสนี้เป็นคลาสในอดีต (วันที่ ${booking.booking_date}) ซึ่งเด็กอาจจะเข้าเรียนไปแล้ว\n\nการยกเลิกจะทำให้เด็กได้เครดิตคืนกลับไปในตะกร้า\n\nคุณแน่ใจจริงๆ หรือไม่ว่าต้องการยกเลิกคลาสนี้?`,
+        )
+      )
+        return;
     } else {
-      if (!confirm(`คุณแน่ใจหรือไม่ที่จะยกเลิกการจองของน้อง ${booking.child_nickname} ในวันที่ ${booking.booking_date}?`)) return;
+      if (
+        !confirm(
+          `คุณแน่ใจหรือไม่ที่จะยกเลิกการจองของน้อง ${booking.child_nickname} ในวันที่ ${booking.booking_date}?`,
+        )
+      )
+        return;
     }
 
     try {
-      const child = childrenList.find(c => c.id === booking.child_id);
-      const childNameForAudit = child?.nickname || child?.full_name || booking.child_nickname || 'ไม่ทราบชื่อ';
+      const child = childrenList.find((c) => c.id === booking.child_id);
+      const childNameForAudit =
+        child?.nickname ||
+        child?.full_name ||
+        booking.child_nickname ||
+        "ไม่ทราบชื่อ";
 
       await store.cancelBooking(booking.id);
-      
+
       if (child) {
         const updatedUsed = Math.max(0, child.used_hours - 1);
-        await store.updateChild(child.id, { used_hours: updatedUsed });
+        const updatedTotal = Math.max(0, child.total_hours - 1);
+        await store.updateChild(child.id, {
+          used_hours: updatedUsed,
+          total_hours: updatedTotal,
+        });
       }
-      
+
       const adminUser = store.getCurrentUser();
-      const adminName = adminUser?.name || 'Admin';
-      const parent = child ? parentsList.find(p => p.id === child.parent_id || p.user_id === child.parent_id) : null;
-      
+      const adminName = adminUser?.name || "Admin";
+      const parent = child
+        ? parentsList.find(
+            (p) => p.id === child.parent_id || p.user_id === child.parent_id,
+          )
+        : null;
+
       // Attempt to log to audit
       try {
         await store.saveAuditLog({
           id: `audit_${Date.now()}`,
           admin_name: adminName,
-          action_type: 'cancel_booking',
+          action_type: "cancel_booking",
           parent_name: parent?.name,
           child_id: booking.child_id,
           child_name: childNameForAudit,
           course_name: booking.course_name,
-          note: `ยกเลิกการจองเรียนวันที่ ${booking.booking_date} เวลา ${(booking.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.')} โดย Admin`
+          note: `ยกเลิกการจองเรียนวันที่ ${booking.booking_date} เวลา ${(booking.time_slot || "").replace(/:/g, ".").replace(/^(\d)\./, "0$1.")} โดย Admin`,
         });
       } catch (err) {
-        console.error('Failed to log audit:', err);
+        console.error("Failed to log audit:", err);
       }
-      
-      showToast('ยกเลิกการจองสำเร็จ');
+
+      showToast("ยกเลิกการจองสำเร็จ");
       if (onBookingCancelled) onBookingCancelled();
     } catch (error: any) {
-      console.error('Cancel booking error:', error);
-      showToast(error.message || 'เกิดข้อผิดพลาดในการยกเลิกการจอง');
+      console.error("Cancel booking error:", error);
+      showToast(error.message || "เกิดข้อผิดพลาดในการยกเลิกการจอง");
     }
   };
 
   const getThemeStyles = (courseName?: string) => {
-    const isMega = courseName?.toLowerCase().includes('mega');
+    const isMega = courseName?.toLowerCase().includes("mega");
     return isMega
-      ? { badgeBgColor: '#eff6ff', badgeTextColor: '#1d4ed8', badgeBorderColor: '#bfdbfe' }
-      : { badgeBgColor: '#fdf4ff', badgeTextColor: '#a21caf', badgeBorderColor: '#fbcfe8' };
+      ? {
+          badgeBgColor: "#eff6ff",
+          badgeTextColor: "#1d4ed8",
+          badgeBorderColor: "#bfdbfe",
+        }
+      : {
+          badgeBgColor: "#fdf4ff",
+          badgeTextColor: "#a21caf",
+          badgeBorderColor: "#fbcfe8",
+        };
   };
 
   const getNormalizedCourseName = (courseName?: string) => {
-    const raw = courseName || 'Orca Cubs';
+    const raw = courseName || "Orca Cubs";
     return uniqueCoursesMap.get(raw.toLowerCase()) || raw;
   };
 
-  const groupedBookings = filteredBookings.reduce((acc, b) => {
-    const normCourse = getNormalizedCourseName(b.course_name);
-    let timeKey = (b.time_slot || '').replace(/:/g, '.').replace(/^(\d)\./, '0$1.');
-    
-    // Normalize times to merge split classes
-    const cNameLower = normCourse.toLowerCase();
-    if (cNameLower === 'mega orca') {
-      if (timeKey.startsWith('10')) timeKey = '10.30-12.30';
-      else if (timeKey.startsWith('14')) timeKey = '14.30-16.30';
-      else if (timeKey.startsWith('16')) timeKey = '16.30-18.30';
-    } else if (cNameLower === 'orca cubs' || cNameLower === 'orca flip') {
-      if (timeKey.startsWith('17')) timeKey = '17.30-19.00';
-    }
-    
-    const key = `${b.booking_date} | ${timeKey} | ${normCourse}`;
-    if (!acc[key]) {
-      acc[key] = {
-        date: b.booking_date,
-        time: timeKey,
-        course: normCourse,
-        bookings: []
-      };
-    }
-    acc[key].bookings.push(b);
-    return acc;
-  }, {} as Record<string, { date: string, time: string, course: string, bookings: Booking[] }>);
+  const groupedBookings = filteredBookings.reduce(
+    (acc, b) => {
+      const normCourse = getNormalizedCourseName(b.course_name);
+      let timeKey = (b.time_slot || "")
+        .replace(/:/g, ".")
+        .replace(/^(\d)\./, "0$1.");
+
+      // Normalize times to merge split classes
+      const cNameLower = normCourse.toLowerCase();
+      if (cNameLower === "mega orca") {
+        if (timeKey.startsWith("10")) timeKey = "10.30-12.30";
+        else if (timeKey.startsWith("14")) timeKey = "14.30-16.30";
+        else if (timeKey.startsWith("16")) timeKey = "16.30-18.30";
+      } else if (cNameLower === "orca cubs" || cNameLower === "orca flip") {
+        if (timeKey.startsWith("17")) timeKey = "17.30-19.00";
+      }
+
+      const key = `${b.booking_date} | ${timeKey} | ${normCourse}`;
+      if (!acc[key]) {
+        acc[key] = {
+          date: b.booking_date,
+          time: timeKey,
+          course: normCourse,
+          bookings: [],
+        };
+      }
+      acc[key].bookings.push(b);
+      return acc;
+    },
+    {} as Record<
+      string,
+      { date: string; time: string; course: string; bookings: Booking[] }
+    >,
+  );
 
   const sortedGroups = Object.values(groupedBookings).sort((a, b) => {
     if (a.date !== b.date) {
-      if (timeFilter === 'upcoming') {
+      if (timeFilter === "upcoming") {
         return new Date(a.date).getTime() - new Date(b.date).getTime(); // ASCENDING: Closest upcoming date first
       } else {
         return new Date(b.date).getTime() - new Date(a.date).getTime(); // DESCENDING: Most recent past date first
@@ -176,30 +239,33 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-slate-200 shadow-sm mt-8 space-y-5 print:shadow-none print:border-none print:p-0 print:m-0 print:space-y-4">
-      
       {/* Title and Subtitle Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <h3 className="text-xl sm:text-2xl font-black text-[#001a3a] flex items-center gap-2">
             <span>📅</span>
-            <span>ตารางรายการเด็กที่จองเวลาเรียนเข้ามาทั้งหมด (Student Bookings Roster)</span>
+            <span>
+              ตารางรายการเด็กที่จองเวลาเรียนเข้ามาทั้งหมด (Student Bookings
+              Roster)
+            </span>
           </h3>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            แสดงรายการจองเรียนทั้งหมดในระบบ สามารถค้นหา กรองตามคลาสเรียน หรือทำการยกเลิกการจองได้
+            แสดงรายการจองเรียนทั้งหมดในระบบ สามารถค้นหา กรองตามคลาสเรียน
+            หรือทำการยกเลิกการจองได้
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto shrink-0">
           <div className="flex items-center gap-2 print:hidden bg-white border border-slate-300 rounded-xl px-3 py-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
             <span className="text-sm">📅</span>
-            <input 
+            <input
               type="date"
               value={selectedDateFilter}
               onChange={(e) => setSelectedDateFilter(e.target.value)}
               className="outline-none text-xs font-bold text-slate-700 bg-transparent cursor-pointer"
             />
             {selectedDateFilter && (
-              <button 
-                onClick={() => setSelectedDateFilter('')}
+              <button
+                onClick={() => setSelectedDateFilter("")}
                 className="text-slate-400 hover:text-rose-500 transition-colors ml-1 font-bold flex items-center justify-center w-4 h-4"
                 title="ล้างวันที่"
               >
@@ -207,7 +273,10 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
               </button>
             )}
           </div>
-          <button onClick={() => window.print()} className="print:hidden text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl border border-blue-700 shadow-sm transition-colors cursor-pointer flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="print:hidden text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl border border-blue-700 shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+          >
             <span>🖨️</span> Save as PDF / พิมพ์
           </button>
           <div className="print:hidden text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-300">
@@ -215,24 +284,25 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
           </div>
         </div>
         <div className="hidden sm:flex text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-300 self-start shrink-0 items-center justify-center">
-          ทั้งหมด {sortedGroups.reduce((sum, g) => sum + g.bookings.length, 0)} รายการ
+          ทั้งหมด {sortedGroups.reduce((sum, g) => sum + g.bookings.length, 0)}{" "}
+          รายการ
         </div>
       </div>
 
       {!selectedDateFilter && (
         <div className="print:hidden border-b border-slate-200 pb-2">
           <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
-            <button 
+            <button
               type="button"
-              onClick={() => setTimeFilter('upcoming')}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === 'upcoming' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setTimeFilter("upcoming")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === "upcoming" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
               รายการจองที่จะมาถึง (Upcoming)
             </button>
-            <button 
+            <button
               type="button"
-              onClick={() => setTimeFilter('past')}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === 'past' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setTimeFilter("past")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${timeFilter === "past" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
               ประวัติการจองที่ผ่านมา (Past)
             </button>
@@ -242,45 +312,61 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
       {/* Course Filter Pill Bar */}
       <div className="print:hidden">
-      <div>
-        <label className="block text-xs font-extrabold text-slate-700 mb-2">
-          เลือกดูแยกตามคลาสเรียน (Filter by Course):
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          {['All Courses', ...courses].map((courseName) => {
-            const isSelected = selectedCourseFilter.toLowerCase() === courseName.toLowerCase();
-            const count = courseName === 'All Courses'
-              ? allBookings.length
-              : allBookings.filter(b => b.course_name?.toLowerCase() === courseName.toLowerCase()).length;
+        <div>
+          <label className="block text-xs font-extrabold text-slate-700 mb-2">
+            เลือกดูแยกตามคลาสเรียน (Filter by Course):
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {["All Courses", ...courses].map((courseName) => {
+              const isSelected =
+                selectedCourseFilter.toLowerCase() === courseName.toLowerCase();
+              const count =
+                courseName === "All Courses"
+                  ? allBookings.length
+                  : allBookings.filter(
+                      (b) =>
+                        b.course_name?.toLowerCase() ===
+                        courseName.toLowerCase(),
+                    ).length;
 
-            return (
-              <button
-                key={courseName}
-                type="button"
-                onClick={() => setSelectedCourseFilter(courseName)}
-                className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                  isSelected
-                    ? 'bg-[#001a3a] text-white border-[#001a3a] shadow-md ring-2 ring-blue-900/30'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
-                }`}
-              >
-                <span>{courseName === 'All Courses' ? '🌐 All Courses' : `🏊 ${courseName}`}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={courseName}
+                  type="button"
+                  onClick={() => setSelectedCourseFilter(courseName)}
+                  className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    isSelected
+                      ? "bg-[#001a3a] text-white border-[#001a3a] shadow-md ring-2 ring-blue-900/30"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                  }`}
+                >
+                  <span>
+                    {courseName === "All Courses"
+                      ? "🌐 All Courses"
+                      : `🏊 ${courseName}`}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      isSelected
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Search Bar Row */}
       <div className="print:hidden flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <div className="relative w-full sm:max-w-md">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+            🔍
+          </span>
           <input
             type="text"
             value={searchQuery}
@@ -291,7 +377,7 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600 bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center border-none cursor-pointer"
             >
               ✕
@@ -318,7 +404,10 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
           {sortedGroups.map((group, groupIdx) => {
             const theme = getThemeStyles(group.course);
             return (
-              <div key={groupIdx} className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs print:shadow-none print:border-black print:overflow-visible print:mb-8 bg-white">
+              <div
+                key={groupIdx}
+                className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs print:shadow-none print:border-black print:overflow-visible print:mb-8 bg-white"
+              >
                 <div className="bg-[#001a3a] text-white p-3 sm:p-4 border-b border-blue-950 flex flex-wrap items-center justify-between gap-3 print:bg-slate-200 print:text-black print:border-black print:break-after-avoid">
                   <div className="flex items-center gap-3">
                     <span className="text-lg font-black bg-white/20 px-3 py-1 rounded-xl inline-flex items-center gap-2 print:bg-white print:border print:border-black">
@@ -334,41 +423,76 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                       style={{
                         backgroundColor: theme.badgeBgColor,
                         color: theme.badgeTextColor,
-                        borderColor: theme.badgeBorderColor
+                        borderColor: theme.badgeBorderColor,
                       }}
                     >
                       {group.course}
                     </span>
                     <span className="text-sm font-bold bg-blue-800 px-3 py-1.5 rounded-full print:bg-white print:text-black print:border print:border-black">
-                      👥 {group.bookings.filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled').length} คน
+                      👥{" "}
+                      {
+                        group.bookings.filter(
+                          (b) =>
+                            b.status !== "cancelled" &&
+                            b.status !== "Cancelled",
+                        ).length
+                      }{" "}
+                      คน
                     </span>
                   </div>
                 </div>
-                
+
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="print:table-header-group">
                     <tr className="bg-slate-50 border-b border-slate-200 font-black print:bg-slate-100 print:border-black print:break-inside-avoid">
-                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap w-12 text-center">ลำดับ</th>
-                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ชื่อนักเรียน</th>
-                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">ผู้ปกครอง & เบอร์โทร</th>
-                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">สถานะ</th>
-                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap text-center print:w-32">เช็คชื่อ (Check-in)</th>
-                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">จัดการ</th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap w-12 text-center">
+                        ลำดับ
+                      </th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">
+                        ชื่อนักเรียน
+                      </th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap">
+                        ผู้ปกครอง & เบอร์โทร
+                      </th>
+                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">
+                        สถานะ
+                      </th>
+                      <th className="p-3 sm:p-3.5 font-black whitespace-nowrap text-center print:w-32">
+                        เช็คชื่อ (Check-in)
+                      </th>
+                      <th className="print:hidden p-3 sm:p-3.5 font-black whitespace-nowrap text-center">
+                        จัดการ
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="print:table-row-group">
                     {group.bookings.map((b, index) => {
-                      const child = childrenList.find(c => c.id === b.child_id);
-                      const parent = child ? parentsList.find(u => u.id === child.parent_id || u.user_id === child.parent_id) : null;
+                      const child = childrenList.find(
+                        (c) => c.id === b.child_id,
+                      );
+                      const parent = child
+                        ? parentsList.find(
+                            (u) =>
+                              u.id === child.parent_id ||
+                              u.user_id === child.parent_id,
+                          )
+                        : null;
 
                       return (
-                        <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300 print:break-inside-avoid">
+                        <tr
+                          key={b.id}
+                          className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors print:border-slate-300 print:break-inside-avoid"
+                        >
                           <td className="p-3 sm:p-3.5 text-center font-bold text-slate-500">
                             {index + 1}
                           </td>
                           <td className="p-3 sm:p-3.5">
                             <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
-                              {b.child_nickname ? (b.child_nickname.startsWith('น้อง') ? b.child_nickname : `น้อง${b.child_nickname}`) : 'น้องนักเรียน'}
+                              {b.child_nickname
+                                ? b.child_nickname.startsWith("น้อง")
+                                  ? b.child_nickname
+                                  : `น้อง${b.child_nickname}`
+                                : "น้องนักเรียน"}
                               {parent?.purchased_hours === 2 && (
                                 <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
                                   ฟรี
@@ -386,7 +510,9 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                           <td className="p-3 sm:p-3.5">
                             {parent ? (
                               <div>
-                                <div className="font-bold text-slate-800">{parent.name}</div>
+                                <div className="font-bold text-slate-800">
+                                  {parent.name}
+                                </div>
                                 <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
                                   <span>📞</span>
                                   <span>{parent.phone}</span>
@@ -394,14 +520,17 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                               </div>
                             ) : (
                               <div className="text-slate-500 font-medium">
-                                {child ? `ผู้ปกครอง (${child.parent_id})` : 'ผู้ปกครอง'}
+                                {child
+                                  ? `ผู้ปกครอง (${child.parent_id})`
+                                  : "ผู้ปกครอง"}
                               </div>
                             )}
                           </td>
 
                           {/* Status */}
                           <td className="print:hidden p-3 sm:p-3.5 text-center">
-                            {b.status === 'Cancelled' || b.status === 'cancelled' ? (
+                            {b.status === "Cancelled" ||
+                            b.status === "cancelled" ? (
                               <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
                                 <span>❌</span>
                                 <span>ยกเลิกแล้ว</span>
@@ -409,7 +538,11 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                             ) : (
                               <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
                                 <span>✅</span>
-                                <span>{b.status === 'confirmed' ? 'ยืนยันแล้ว' : b.status}</span>
+                                <span>
+                                  {b.status === "confirmed"
+                                    ? "ยืนยันแล้ว"
+                                    : b.status}
+                                </span>
                               </span>
                             )}
                           </td>
@@ -421,7 +554,8 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
 
                           {/* Action */}
                           <td className="print:hidden p-3 sm:p-3.5 text-center">
-                            {(b.status !== 'Cancelled' && b.status !== 'cancelled') ? (
+                            {b.status !== "Cancelled" &&
+                            b.status !== "cancelled" ? (
                               <button
                                 type="button"
                                 onClick={() => handleCancelBooking(b)}
@@ -431,7 +565,9 @@ export default function StudentBookingsRoster({ allBookings, childrenList, paren
                                 <span>ยกเลิกโดย Admin</span>
                               </button>
                             ) : (
-                              <span className="text-slate-300 font-bold text-xs">-</span>
+                              <span className="text-slate-300 font-bold text-xs">
+                                -
+                              </span>
                             )}
                           </td>
                         </tr>
