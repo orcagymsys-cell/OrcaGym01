@@ -641,7 +641,7 @@ export default function StudentDashboardPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-4 text-center gap-2 bg-white p-3.5 rounded-2xl border border-sky-200 font-bold shadow-2xs">
+        <div className="grid grid-cols-3 text-center gap-2 bg-white p-3.5 rounded-2xl border border-sky-200 font-bold shadow-2xs">
           <div className="border-r border-slate-100 pr-1">
             <div className="text-xs text-slate-500 font-normal mb-0.5">
               จำนวนครั้งที่ซื้อ
@@ -656,14 +656,6 @@ export default function StudentDashboardPage() {
             </div>
             <div className="text-rose-600 text-sm sm:text-base font-extrabold">
               {activeBookings.length} ครั้ง
-            </div>
-          </div>
-          <div className="border-r border-slate-100 pr-1">
-            <div className="text-xs text-slate-500 font-normal mb-0.5">
-              แถมฟรี
-            </div>
-            <div className="text-emerald-600 text-sm sm:text-base font-extrabold">
-              +{child.bonus_hours || 0} ครั้ง
             </div>
           </div>
           <div>
