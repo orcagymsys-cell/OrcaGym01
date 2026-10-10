@@ -122,6 +122,33 @@ export function initLocalSeed() {
     console.error('Failed to cleanup large slips:', e);
   }
 
+  // PATCH: Auto-fix single-child family quota bug (คืนโควต้าที่หายจากการกดยกเลิกคลาส)
+  try {
+    const isQuotaFixed = getLocal<boolean>('orca_quota_bug_fixed_v1', false);
+    if (!isQuotaFixed) {
+      const users = getLocal<any[]>(STORAGE_KEYS.USERS, []);
+      const children = getLocal<any[]>(STORAGE_KEYS.CHILDREN, []);
+      let fixed = false;
+      users.forEach(u => {
+        if (u.purchased_hours > 0) {
+          const famChildren = children.filter(c => c.parent_id === u.id || c.parent_id === u.user_id);
+          const alloc = famChildren.reduce((acc, c) => acc + (c.total_hours || 0), 0);
+          const rem = u.purchased_hours - alloc;
+          if (rem > 0 && famChildren.length === 1) {
+            famChildren[0].total_hours += rem;
+            fixed = true;
+          }
+        }
+      });
+      if (fixed) {
+        localStorage.setItem(STORAGE_KEYS.CHILDREN, JSON.stringify(children));
+      }
+      localStorage.setItem('orca_quota_bug_fixed_v1', JSON.stringify(true));
+    }
+  } catch(e) {
+    console.error('Failed to run quota patch:', e);
+  }
+
   const isInitialized = getLocal<boolean>(STORAGE_KEYS.SEED_INITIALIZED, false);
   if (isInitialized) return;
 

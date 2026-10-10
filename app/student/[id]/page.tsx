@@ -170,12 +170,10 @@ export default function StudentDashboardPage() {
       await store.cancelBooking(bookingId);
       if (child) {
         const newUsed = Math.max(0, child.used_hours - 1);
-        const newTotal = Math.max(0, child.total_hours - 1);
         await store.updateChild(child.id, {
           used_hours: newUsed,
-          total_hours: newTotal,
         });
-        setChild({ ...child, used_hours: newUsed, total_hours: newTotal });
+        setChild({ ...child, used_hours: newUsed });
       }
       setBookings((prev) => prev.filter((b) => b.id !== bookingId));
       showToast("ยกเลิกการจองคลาสเรียนเรียบร้อย");

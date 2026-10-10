@@ -416,7 +416,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <span className="text-blue-900 bg-sky-100 px-3 py-1.5 rounded-full text-[11px] font-extrabold border border-sky-300 shrink-0">
-                  คงเหลือ: <strong className="text-blue-700 text-sm">{basket.remaining_hours}</strong> ครั้ง
+                  คงเหลือ: <strong className="text-blue-700 text-sm">{basket.original_hours - (basket.used_hours || 0)}</strong> ครั้ง
                 </span>
               </div>
               <div className="grid grid-cols-3 text-center gap-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 font-bold shadow-2xs">
@@ -426,11 +426,11 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-normal">จัดสรรแล้ว</div>
-                  <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{basket.original_hours - basket.remaining_hours} ครั้ง</div>
+                  <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{basket.used_hours || 0} ครั้ง</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-normal">คงเหลือในตะกร้า</div>
-                  <div className="text-blue-700 text-xs sm:text-sm font-black">{basket.remaining_hours} ครั้ง</div>
+                  <div className="text-blue-700 text-xs sm:text-sm font-black">{basket.original_hours - (basket.used_hours || 0)} ครั้ง</div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50/70 p-2.5 rounded-2xl border border-sky-100 text-[11px] font-semibold text-slate-700">
@@ -533,8 +533,8 @@ export default function HomePage() {
               <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl space-y-1 text-xs">
                 <div className="font-bold text-[#001a3a]">🛒 สรุปโควต้าตะกร้าครอบครัว</div>
                 <div>ซื้อรวม: <strong>{familyBaskets.reduce((acc, b) => acc + b.original_hours, 0)} ครั้ง</strong></div>
-                <div>จัดสรรให้เด็กแล้ว: <strong>{familyBaskets.reduce((acc, b) => acc + (b.original_hours - b.remaining_hours), 0)} ครั้ง</strong></div>
-                <div>คงเหลือครอบครัว: <strong className="text-blue-700">{familyBaskets.reduce((acc, b) => acc + b.remaining_hours, 0)} ครั้ง</strong></div>
+                <div>จัดสรรให้เด็กแล้ว: <strong>{familyBaskets.reduce((acc, b) => acc + (b.used_hours || 0), 0)} ครั้ง</strong></div>
+                <div>คงเหลือครอบครัว: <strong className="text-blue-700">{familyBaskets.reduce((acc, b) => acc + (b.original_hours - (b.used_hours || 0)), 0)} ครั้ง</strong></div>
               </div>
 
               </div>

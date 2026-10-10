@@ -131,10 +131,8 @@ export default function StudentBookingsRoster({
 
       if (child) {
         const updatedUsed = Math.max(0, child.used_hours - 1);
-        const updatedTotal = Math.max(0, child.total_hours - 1);
         await store.updateChild(child.id, {
           used_hours: updatedUsed,
-          total_hours: updatedTotal,
         });
       }
 
