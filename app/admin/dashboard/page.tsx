@@ -2905,7 +2905,7 @@ function AdminDashboardContent() {
       {/* TAB 3: SCHEDULE MATRIX */}
         {activeTab === 'schedule' && (
           <div className="space-y-4">
-            <WeeklyScheduleAdmin allBookings={allBookings} />
+            <WeeklyScheduleAdmin allBookings={allBookings} allChildren={children} />
             <StudentBookingsRoster allBookings={allBookings} childrenList={children} parentsList={parents} onBookingCancelled={() => window.location.reload()} />
           </div>
         )}

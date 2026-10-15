@@ -474,8 +474,16 @@ export const store = {
         const { data, error } = await query;
         if (!error) {
           const freshData = data || [];
-          const children = this.getChildrenSync();
-          const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
+          let children = this.getChildrenSync();
+          if (!children || children.length === 0) {
+            children = await this.getChildren();
+          }
+          let childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
+          const missingChild = freshData.some(b => b.child_id && !childrenMap.has(b.child_id));
+          if (missingChild) {
+            children = await this.getChildren();
+            childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
+          }
           const mapped = freshData.map(b => {
             const c = childrenMap.get(b.child_id);
             return {

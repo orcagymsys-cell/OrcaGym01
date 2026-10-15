@@ -485,23 +485,34 @@ export default function StudentBookingsRoster({
                             {index + 1}
                           </td>
                           <td className="p-3 sm:p-3.5">
-                            <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
-                              {b.child_nickname
-                                ? b.child_nickname.startsWith("น้อง")
-                                  ? b.child_nickname
-                                  : `น้อง${b.child_nickname}`
-                                : "น้องนักเรียน"}
-                              {parent?.purchased_hours === 2 && (
-                                <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
-                                  ฟรี
-                                </span>
-                              )}
-                            </div>
-                            {b.child_full_name && (
-                              <div className="text-[11px] font-medium text-slate-500">
-                                {b.child_full_name}
-                              </div>
-                            )}
+                            {(() => {
+                              const child = childrenList.find(c => c.id === b.child_id);
+                              const rawNickname = b.child_nickname || child?.nickname;
+                              const displayName = rawNickname
+                                ? rawNickname.startsWith("น้อง")
+                                  ? rawNickname
+                                  : `น้อง${rawNickname}`
+                                : "น้องนักเรียน";
+                              const fullName = b.child_full_name || child?.full_name;
+
+                              return (
+                                <>
+                                  <div className="font-black text-[#001a3a] text-sm flex items-center flex-wrap gap-1">
+                                    {displayName}
+                                    {parent?.purchased_hours === 2 && (
+                                      <span className="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold ml-1 shadow-sm">
+                                        ฟรี
+                                      </span>
+                                    )}
+                                  </div>
+                                  {fullName && (
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      {fullName}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </td>
 
                           {/* Parent & Phone */}

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { store } from '@/lib/supabase';
-import { Booking } from '@/lib/types';
+import { Booking, Child } from '@/lib/types';
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -89,13 +89,31 @@ function getChildColor(str: string) {
   return colors[index % colors.length];
 }
 
-export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Booking[] }) {
+export default function WeeklyScheduleAdmin({ 
+  allBookings, 
+  allChildren 
+}: { 
+  allBookings: Booking[];
+  allChildren?: Child[];
+}) {
   const [quotas, setQuotas] = useState<Record<string, number>>({});
   const [courses, setCourses] = useState<any[]>([]);
+  const [children, setChildren] = useState<Child[]>(() => (allChildren && allChildren.length > 0) ? allChildren : store.getChildrenSync());
   
+  useEffect(() => {
+    if (allChildren && allChildren.length > 0) {
+      setChildren(allChildren);
+    }
+  }, [allChildren]);
+
   useEffect(() => {
     store.getSlotQuotas().then(setQuotas);
     store.getCourses().then(c => setCourses(c || []));
+    if (!allChildren || allChildren.length === 0) {
+      store.getChildren().then(c => {
+        if (c && c.length > 0) setChildren(c);
+      });
+    }
   }, []);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
@@ -420,15 +438,24 @@ export default function WeeklyScheduleAdmin({ allBookings }: { allBookings: Book
                   <div className="font-bold">ยังไม่มีผู้ลงเรียนในคลาสนี้</div>
                 </div>
               ) : (
-                selectedSlot.bookings.map(b => (
+                selectedSlot.bookings.map(b => {
+                const child = children.find(c => c.id === b.child_id);
+                const rawNickname = b.child_nickname || child?.nickname;
+                const displayName = rawNickname 
+                  ? (rawNickname.startsWith('น้อง') ? rawNickname : `น้อง${rawNickname}`) 
+                  : 'น้องนักเรียน';
+                const fullName = b.child_full_name || child?.full_name;
+
+                return (
                   <div key={b.id} className="p-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl flex justify-between items-center hover:border-blue-200 transition-colors">
                     <div>
-                      <div className="font-black text-[#001a3a] text-[15px]">{b.child_nickname ? (b.child_nickname.startsWith('น้อง') ? b.child_nickname : `น้อง${b.child_nickname}`) : 'น้องนักเรียน'}</div>
-                      <div className="text-[12px] font-medium text-slate-500 mt-0.5">{b.child_full_name}</div>
+                      <div className="font-black text-[#001a3a] text-[15px]">{displayName}</div>
+                      {fullName && <div className="text-[12px] font-medium text-slate-500 mt-0.5">{fullName}</div>}
                     </div>
                     <span className="text-[11px] font-extrabold px-3 py-1 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-full">ยืนยันแล้ว</span>
                   </div>
-                ))
+                );
+              })
               )}
             </div>
             

@@ -239,7 +239,7 @@ export default function SchedulePage() {
           </h1>
         </div>
         
-        <WeeklyScheduleAdmin allBookings={allBookings} />
+        <WeeklyScheduleAdmin allBookings={allBookings} allChildren={allChildren} />
         <StudentBookingsRoster 
           allBookings={allBookings} 
           childrenList={allChildren} 
