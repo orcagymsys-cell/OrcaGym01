@@ -177,11 +177,16 @@ export default function SchedulePage() {
 
   useEffect(() => {
     loadData();
-    // Setup Supabase Realtime for instant updates
+    // Setup Supabase Realtime for instant updates with debouncing
+    let debounceTimer: any = null;
     const cleanupRealtime = setupRealtimeSubscriptions(() => {
-      loadData();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadData();
+      }, 1500);
     });
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupRealtime) cleanupRealtime();
     };
   }, []);

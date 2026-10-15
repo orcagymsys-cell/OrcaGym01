@@ -17,6 +17,19 @@ export default function AuditPage() {
   const [dateFilter, setDateFilter] = useState('');
   const [selectedSlip, setSelectedSlip] = useState<AuditLog | null>(null);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const logs = await store.getAuditLogs();
+      setAuditLogs(logs || []);
+      showToast('รีเฟรชข้อมูลล่าสุดเรียบร้อยแล้ว');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       const user = store.getCurrentUser();
@@ -32,26 +45,6 @@ export default function AuditPage() {
     }
 
     loadData();
-
-    // Auto-refresh audit log data in real-time
-    const interval = setInterval(async () => {
-      const logs = await store.getAuditLogs();
-      setAuditLogs(logs || []);
-    }, 60000);
-
-    const handleStoreChange = async () => {
-      const logs = await store.getAuditLogs();
-      setAuditLogs(logs || []);
-    };
-
-    window.addEventListener('storage', handleStoreChange);
-    window.addEventListener('orca_store_updated', handleStoreChange);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', handleStoreChange);
-      window.removeEventListener('orca_store_updated', handleStoreChange);
-    };
   }, [router]);
 
   // Filtered Logs Computation
@@ -189,6 +182,15 @@ export default function AuditPage() {
             }`}
           >
             แสดงทั้งหมด
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-2xl text-xs font-black hover:bg-slate-100 transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-60"
+          >
+            <span>{refreshing ? '⏳ กำลังโหลด...' : '🔄 รีเฟรช'}</span>
           </button>
         </div>
       </div>

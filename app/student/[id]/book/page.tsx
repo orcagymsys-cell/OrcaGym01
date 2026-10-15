@@ -108,8 +108,17 @@ export default function BookingCalendarPage() {
     }
     loadData();
 
-    const cleanupRealtime = setupRealtimeSubscriptions(() => loadData());
-    return () => { if (cleanupRealtime) cleanupRealtime(); };
+    let debounceTimer: any = null;
+    const cleanupRealtime = setupRealtimeSubscriptions(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadData();
+      }, 1500);
+    });
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (cleanupRealtime) cleanupRealtime();
+    };
   }, [childId, selectedDate, router]);
 
   const changeMonth = (delta: number) => {

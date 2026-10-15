@@ -361,35 +361,30 @@ function AdminDashboardContent() {
     }
     loadData();
 
-    // Setup Supabase Realtime for instant updates
+    // Setup Supabase Realtime for instant updates with debouncing
+    let debounceTimer: any = null;
     const fetchDataBackground = () => {
-      Promise.all([
-        store.getUsers(), store.getChildren(), store.getAuditLogs(),
-        store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
-      ]).then(([uList, cList, logs, b, bAll, q]) => {
-        setParents(uList.filter(u => u.role !== 'admin'));
-        setChildren(cList);
-        setAuditLogs(logs);
-        setDayBookings(b);
-        setAllBookings(bAll);
-        setQuotas(q);
-      });
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        Promise.all([
+          store.getUsers(), store.getChildren(), store.getAuditLogs(),
+          store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
+        ]).then(([uList, cList, logs, b, bAll, q]) => {
+          setParents(uList.filter(u => u.role !== 'admin'));
+          setChildren(cList);
+          setAuditLogs(logs);
+          setDayBookings(b);
+          setAllBookings(bAll);
+          setQuotas(q);
+        });
+      }, 1500);
     };
 
     const cleanupRealtime = setupRealtimeSubscriptions(fetchDataBackground);
 
-    
-
-    let syncChannel: BroadcastChannel | null = null;
-    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-      syncChannel = new BroadcastChannel('orca_store_channel');
-      syncChannel.onmessage = () => loadData();
-    }
-
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupRealtime) cleanupRealtime();
-      if (syncChannel) syncChannel.close();
-      
     };
   }, [router, selectedDate]);
 

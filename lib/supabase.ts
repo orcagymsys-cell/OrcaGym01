@@ -46,7 +46,7 @@ const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in windo
   ? new BroadcastChannel('orca_store_channel') 
   : null;
 
-function setLocal(key: string, val: any) {
+function setLocal(key: string, val: any, notify: boolean = true) {
   if (typeof window === 'undefined') return;
   const newVal = JSON.stringify(val);
   const oldVal = localStorage.getItem(key);
@@ -56,11 +56,13 @@ function setLocal(key: string, val: any) {
   
   try {
     localStorage.setItem(key, newVal);
-    window.dispatchEvent(new CustomEvent('orca_store_updated', { detail: { key, value: val } }));
-    if (syncChannel) {
-      try {
-        syncChannel.postMessage({ key, value: val });
-      } catch (err) {}
+    if (notify) {
+      window.dispatchEvent(new CustomEvent('orca_store_updated', { detail: { key, value: val } }));
+      if (syncChannel) {
+        try {
+          syncChannel.postMessage({ key, value: val });
+        } catch (err) {}
+      }
     }
   } catch (e: any) {
     if (e?.name === 'QuotaExceededError' || e?.code === 22) {
@@ -226,8 +228,8 @@ export const store = {
     return getLocal<T>(key, fallback);
   },
 
-  setLocal(key: string, val: any) {
-    setLocal(key, val);
+  setLocal(key: string, val: any, notify: boolean = true) {
+    setLocal(key, val, notify);
   },
 
   getCurrentUser(): UserProfile | null {
@@ -273,7 +275,7 @@ export const store = {
           // Always use Supabase data (even empty array) and overwrite local cache
           // This handles deletions without causing flicker
           const freshData = data || [];
-          setLocal(STORAGE_KEYS.USERS, freshData);
+          setLocal(STORAGE_KEYS.USERS, freshData, false);
           return freshData;
         }
       } catch (e) {
@@ -377,7 +379,7 @@ export const store = {
         const { data, error } = await supabase.from('children').select('id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at,photo_url').order('id');
         if (!error) {
           const freshData = data || [];
-          setLocal(STORAGE_KEYS.CHILDREN, freshData);
+          setLocal(STORAGE_KEYS.CHILDREN, freshData, false);
           
           // Auto-update ORCA_MY_KIDS cache for parents so navigation is instantly fast
           if (typeof window !== 'undefined') {
@@ -386,7 +388,7 @@ export const store = {
               const resolvedUserId = (currentUser.id || currentUser.user_id)?.trim();
               if (resolvedUserId) {
                 const myKids = freshData.filter(c => c.parent_id?.trim() === resolvedUserId);
-                setLocal('ORCA_MY_KIDS', myKids);
+                setLocal('ORCA_MY_KIDS', myKids, false);
               }
             }
           }
@@ -472,7 +474,7 @@ export const store = {
         const { data, error } = await query;
         if (!error) {
           const freshData = data || [];
-          const children = await this.getChildren();
+          const children = this.getChildrenSync();
           const childrenMap = new Map<string, any>(children.map(c => [c.id, c]));
           const mapped = freshData.map(b => {
             const c = childrenMap.get(b.child_id);
@@ -484,7 +486,7 @@ export const store = {
             };
           });
           
-          if (!childId && !date) setLocal(STORAGE_KEYS.BOOKINGS, mapped);
+          if (!childId && !date) setLocal(STORAGE_KEYS.BOOKINGS, mapped, false);
           
           // Auto-update ORCA_MY_BOOKINGS cache for parents
           if (typeof window !== 'undefined') {
@@ -495,7 +497,7 @@ export const store = {
                  // Get parent's children IDs to filter bookings
                  const myKidIds = new Set(children.filter(c => c.parent_id?.trim() === resolvedUserId).map(c => c.id));
                  const myBookings = mapped.filter(b => myKidIds.has(b.child_id));
-                 setLocal('ORCA_MY_BOOKINGS', myBookings);
+                 setLocal('ORCA_MY_BOOKINGS', myBookings, false);
                }
             }
           }
@@ -612,7 +614,7 @@ export const store = {
     if (isSupabaseConfigured && supabase) {
       const { data } = await supabase.from('audit_logs').select('*').order('id').order('created_at', { ascending: false });
       if (data) {
-        setLocal(STORAGE_KEYS.AUDIT_LOGS, data);
+        setLocal(STORAGE_KEYS.AUDIT_LOGS, data, false);
         return data;
       }
     }
@@ -686,7 +688,7 @@ export const store = {
       try {
         const { data, error } = await supabase.from('course_configs').select('*');
         if (!error && data && data.length > 0) {
-          setLocal(STORAGE_KEYS.COURSES, data);
+          setLocal(STORAGE_KEYS.COURSES, data, false);
           return data as CourseConfig[];
         } else if (!error && data && data.length === 0) {
           if (courses && courses.length > 0) {

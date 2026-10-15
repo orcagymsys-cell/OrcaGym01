@@ -138,16 +138,18 @@ export default function HomePage() {
     }
     loadData();
 
-    // Setup Realtime
+    // Setup Realtime with debounce
+    let debounceTimer: any = null;
     const cleanupRealtime = setupRealtimeSubscriptions(() => {
-      loadData();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadData();
+      }, 1500);
     });
 
-    
-
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupRealtime) cleanupRealtime();
-      
     };
   }, []);
 

@@ -155,8 +155,15 @@ export default function StudentDashboardPage() {
     }
     loadData();
 
-    const cleanupRealtime = setupRealtimeSubscriptions(() => loadData());
+    let debounceTimer: any = null;
+    const cleanupRealtime = setupRealtimeSubscriptions(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadData();
+      }, 1500);
+    });
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupRealtime) cleanupRealtime();
     };
   }, [mounted, childId]);

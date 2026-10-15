@@ -182,28 +182,6 @@ export default function PricingPage() {
       setAllUsers(uData || []);
     }
     loadData();
-
-    // Auto-listen for store changes
-    const handleStoreChange = async () => {
-      const data = await store.getCourses();
-      setCourses(data || []);
-
-      const bData = await store.getBookings();
-      setBookings(bData || []);
-
-      const cData = await store.getChildren();
-      setAllChildren(cData || []);
-
-      const uData = await store.getUsers();
-      setAllUsers(uData || []);
-    };
-    window.addEventListener('storage', handleStoreChange);
-    window.addEventListener('orca_store_updated', handleStoreChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStoreChange);
-      window.removeEventListener('orca_store_updated', handleStoreChange);
-    };
   }, []);
 
   const handleCancelBooking = async (b: Booking) => {
