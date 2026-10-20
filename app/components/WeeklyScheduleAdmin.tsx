@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { store } from '@/lib/supabase';
-import { Booking, Child } from '@/lib/types';
+import { Booking, Child, GymHoliday } from '@/lib/types';
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -98,6 +98,7 @@ export default function WeeklyScheduleAdmin({
 }) {
   const [quotas, setQuotas] = useState<Record<string, number>>({});
   const [courses, setCourses] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<GymHoliday[]>(() => store.getHolidaysSync());
   const [children, setChildren] = useState<Child[]>(() => (allChildren && allChildren.length > 0) ? allChildren : store.getChildrenSync());
   
   useEffect(() => {
@@ -109,6 +110,7 @@ export default function WeeklyScheduleAdmin({
   useEffect(() => {
     store.getSlotQuotas().then(setQuotas);
     store.getCourses().then(c => setCourses(c || []));
+    store.getHolidays().then(setHolidays);
     if (!allChildren || allChildren.length === 0) {
       store.getChildren().then(c => {
         if (c && c.length > 0) setChildren(c);
@@ -207,6 +209,8 @@ export default function WeeklyScheduleAdmin({
 
                 const isMonday = dayConfig.key === 1;
                 const isWeekend = dayConfig.key === 0 || dayConfig.key === 6;
+                const dayHolidays = holidays.filter(h => h.date === dateStr);
+                const allDayHoliday = dayHolidays.find(h => !h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)');
 
                 return (
                   <tr key={dayConfig.key} className="border-b-2 border-slate-100 hover:bg-slate-50 transition-colors">

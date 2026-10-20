@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
-import { Child, Booking, UserProfile } from '@/lib/types';
+import { Child, Booking, UserProfile, GymHoliday } from '@/lib/types';
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
 
@@ -97,6 +97,7 @@ export default function SchedulePage() {
   const [parents, setParents] = useState<UserProfile[]>([]);
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<GymHoliday[]>(() => store.getHolidaysSync());
   const [loading, setLoading] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getStartOfWeek(new Date()));
 
@@ -139,23 +140,26 @@ export default function SchedulePage() {
 
     // --- SWR Pattern: Background Fetch from Supabase ---
     if (user.role === 'admin') {
-      const [bookings, users, kids, coursesList] = await Promise.all([
-        store.getBookings(), store.getUsers(), store.getChildren(), store.getCourses()
+      const [bookings, users, kids, coursesList, hList] = await Promise.all([
+        store.getBookings(), store.getUsers(), store.getChildren(), store.getCourses(), store.getHolidays()
       ]);
       if (reqId !== requestRef.current) return;
       setAllBookings(bookings);
       setParents(users.filter(u => u.role === 'parent'));
       setAllChildren(kids);
       setCourses(coursesList);
+      if (hList) setHolidays(hList);
     } else {
       const parentUserId = user.id || user.user_id;
-      const [allKids, allBookingsSys, coursesList] = await Promise.all([
+      const [allKids, allBookingsSys, coursesList, hList] = await Promise.all([
         store.getChildren(),  // fetch ALL, filter locally
         store.getBookings(),
-        store.getCourses()
+        store.getCourses(),
+        store.getHolidays()
       ]);
       if (reqId !== requestRef.current) return;
       setCourses(coursesList);
+      if (hList) setHolidays(hList);
       const kidsToSave = allKids.filter(k => k.parent_id === parentUserId);
       setChildren(kidsToSave);
       store.setLocal('ORCA_MY_KIDS', kidsToSave);
@@ -308,6 +312,8 @@ export default function SchedulePage() {
 
                   const isMonday = dayConfig.key === 1;
                   const isWeekend = dayConfig.key === 0 || dayConfig.key === 6;
+                  const dayHolidays = holidays.filter(h => h.date === dateStr);
+                  const allDayHoliday = dayHolidays.find(h => !h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)');
 
                   return (
                     <tr key={dayConfig.key} className="border-b-2 border-slate-100 hover:bg-slate-50 transition-colors">

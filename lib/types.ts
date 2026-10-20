@@ -129,3 +129,11 @@ export interface CourseConfig {
   pricing_options: PricingOption[];
   schedule_groups?: ScheduleDayGroup[];
 }
+
+export interface GymHoliday {
+  id: string;
+  date: string;
+  course_name?: string;
+  reason?: string;
+  created_at?: string;
+}

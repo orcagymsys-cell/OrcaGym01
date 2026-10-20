@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { UserProfile, Child, Booking, AuditLog, SlotQuota, CourseConfig } from './types';
+import { UserProfile, Child, Booking, AuditLog, SlotQuota, CourseConfig, GymHoliday } from './types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -30,6 +30,7 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'orca_current_user_v3',
   SEED_INITIALIZED: 'orca_seed_init_v3',
   COURSES: 'orca_courses_v4',
+  HOLIDAYS: 'orca_gym_holidays_v1',
 };
 
 function getLocal<T>(key: string, defaultVal: T): T {
@@ -813,6 +814,74 @@ export const store = {
     if (isSupabaseConfigured && supabase) {
       await supabase.from('course_configs').delete().eq('id', id);
     }
+  },
+
+  getHolidaysSync(): GymHoliday[] {
+    return getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+  },
+
+  async getHolidays(): Promise<GymHoliday[]> {
+    let holidays = getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('gym_holidays')
+          .select('*')
+          .order('date', { ascending: true });
+        if (!error && data) {
+          holidays = data as GymHoliday[];
+          setLocal(STORAGE_KEYS.HOLIDAYS, holidays, false);
+          return holidays;
+        }
+      } catch (e) {}
+    }
+    return holidays;
+  },
+
+  async saveHoliday(holiday: GymHoliday): Promise<void> {
+    const holidays = getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+    const idx = holidays.findIndex(h => h.id === holiday.id || (h.date === holiday.date && (h.course_name || 'All Courses') === (holiday.course_name || 'All Courses')));
+    if (idx !== -1) {
+      holidays[idx] = { ...holidays[idx], ...holiday };
+    } else {
+      holidays.push(holiday);
+    }
+    holidays.sort((a, b) => a.date.localeCompare(b.date));
+    setLocal(STORAGE_KEYS.HOLIDAYS, holidays);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('gym_holidays').upsert([holiday]);
+      } catch (e) {}
+    }
+  },
+
+  async deleteHoliday(id: string): Promise<void> {
+    let holidays = getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+    holidays = holidays.filter(h => h.id !== id);
+    setLocal(STORAGE_KEYS.HOLIDAYS, holidays);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('gym_holidays').delete().eq('id', id);
+      } catch (e) {}
+    }
+  },
+
+  isDateHoliday(date: string, courseName?: string, holidayList?: GymHoliday[]): { isHoliday: boolean; holiday?: GymHoliday } {
+    const list = holidayList || getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+    const found = list.find(h => {
+      if (h.date !== date) return false;
+      if (!h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)') {
+        return true;
+      }
+      if (!courseName) return true;
+      const c1 = courseName.toLowerCase();
+      const c2 = h.course_name.toLowerCase();
+      return c1.includes(c2) || c2.includes(c1);
+    });
+    return {
+      isHoliday: Boolean(found),
+      holiday: found
+    };
   }
 };
 
@@ -826,6 +895,7 @@ export function setupRealtimeSubscriptions(onUpdate: () => void) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'course_configs' }, onUpdate)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'gym_holidays' }, onUpdate)
     .subscribe();
   return () => {
     if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }

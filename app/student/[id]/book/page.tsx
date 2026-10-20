@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import { store, setupRealtimeSubscriptions } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
-import { Child, Booking } from '@/lib/types';
+import { Child, Booking, GymHoliday } from '@/lib/types';
 
 const COURSE_SCHEDULES: Record<string, { weekday: string[]; weekend: string[] }> = {
   'Orca Cubs': {
@@ -62,6 +62,7 @@ export default function BookingCalendarPage() {
   const [successModalText, setSuccessModalText] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<GymHoliday[]>(() => typeof window !== 'undefined' ? store.getHolidaysSync() : []);
 
   useEffect(() => {
     async function loadData() {
@@ -81,19 +82,22 @@ export default function BookingCalendarPage() {
       }
       setDateBookings(store.getBookingsSync().filter(b => b.booking_date === selectedDate));
       setQuotas(store.getSlotQuotasSync());
+      setHolidays(store.getHolidaysSync());
       setLoading(false);
 
       // 2. Background Fetch
-      const [allC, b, q, crs] = await Promise.all([
+      const [allC, b, q, crs, hList] = await Promise.all([
         store.getChildren(),
         store.getBookings(undefined, selectedDate),
         store.getSlotQuotas(),
-        store.getCourses()
+        store.getCourses(),
+        store.getHolidays()
       ]);
       
       if (reqId !== requestRef.current) return;
       
       setCoursesListGlobal(crs || []);
+      setHolidays(hList || []);
       let c = allC.find(x => x.id === resolvedChildId);
       if (c) {
         if ((c.total_hours - c.used_hours) <= 0) {
@@ -130,9 +134,31 @@ export default function BookingCalendarPage() {
     setYear(newY);
   };
 
+  
+  const getHolidayForDate = (dateStr: string) => {
+    return holidays.find(h => {
+      if (h.date !== dateStr) return false;
+      if (!h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)') {
+        return true;
+      }
+      const childCourse = (child?.course_name || '').toLowerCase();
+      const hCourse = h.course_name.toLowerCase();
+      return childCourse.includes(hCourse) || hCourse.includes(childCourse);
+    });
+  };
+  const selectedHoliday = getHolidayForDate(selectedDate);
+
   const handleConfirmBooking = async () => {
     if (!child || !selectedSlot) {
       showToast('กรุณาเลือกรอบเวลาที่ต้องการเข้าเรียน');
+      return;
+    }
+
+    const activeHoliday = getHolidayForDate(selectedDate);
+    if (activeHoliday) {
+      setAlertModalText(
+        '🛑 วันที่ ' + selectedDate + ' เป็นวันหยุดทำการ (' + (activeHoliday.reason || 'ยิมปิดทำการ') + ')\n\nไม่สามารถทำการจองคลาสเรียนได้ ขออภัยในความไม่สะดวกค่ะ'
+      );
       return;
     }
 
@@ -508,7 +534,7 @@ export default function BookingCalendarPage() {
       <button
         type="button"
         onClick={handleConfirmBooking}
-        disabled={isMonday || !selectedSlot || isSubmitting}
+        disabled={Boolean(selectedHoliday) || Boolean(selectedHoliday) || isMonday || !selectedSlot || isSubmitting}
         className={`w-full py-3.5 sm:py-4 rounded-full transition-all duration-300 shadow-xl border-none cursor-pointer mb-8 ${
           isMonday || !selectedSlot || isSubmitting
             ? 'bg-slate-300 text-slate-500 cursor-not-allowed scale-[0.98]'
@@ -516,7 +542,7 @@ export default function BookingCalendarPage() {
         }`}
       >
         <div className="flex flex-col items-center justify-center leading-tight">
-          <span className="text-base sm:text-lg font-bold">{isSubmitting ? 'กำลังจอง...' : 'Book Class'}</span>
+          <span className="text-base sm:text-lg font-bold">{selectedHoliday ? 'วันหยุดทำการ (Gym Closed)' : isSubmitting ? 'กำลังจอง...' : 'Book Class'}</span>
           <span className="text-xs sm:text-sm font-semibold opacity-90">(ยืนยันการจองคลาส)</span>
         </div>
       </button>

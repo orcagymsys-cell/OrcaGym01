@@ -8,7 +8,7 @@ import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
 import { showToast } from '@/components/Toast';
 import { compressImage } from '@/lib/imageUtils';
-import { Child, AuditLog, Booking, UserProfile, PaymentProofRecord } from '@/lib/types';
+import { Child, AuditLog, Booking, UserProfile, PaymentProofRecord, GymHoliday } from '@/lib/types';
 
 function calculateAge(dob: string): string {
   if (!dob) return '-';
@@ -94,12 +94,12 @@ function AdminDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
-  const initialTab = (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase'].includes(tabParam)) ? (tabParam as any) : 'overview';
+  const initialTab = (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays'].includes(tabParam)) ? (tabParam as any) : 'overview';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'parents' | 'members' | 'audit' | 'schedule' | 'quota' | 'supabase'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'parents' | 'members' | 'audit' | 'schedule' | 'quota' | 'supabase' | 'holidays'>(initialTab);
 
   useEffect(() => {
-    if (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase'].includes(tabParam)) {
+    if (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     } else {
       setActiveTab('overview');
@@ -111,6 +111,11 @@ function AdminDashboardContent() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [coursesListGlobal, setCoursesListGlobal] = useState<any[]>([]);
+  const [holidays, setHolidays] = useState<GymHoliday[]>(() => typeof window !== 'undefined' ? store.getHolidaysSync() : []);
+  const [holidayDate, setHolidayDate] = useState<string>('');
+  const [holidayCourse, setHolidayCourse] = useState<string>('All Courses');
+  const [holidayReason, setHolidayReason] = useState<string>('วันหยุดทำการ');
+  const [isSavingHoliday, setIsSavingHoliday] = useState<boolean>(false);
   useEffect(() => {
     store.getCourses().then(c => setCoursesListGlobal(c || []));
   }, []);
@@ -278,6 +283,82 @@ function AdminDashboardContent() {
 
 
 
+
+  const handleSaveHoliday = async () => {
+    if (!holidayDate) {
+      showToast('⚠️ กรุณาเลือกวันที่ต้องการกำหนดเป็นวันหยุดทำการ');
+      return;
+    }
+
+    setIsSavingHoliday(true);
+    try {
+      const newHoliday: GymHoliday = {
+        id: 'hol_' + Date.now(),
+        date: holidayDate,
+        course_name: holidayCourse,
+        reason: holidayReason.trim() || 'วันหยุดทำการ',
+        created_at: new Date().toISOString()
+      };
+
+      await store.saveHoliday(newHoliday);
+
+      const adminUser = store.getCurrentUser();
+      const newLog: AuditLog = {
+        id: 'audit_' + Date.now(),
+        admin_name: adminUser?.name || 'แอดมิน Orca',
+        action_type: 'set_holiday',
+        note: `กำหนดวันหยุดทำการ: วันที่ ${holidayDate} (${holidayCourse === 'All Courses' ? 'ทุกคลาส' : holidayCourse}) เหตุผล: ${newHoliday.reason}`
+      };
+      await store.saveAuditLog(newLog);
+
+      const updated = await store.getHolidays();
+      setHolidays(updated);
+      const updatedLogs = await store.getAuditLogs();
+      setAuditLogs(updatedLogs);
+
+      showToast(`✅ บันทึกวันหยุดทำการ ${formatThaiShortDate(holidayDate)} เรียบร้อยแล้ว`);
+      setHolidayDate('');
+      setHolidayReason('วันหยุดทำการ');
+    } catch (err) {
+      console.error(err);
+      showToast('❌ เกิดข้อผิดพลาดในการบันทึกวันหยุดทำการ');
+    } finally {
+      setIsSavingHoliday(false);
+    }
+  };
+
+  const handleDeleteHoliday = async (id: string) => {
+    const hol = holidays.find(h => h.id === id);
+    if (!hol) return;
+
+    if (!confirm(`คุณต้องการลบวันหยุดทำการ วันที่ ${formatThaiShortDate(hol.date)} ใช่หรือไม่?`)) {
+      return;
+    }
+
+    try {
+      await store.deleteHoliday(id);
+
+      const adminUser = store.getCurrentUser();
+      const newLog: AuditLog = {
+        id: 'audit_' + Date.now(),
+        admin_name: adminUser?.name || 'แอดมิน Orca',
+        action_type: 'delete_holiday',
+        note: `ลบวันหยุดทำการ: วันที่ ${hol.date} (${hol.course_name === 'All Courses' ? 'ทุกคลาส' : hol.course_name}) เหตุผล: ${hol.reason}`
+      };
+      await store.saveAuditLog(newLog);
+
+      const updated = await store.getHolidays();
+      setHolidays(updated);
+      const updatedLogs = await store.getAuditLogs();
+      setAuditLogs(updatedLogs);
+
+      showToast(`🗑️ ลบวันหยุดทำการ ${formatThaiShortDate(hol.date)} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      showToast('❌ เกิดข้อผิดพลาดในการลบวันหยุดทำการ');
+    }
+  };
+
   const isChildOfParent = (c: Child, p: any) => {
     if (!c || !p) return false;
 
@@ -340,13 +421,14 @@ function AdminDashboardContent() {
       setQuotas(store.getSlotQuotasSync());
 
       // --- SWR Pattern: Background Fetch from Supabase ---
-      const [uList, cList, logs, b, bAll, q] = await Promise.all([
+      const [uList, cList, logs, b, bAll, q, hList] = await Promise.all([
         store.getUsers(),
         store.getChildren(),
         store.getAuditLogs(),
         store.getBookings(undefined, selectedDate),
         store.getBookings(),
-        store.getSlotQuotas()
+        store.getSlotQuotas(),
+        store.getHolidays()
       ]);
 
       if (reqId !== requestRef.current) return; // Prevent Race Condition
@@ -358,6 +440,7 @@ function AdminDashboardContent() {
       setDayBookings(b);
       setAllBookings(bAll);
       setQuotas(q);
+      if (hList) setHolidays(hList);
     }
     loadData();
 
@@ -368,14 +451,15 @@ function AdminDashboardContent() {
       debounceTimer = setTimeout(() => {
         Promise.all([
           store.getUsers(), store.getChildren(), store.getAuditLogs(),
-          store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas()
-        ]).then(([uList, cList, logs, b, bAll, q]) => {
+          store.getBookings(undefined, selectedDate), store.getBookings(), store.getSlotQuotas(), store.getHolidays()
+        ]).then(([uList, cList, logs, b, bAll, q, hList]) => {
           setParents(uList.filter(u => u.role !== 'admin'));
           setChildren(cList);
           setAuditLogs(logs);
           setDayBookings(b);
           setAllBookings(bAll);
           setQuotas(q);
+          if (hList) setHolidays(hList);
         });
       }, 1500);
     };
@@ -1467,7 +1551,7 @@ function AdminDashboardContent() {
       </div>
 
       {/* Dashboard Sub-navigation */}
-      {(activeTab === 'overview' || activeTab === 'quota') && (
+      {(activeTab === 'overview' || activeTab === 'quota' || activeTab === 'holidays') && (
         <div className="bg-white border border-slate-200/90 rounded-3xl p-3 shadow-xs mb-6">
           <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
@@ -3141,6 +3225,227 @@ function AdminDashboardContent() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* TAB 5.5: GYM HOLIDAYS CONFIG */}
+      {activeTab === 'holidays' && (
+        <div className="space-y-6 animate-fade-in font-['Anuphan',sans-serif]">
+          {/* 1. Add Holiday Form Card */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-100">
+              <div>
+                <h3 className="text-xl font-extrabold text-[#001a3a] flex items-center gap-2.5">
+                  <span>🏖️</span>
+                  <span>กำหนดวันหยุดทำการของยิม (Add Gym Holiday)</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+                  เมื่อกำหนดวันหยุดทำการแล้ว ผู้ปกครองจะไม่สามารถจองคลาสในวันดังกล่าวได้ และระบบจะแสดงสถานะ &quot;วันหยุดทำการ&quot; ในปฏิทินและตารางเรียน
+                </p>
+              </div>
+              <span className="self-start sm:self-auto bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold px-3.5 py-1.5 rounded-full">
+                🔒 บล็อกการจองอัตโนมัติ
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Date Picker */}
+              <div>
+                <label className="block text-xs font-bold text-[#001a3a] mb-2">
+                  1. เลือกวันที่หยุดทำการ (Date): <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={holidayDate}
+                  onChange={(e) => setHolidayDate(e.target.value)}
+                  className="w-full h-12 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 shadow-2xs cursor-pointer"
+                />
+                {holidayDate && (
+                  <div className="text-[11px] font-bold text-sky-700 mt-1.5 flex items-center gap-1">
+                    <span>📅</span>
+                    <span>{formatThaiShortDate(holidayDate)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Course Selection */}
+              <div>
+                <label className="block text-xs font-bold text-[#001a3a] mb-2">
+                  2. คลาสที่หยุดทำการ (Course Scope):
+                </label>
+                <select
+                  value={holidayCourse}
+                  onChange={(e) => setHolidayCourse(e.target.value)}
+                  className="w-full h-12 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 shadow-2xs cursor-pointer"
+                >
+                  <option value="All Courses">🛑 ทุกคลาส (All Courses) - ปิดทั้งยิม</option>
+                  {coursesListGlobal.map((c: any) => (
+                    <option key={c.id} value={c.display_title}>
+                      📘 เฉพาะคลาส {c.display_title}
+                    </option>
+                  ))}
+                  {!coursesListGlobal.some((c: any) => c.display_title === 'Orca Cubs') && (
+                    <option value="Orca Cubs">📘 เฉพาะคลาส Orca Cubs</option>
+                  )}
+                  {!coursesListGlobal.some((c: any) => c.display_title === 'Orca Flip') && (
+                    <option value="Orca Flip">📘 เฉพาะคลาส Orca Flip</option>
+                  )}
+                  {!coursesListGlobal.some((c: any) => c.display_title === 'Mega Orca') && (
+                    <option value="Mega Orca">📘 เฉพาะคลาส Mega Orca</option>
+                  )}
+                </select>
+                <div className="text-[11px] text-slate-500 mt-1.5">
+                  {holidayCourse === 'All Courses'
+                    ? 'ปิดทำการทุกคลาสในวันดังกล่าว'
+                    : `ปิดทำการเฉพาะคลาส ${holidayCourse} (คลาสอื่นยังเปิดสอนตามปกติ)`}
+                </div>
+              </div>
+
+              {/* Reason / Title */}
+              <div>
+                <label className="block text-xs font-bold text-[#001a3a] mb-2">
+                  3. เหตุผล / ชื่อวันหยุด (Reason):
+                </label>
+                <input
+                  type="text"
+                  value={holidayReason}
+                  onChange={(e) => setHolidayReason(e.target.value)}
+                  placeholder="เช่น วันหยุดสงกรานต์, ปรับปรุงสถานที่"
+                  className="w-full h-12 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 shadow-2xs"
+                />
+                {/* Quick tags */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {['วันหยุดทำการ', 'วันหยุดสงกรานต์', 'วันหยุดปีใหม่', 'ปรับปรุงสถานที่', 'Big Cleaning', 'วันหยุดพิเศษ'].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setHolidayReason(tag)}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-700 hover:text-sky-800 transition-colors cursor-pointer border border-slate-200"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-5 mt-5 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                disabled={isSavingHoliday || !holidayDate}
+                onClick={handleSaveHoliday}
+                className={`px-8 py-3.5 rounded-full font-bold text-sm text-white shadow-md transition-all flex items-center gap-2 ${
+                  isSavingHoliday || !holidayDate
+                    ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                    : 'bg-[#001a3a] hover:bg-[#002855] hover:shadow-lg cursor-pointer'
+                }`}
+              >
+                <span>{isSavingHoliday ? '⏳' : '💾'}</span>
+                <span>{isSavingHoliday ? 'กำลังบันทึก...' : 'บันทึกวันหยุดทำการ (+ Add Holiday)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Holiday List Card */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-slate-100">
+              <div>
+                <h3 className="text-xl font-extrabold text-[#001a3a] flex items-center gap-2">
+                  <span>📋</span>
+                  <span>รายการวันหยุดทำการทั้งหมด (Configured Gym Holidays)</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-normal">
+                  รายการวันที่กำหนดให้ยิมหยุดทำการที่บันทึกไว้ในระบบ
+                </p>
+              </div>
+              <span className="self-start sm:self-auto bg-slate-100 text-slate-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-slate-200">
+                ทั้งหมด {holidays.length} วัน
+              </span>
+            </div>
+
+            {holidays.length === 0 ? (
+              <div className="text-center py-12 bg-slate-50/70 border border-slate-200 rounded-2xl">
+                <div className="text-5xl mb-3">🏖️</div>
+                <div className="font-extrabold text-slate-700 text-base mb-1">
+                  ยังไม่มีการบันทึกวันหยุดทำการในระบบ
+                </div>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  ยิมเปิดทำการตามปกติทุกวัน (ยกเว้นวันจันทร์ที่เป็นวันปิดทำการประจำสัปดาห์) ท่านสามารถเพิ่มวันหยุดพิเศษหรือวันหยุดนักขัตฤกษ์ได้จากฟอร์มด้านบน
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="bg-slate-100/80 border-b border-slate-200 text-xs font-extrabold text-slate-600">
+                      <th className="py-3 px-4 rounded-l-xl">วันที่หยุดทำการ (Date)</th>
+                      <th className="py-3 px-4">ขอบเขตคลาส (Scope)</th>
+                      <th className="py-3 px-4">เหตุผล / ชื่องาน (Reason)</th>
+                      <th className="py-3 px-4 text-center">สถานะ (Status)</th>
+                      <th className="py-3 px-4 text-center rounded-r-xl">จัดการ (Action)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {holidays
+                      .slice()
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map((h) => {
+                        const isAllCourses = !h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)';
+                        const isPast = h.date < todayStr;
+
+                        return (
+                          <tr key={h.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-4 px-4 font-extrabold text-slate-900">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">📅</span>
+                                <div>
+                                  <div className="font-extrabold text-sm text-[#001a3a]">{formatThaiShortDate(h.date)}</div>
+                                  <div className="text-[10px] text-slate-400 font-mono font-normal">{h.date}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold ${
+                                isAllCourses
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  : 'bg-sky-100 text-sky-800 border border-sky-200'
+                              }`}>
+                                <span>{isAllCourses ? '🛑' : '📘'}</span>
+                                <span>{isAllCourses ? 'ทุกคลาส (All Courses)' : h.course_name}</span>
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 font-bold text-slate-700">
+                              <span className="text-sm">{h.reason || 'วันหยุดทำการ'}</span>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                isPast
+                                  ? 'bg-slate-100 text-slate-500'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}>
+                                {isPast ? 'ผ่านมาแล้ว' : 'กำลังมาถึง'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteHoliday(h.id)}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 rounded-xl font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <span>🗑️</span>
+                                <span>ลบ</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

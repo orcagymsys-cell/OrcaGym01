@@ -39,7 +39,7 @@ export default function Sidebar() {
         return pathname === '/admin/dashboard' && (currentTab === 'parents' || currentTab === 'members');
       }
       if (targetTab === 'overview') {
-        return pathname === '/admin/dashboard' && (!currentTab || currentTab === 'overview' || currentTab === 'quota');
+        return pathname === '/admin/dashboard' && (!currentTab || currentTab === 'overview' || currentTab === 'quota' || currentTab === 'holidays');
       }
       return pathname === path.split('?')[0] && currentTab === targetTab;
     }
