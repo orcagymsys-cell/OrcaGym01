@@ -1587,7 +1587,7 @@ function AdminDashboardContent() {
               }`}
             >
               <span>🏖️</span>
-              <span>3. วันหยุดทำการ (Gym Holidays)</span>
+              <span>3. ตั้งค่าวันหยุดของ Orca Gym</span>
               {holidays.length > 0 && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   activeTab === 'holidays' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
