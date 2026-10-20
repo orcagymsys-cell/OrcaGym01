@@ -241,13 +241,7 @@ export default function SchedulePage() {
           <h1 className="text-xl sm:text-2xl font-black text-[#001a3a] flex items-center gap-2">
             <span>📅</span> ตารางเรียนทั้งหมด (Admin Schedule)
           </h1>
-          <Link
-            href="/admin/dashboard?tab=holidays"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2 rounded-2xl shadow-xs transition-all cursor-pointer"
-          >
-            <span>🏖️</span>
-            <span>ตั้งค่าวันหยุดทำการ (Gym Holidays)</span>
-          </Link>
+
         </div>
         
         <WeeklyScheduleAdmin allBookings={allBookings} allChildren={allChildren} />

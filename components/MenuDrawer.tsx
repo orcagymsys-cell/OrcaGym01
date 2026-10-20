@@ -75,10 +75,7 @@ export default function MenuDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 <span>SCHEDULE</span>
               </Link>
 
-              <Link href="/admin/dashboard?tab=holidays" onClick={onClose} className={itemClass}>
-                <span className="text-xl">🏖️</span>
-                <span className="font-['Anuphan',sans-serif] font-normal">วันหยุดทำการ</span>
-              </Link>
+
 
               <Link href="/audit" onClick={onClose} className={itemClass}>
                 <span className="text-xl">🛡️</span>
