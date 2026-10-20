@@ -3300,20 +3300,11 @@ function AdminDashboardContent() {
                   className="w-full h-12 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-600 shadow-2xs cursor-pointer"
                 >
                   <option value="All Courses">🛑 ทุกคลาส (All Courses) - ปิดทั้งยิม</option>
-                  {coursesListGlobal.map((c: any) => (
-                    <option key={c.id} value={c.display_title}>
+                  {Array.from(new Map(coursesListGlobal.map((c: any) => [c.display_title?.trim().toLowerCase(), c])).values()).map((c: any) => (
+                    <option key={c.id || c.display_title} value={c.display_title}>
                       📘 เฉพาะคลาส {c.display_title}
                     </option>
                   ))}
-                  {!coursesListGlobal.some((c: any) => c.display_title === 'Orca Cubs') && (
-                    <option value="Orca Cubs">📘 เฉพาะคลาส Orca Cubs</option>
-                  )}
-                  {!coursesListGlobal.some((c: any) => c.display_title === 'Orca Flip') && (
-                    <option value="Orca Flip">📘 เฉพาะคลาส Orca Flip</option>
-                  )}
-                  {!coursesListGlobal.some((c: any) => c.display_title === 'Mega Orca') && (
-                    <option value="Mega Orca">📘 เฉพาะคลาส Mega Orca</option>
-                  )}
                 </select>
                 <div className="text-[11px] text-slate-500 mt-1.5">
                   {holidayCourse === 'All Courses'

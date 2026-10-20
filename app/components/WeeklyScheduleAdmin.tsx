@@ -384,6 +384,25 @@ export default function WeeklyScheduleAdmin({
                                   
                                   const isBooked = bookedForThisSlot.length > 0;
                                   const isFull = bookedForThisSlot.length >= maxQuota;
+                                  const courseHoliday = dayHolidays.find(h => h.course_name && (h.course_name.toLowerCase().replace(/\s+/g, '').includes(c.course.toLowerCase().replace(/\s+/g, '')) || c.course.toLowerCase().replace(/\s+/g, '').includes(h.course_name.toLowerCase().replace(/\s+/g, ''))));
+
+                                  if (courseHoliday) {
+                                    return (
+                                      <div 
+                                        key={`${c.course}-${c.time}-${idx}`}
+                                        className="border-[3px] border-amber-300 bg-amber-50/90 rounded-2xl p-2.5 flex flex-col items-center text-center w-full shadow-2xs"
+                                      >
+                                        <div className="font-black text-[14px] leading-tight text-amber-950">{c.course}</div>
+                                        <div className="text-[10px] font-bold mt-1 text-amber-700">{c.time}</div>
+                                        <div className="mt-2 text-amber-900 text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-amber-200">
+                                          🛑 วันหยุดทำการ
+                                        </div>
+                                        <div className="text-[10px] text-amber-800 mt-1 font-semibold truncate max-w-full">
+                                          {courseHoliday.reason || 'หยุดทำการ'}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
                                   
                                   return (
                                     <div 
