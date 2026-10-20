@@ -38,6 +38,9 @@ export default function Sidebar() {
       if (targetTab === 'parents') {
         return pathname === '/admin/dashboard' && (currentTab === 'parents' || currentTab === 'members');
       }
+      if (targetTab === 'holidays') {
+        return pathname === '/admin/dashboard' && currentTab === 'holidays';
+      }
       if (targetTab === 'overview') {
         return pathname === '/admin/dashboard' && (!currentTab || currentTab === 'overview' || currentTab === 'quota' || currentTab === 'holidays');
       }
@@ -112,6 +115,11 @@ export default function Sidebar() {
             <Link href="/schedule" className={navItemClass('/schedule')}>
               <span className="text-xl">📅</span>
               <span>SCHEDULE</span>
+            </Link>
+
+            <Link href="/admin/dashboard?tab=holidays" className={navItemClass('/admin/dashboard?tab=holidays')}>
+              <span className="text-xl">🏖️</span>
+              <span>วันหยุดทำการ</span>
             </Link>
 
             <Link href="/gallery" className={navItemClass('/gallery')}>

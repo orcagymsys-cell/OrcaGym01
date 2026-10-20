@@ -1577,6 +1577,25 @@ function AdminDashboardContent() {
               <span>⚙️</span>
               <span>2. ตั้งค่าโควต้า (Quota Config)</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('holidays')}
+              className={`flex items-center gap-2.5 px-6 py-2.5 rounded-full text-xs sm:text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'holidays'
+                  ? 'bg-[#001a3a] text-white shadow-md'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>🏖️</span>
+              <span>3. วันหยุดทำการ (Gym Holidays)</span>
+              {holidays.length > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'holidays' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                }`}>
+                  {holidays.length}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       )}
