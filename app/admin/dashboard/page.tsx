@@ -3336,7 +3336,7 @@ function AdminDashboardContent() {
                 />
                 {/* Quick tags */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['วันหยุดทำการ', 'วันหยุดสงกรานต์', 'วันหยุดปีใหม่', 'ปรับปรุงสถานที่', 'Big Cleaning', 'วันหยุดพิเศษ'].map((tag) => (
+                  {['วันหยุดทำการ', 'วันหยุดสงกรานต์', 'วันหยุดปีใหม่', 'ปรับปรุงสถานที่', 'วันหยุดพิเศษ'].map((tag) => (
                     <button
                       key={tag}
                       type="button"
