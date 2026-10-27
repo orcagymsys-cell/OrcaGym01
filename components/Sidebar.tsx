@@ -36,7 +36,7 @@ export default function Sidebar() {
     if (path.includes('?tab=')) {
       const targetTab = path.split('?tab=')[1];
       if (targetTab === 'parents') {
-        return pathname === '/admin/dashboard' && (currentTab === 'parents' || currentTab === 'members');
+        return pathname === '/admin/dashboard' && (currentTab === 'parents' || currentTab === 'members' || currentTab === 'birthdays');
       }
 
       if (targetTab === 'overview') {

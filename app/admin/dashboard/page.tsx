@@ -1,11 +1,12 @@
 'use client';
-import { useState, useEffect, useRef, Suspense, Fragment } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense, Fragment } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import { store, isSupabaseConfigured, setupRealtimeSubscriptions, getFamilyBaskets } from '@/lib/supabase';
 import WeeklyScheduleAdmin from '@/app/components/WeeklyScheduleAdmin';
 import StudentBookingsRoster from '@/app/components/StudentBookingsRoster';
+import AdminBirthdayView, { parseChildDob } from '@/app/components/AdminBirthdayView';
 import { showToast } from '@/components/Toast';
 import { compressImage } from '@/lib/imageUtils';
 import { Child, AuditLog, Booking, UserProfile, PaymentProofRecord, GymHoliday } from '@/lib/types';
@@ -94,12 +95,12 @@ function AdminDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams ? searchParams.get('tab') : null;
-  const initialTab = (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays'].includes(tabParam)) ? (tabParam as any) : 'overview';
+  const initialTab = (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays', 'birthdays'].includes(tabParam)) ? (tabParam as any) : 'overview';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'parents' | 'members' | 'audit' | 'schedule' | 'quota' | 'supabase' | 'holidays'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'parents' | 'members' | 'audit' | 'schedule' | 'quota' | 'supabase' | 'holidays' | 'birthdays'>(initialTab);
 
   useEffect(() => {
-    if (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays'].includes(tabParam)) {
+    if (tabParam && ['overview', 'parents', 'members', 'audit', 'schedule', 'quota', 'supabase', 'holidays', 'birthdays'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     } else {
       setActiveTab('overview');
@@ -124,6 +125,30 @@ function AdminDashboardContent() {
   const [showCreateParentModal, setShowCreateParentModal] = useState(false);
   const [dismissPendingToast, setDismissPendingToast] = useState(false);
   const [viewDetailsChild, setViewDetailsChild] = useState<Child | null>(null);
+
+  // Birthday Counts for Tab Badge
+  const birthdayCounts = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const currentYear = today.getFullYear();
+    let todayCount = 0;
+    let monthCount = 0;
+
+    for (const c of children || []) {
+      const parsed = parseChildDob(c.dob);
+      if (!parsed) continue;
+
+      let nextBday = new Date(currentYear, parsed.month - 1, parsed.day);
+      if (nextBday < today) {
+        nextBday = new Date(currentYear + 1, parsed.month - 1, parsed.day);
+      }
+      const diffTime = nextBday.getTime() - today.getTime();
+      const daysUntil = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (daysUntil === 0) todayCount++;
+      if (parsed.month - 1 === now.getMonth()) monthCount++;
+    }
+    return { today: todayCount, month: monthCount };
+  }, [children]);
 
   // Create Parent Form State
   const [newParentName, setNewParentName] = useState('');
@@ -1509,7 +1534,7 @@ function AdminDashboardContent() {
       <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs border border-slate-200/90 flex flex-wrap items-center justify-between gap-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#001a3a] mb-1">
-            {activeTab === 'parents' || activeTab === 'members'
+            {activeTab === 'parents' || activeTab === 'members' || activeTab === 'birthdays'
               ? 'จัดการสมาชิก (Member Management)'
               : activeTab === 'schedule'
               ? 'ตารางเรียน (Schedule Matrix)'
@@ -1518,7 +1543,7 @@ function AdminDashboardContent() {
               : 'ภาพรวมระบบ (Admin Overview)'}
           </h1>
           <p className="text-sm font-normal text-slate-500">
-            {activeTab === 'parents' || activeTab === 'members'
+            {activeTab === 'parents' || activeTab === 'members' || activeTab === 'birthdays'
               ? 'จัดการข้อมูลบัญชีผู้ปกครองและข้อมูลนักเรียน'
               : activeTab === 'schedule'
               ? 'ตรวจสอบและจัดตารางเรียนรายสัปดาห์'
@@ -1529,7 +1554,7 @@ function AdminDashboardContent() {
         </div>
 
         {/* Display Create Parent button strictly on Member tab */}
-        {(activeTab === 'parents' || activeTab === 'members') && (
+        {(activeTab === 'parents' || activeTab === 'members' || activeTab === 'birthdays') && (
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
@@ -1600,7 +1625,7 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {(activeTab === 'parents' || activeTab === 'members') && (
+      {(activeTab === 'parents' || activeTab === 'members' || activeTab === 'birthdays') && (
         <div className="bg-white border border-slate-200/90 rounded-3xl p-3 shadow-xs mb-6">
           <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
@@ -1625,6 +1650,29 @@ function AdminDashboardContent() {
             >
               <span>🧒</span>
               <span>2. ข้อมูลนักเรียน (Students)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('birthdays')}
+              className={`flex items-center gap-2.5 px-6 py-2.5 rounded-full text-xs sm:text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'birthdays'
+                  ? 'bg-[#001a3a] text-white shadow-md'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>🎂</span>
+              <span>3. วันเกิดเด็ก (Birthdays)</span>
+              {birthdayCounts.today > 0 ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-400 text-slate-900 animate-pulse">
+                  🎉 วันนี้ {birthdayCounts.today}
+                </span>
+              ) : birthdayCounts.month > 0 ? (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'birthdays' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                }`}>
+                  {birthdayCounts.month} เดือนนี้
+                </span>
+              ) : null}
             </button>
           </div>
         </div>
@@ -3003,6 +3051,15 @@ function AdminDashboardContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB 2.5: BIRTHDAYS VIEW */}
+      {activeTab === 'birthdays' && (
+        <AdminBirthdayView
+          childrenList={children}
+          parentsList={parents}
+          onViewChildDetails={(child) => setViewDetailsChild(child)}
+        />
       )}
 
       {/* TAB 3: SCHEDULE MATRIX */}
