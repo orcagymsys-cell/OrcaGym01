@@ -100,6 +100,56 @@ export function calculateAgeDetailed(dob: string | undefined | null): string {
   return `น้อยกว่า 1 เดือน`;
 }
 
+/**
+ * ChildAvatar Component
+ * Matches the exact design from the Parent screen (app/home/page.tsx:642 & 665)
+ * Shows a circular avatar with soft sky-blue background, slate border,
+ * and the 3D-style child emoji (👧🏻 for girls, 🧒🏼 for boys) when no photo is provided.
+ */
+function ChildAvatar({ child, size = 'md' }: { child: Child; size?: 'sm' | 'md' | 'lg' }) {
+  const [imgError, setImgError] = useState(false);
+
+  // Exact gender-based matching as in Parent screen
+  const isGirl =
+    child.gender?.toLowerCase() === 'girl' ||
+    child.gender?.toLowerCase() === 'female' ||
+    child.gender === 'หญิง' ||
+    child.avatar === 'girl';
+  const avatarEmoji = isGirl ? '👧🏻' : '🧒🏼';
+
+  // Validate that photo_url is a real image URL/data URI, NOT an avatar string like "boy" or "girl"
+  const hasValidPhoto =
+    !imgError &&
+    typeof child.photo_url === 'string' &&
+    (child.photo_url.startsWith('http://') ||
+      child.photo_url.startsWith('https://') ||
+      child.photo_url.startsWith('data:image/') ||
+      child.photo_url.startsWith('/'));
+
+  const sizeClasses = {
+    sm: 'w-9 h-9 text-lg border-[2px]',
+    md: 'w-14 h-14 text-2xl border-[3px]',
+    lg: 'w-20 h-20 text-3xl border-[3.5px]',
+  }[size];
+
+  return (
+    <div
+      className={`${sizeClasses} rounded-full overflow-hidden shrink-0 border-slate-300 bg-sky-100 flex items-center justify-center shadow-inner select-none`}
+    >
+      {hasValidPhoto ? (
+        <img
+          src={child.photo_url}
+          alt={child.nickname || child.full_name || 'รูปน้อง'}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span className="leading-none">{avatarEmoji}</span>
+      )}
+    </div>
+  );
+}
+
 export interface ProcessedBirthdayItem {
   child: Child;
   parent: UserProfile | null;
@@ -441,17 +491,7 @@ export default function AdminBirthdayView({
                   </div>
 
                   <div className="flex items-center gap-3 my-2">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-400 text-white font-extrabold text-xl flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
-                      {item.child.photo_url || item.child.avatar ? (
-                        <img
-                          src={item.child.photo_url || item.child.avatar}
-                          alt={item.child.nickname}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>{item.child.nickname ? item.child.nickname[0] : '🎂'}</span>
-                      )}
-                    </div>
+                    <ChildAvatar child={item.child} size="md" />
                     <div>
                       <h4 className="font-extrabold text-[#001a3a] text-base leading-tight">
                         น้อง{item.child.nickname || '-'}
@@ -464,7 +504,7 @@ export default function AdminBirthdayView({
 
                   {item.parent && (
                     <div className="text-[11px] text-slate-600 bg-slate-50 rounded-xl p-2 mt-2 space-y-0.5">
-                      <div>👨‍👩‍👦 ผปค: <strong className="text-slate-800">{item.parent.name || '-'}</strong></div>
+                      <div>👨‍👩‍👦 ชื่อผู้ปกครอง: <strong className="text-slate-800">{item.parent.name || '-'}</strong></div>
                       {item.parent.phone && (
                         <div className="flex items-center justify-between">
                           <span>📞 {item.parent.phone}</span>
@@ -722,17 +762,7 @@ export default function AdminBirthdayView({
 
                   {/* Child Avatar & Name */}
                   <div className="flex items-center gap-3.5 my-3">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 text-white font-extrabold text-2xl flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
-                      {item.child.photo_url || item.child.avatar ? (
-                        <img
-                          src={item.child.photo_url || item.child.avatar}
-                          alt={item.child.nickname}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>{item.child.nickname ? item.child.nickname[0] : '👶'}</span>
-                      )}
-                    </div>
+                    <ChildAvatar child={item.child} size="md" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <h4 className="font-extrabold text-[#001a3a] text-lg leading-tight truncate">
@@ -768,7 +798,7 @@ export default function AdminBirthdayView({
                   {item.parent && (
                     <div className="mt-3 p-2.5 rounded-2xl bg-sky-50/50 border border-sky-100/80 text-xs space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">👨‍👩‍👦 ผปค:</span>
+                        <span className="text-slate-500">👨‍👩‍👦 ชื่อผู้ปกครอง:</span>
                         <strong className="text-slate-800 truncate max-w-[170px]">
                           {item.parent.name || '-'}
                         </strong>
@@ -836,7 +866,7 @@ export default function AdminBirthdayView({
                   <th className="py-3.5 px-4 w-[12%] text-center">อายุที่จะครบ</th>
                   <th className="py-3.5 px-4 w-[14%]">นับถอยหลัง</th>
                   <th className="py-3.5 px-4 w-[12%]">คอร์ส</th>
-                  <th className="py-3.5 px-4 w-[16%]">ผู้ปกครอง / เบอร์โทร</th>
+                  <th className="py-3.5 px-4 w-[16%]">ชื่อผู้ปกครอง / เบอร์โทร</th>
                   <th className="py-3.5 px-4 w-[10%] text-center">อวยพร LINE</th>
                 </tr>
               </thead>
@@ -857,17 +887,7 @@ export default function AdminBirthdayView({
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-                            {item.child.photo_url || item.child.avatar ? (
-                              <img
-                                src={item.child.photo_url || item.child.avatar}
-                                alt={item.child.nickname}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>{item.child.nickname ? item.child.nickname[0] : '👶'}</span>
-                            )}
-                          </div>
+                          <ChildAvatar child={item.child} size="sm" />
                           <div>
                             <div className="font-bold text-[#001a3a] flex items-center gap-1">
                               <span>น้อง{item.child.nickname || '-'}</span>
