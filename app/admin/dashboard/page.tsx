@@ -1661,18 +1661,7 @@ function AdminDashboardContent() {
               }`}
             >
               <span>🎂</span>
-              <span>3. วันเกิดเด็ก (Birthdays)</span>
-              {birthdayCounts.today > 0 ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-400 text-slate-900 animate-pulse">
-                  🎉 วันนี้ {birthdayCounts.today}
-                </span>
-              ) : birthdayCounts.month > 0 ? (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  activeTab === 'birthdays' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
-                }`}>
-                  {birthdayCounts.month} เดือนนี้
-                </span>
-              ) : null}
+              <span>3. วันเกิดเด็ก Birthday</span>
             </button>
           </div>
         </div>
