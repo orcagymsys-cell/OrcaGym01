@@ -16,6 +16,22 @@ export default function AuditPage() {
   const [actionFilter, setActionFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
   const [selectedSlip, setSelectedSlip] = useState<AuditLog | null>(null);
+  const [loadingSlip, setLoadingSlip] = useState(false);
+
+  const handleOpenSlip = async (log: AuditLog) => {
+    setSelectedSlip(log);
+    if (!log.slip_url) {
+      setLoadingSlip(true);
+      try {
+        const url = await store.getAuditLogSlip(log.id);
+        if (url) {
+          setSelectedSlip(prev => prev && prev.id === log.id ? { ...prev, slip_url: url } : prev);
+        }
+      } finally {
+        setLoadingSlip(false);
+      }
+    }
+  };
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -431,7 +447,7 @@ export default function AuditPage() {
                             )}
                             <button
                               type="button"
-                              onClick={() => setSelectedSlip(log)}
+                              onClick={() => handleOpenSlip(log)}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 hover:text-sky-900 border border-sky-200/80 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer shadow-2xs mt-1"
                             >
                               <svg className="w-3.5 h-3.5 text-sky-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -500,7 +516,12 @@ export default function AuditPage() {
 
               <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl text-center">
                 <div className="text-xs font-bold text-sky-900 mb-2">📷 รูปภาพสลิปโอนเงิน (Slip Preview)</div>
-                {selectedSlip.slip_url ? (
+                {loadingSlip ? (
+                  <div className="h-44 flex flex-col items-center justify-center text-sky-600 font-bold text-xs gap-2">
+                    <span className="text-2xl animate-spin">⏳</span>
+                    <span>กำลังโหลดรูปสลิปความละเอียดสูง...</span>
+                  </div>
+                ) : selectedSlip.slip_url ? (
                   <img src={selectedSlip.slip_url} alt="Slip" className="max-h-60 mx-auto rounded-xl shadow-md border" />
                 ) : (
                   <div className="h-44 bg-white rounded-xl border border-sky-300 border-dashed flex flex-col items-center justify-center text-sky-600 font-bold text-xs gap-1">

@@ -126,6 +126,27 @@ function AdminDashboardContent() {
   const [dismissPendingToast, setDismissPendingToast] = useState(false);
   const [viewDetailsChild, setViewDetailsChild] = useState<Child | null>(null);
 
+  const handleViewDetails = async (child: Child) => {
+    setViewDetailsChild(child);
+    if (!child.photo_url) {
+      const fullChild = await store.getChildById(child.id);
+      if (fullChild?.photo_url) {
+        setViewDetailsChild(prev => prev && prev.id === child.id ? { ...prev, photo_url: fullChild.photo_url } : prev);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'members' || activeTab === 'birthdays') {
+      const needsPhotos = children.some(c => !c.photo_url);
+      if (needsPhotos) {
+        store.getChildren(undefined, { withPhotos: true }).then(fullKids => {
+          if (fullKids && fullKids.length > 0) setChildren(fullKids);
+        });
+      }
+    }
+  }, [activeTab]);
+
   // Birthday Counts for Tab Badge
   const birthdayCounts = useMemo(() => {
     const now = new Date();
@@ -2978,7 +2999,7 @@ function AdminDashboardContent() {
                               {/* 1. ดูรายละเอียด */}
                               <button
                                 type="button"
-                                onClick={() => setViewDetailsChild(c)}
+                                onClick={() => handleViewDetails(c)}
                                 title="ดูรายละเอียดนักเรียน"
                                 className="h-8 px-2.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 shrink-0 cursor-pointer"
                               >
@@ -3047,7 +3068,7 @@ function AdminDashboardContent() {
         <AdminBirthdayView
           childrenList={children}
           parentsList={parents}
-          onViewChildDetails={(child) => setViewDetailsChild(child)}
+          onViewChildDetails={(child) => handleViewDetails(child)}
         />
       )}
 

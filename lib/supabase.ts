@@ -271,7 +271,7 @@ export const store = {
   async getUsers(): Promise<UserProfile[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('profiles').select('id,user_id,name,phone,email,password,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_slip,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('profiles').select('id,user_id,name,phone,email,password,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at').order('created_at', { ascending: false });
         if (!error) {
           // Always use Supabase data (even empty array) and overwrite local cache
           // This handles deletions without causing flicker
@@ -280,13 +280,22 @@ export const store = {
           return freshData;
         }
       } catch (e) {
-        // Network error only: clear stale cache so ghost data doesn't appear
         if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEYS.USERS);
         return [];
       }
     }
     initLocalSeed();
     return getLocal<UserProfile[]>(STORAGE_KEYS.USERS, []);
+  },
+
+  async getUserPaymentSlip(id: string): Promise<string | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('profiles').select('payment_slip').eq('id', id).single();
+        if (!error && data?.payment_slip) return data.payment_slip;
+      } catch (e) {}
+    }
+    return null;
   },
 
   async saveUser(user: UserProfile) {
@@ -374,13 +383,37 @@ export const store = {
     return null;
   },
 
-  async getChildren(parentId?: string): Promise<Child[]> {
+  async getChildren(parentId?: string, options?: { withPhotos?: boolean }): Promise<Child[]> {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('children').select('id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at,photo_url').order('id');
+        const includePhotos = options?.withPhotos ?? Boolean(parentId);
+        const selectFields = includePhotos
+          ? 'id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at,photo_url'
+          : 'id,parent_id,full_name,nickname,dob,gender,avatar,status,course_name,total_hours,used_hours,expiry_date,created_at';
+          
+        let query = supabase.from('children').select(selectFields).order('id');
+        if (parentId) {
+          query = query.eq('parent_id', parentId.trim());
+        }
+        const { data, error } = await query;
         if (!error) {
           const freshData = data || [];
-          setLocal(STORAGE_KEYS.CHILDREN, freshData, false);
+          
+          // Preserve any existing in-memory/cached photo_urls if current query was lightweight
+          const cachedChildren = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+          const photoMap = new Map<string, string>();
+          cachedChildren.forEach(c => {
+            if (c.photo_url) photoMap.set(c.id, c.photo_url);
+          });
+          
+          const mergedData = freshData.map((c: any) => ({
+            ...c,
+            photo_url: c.photo_url || photoMap.get(c.id) || undefined
+          }));
+          
+          if (!parentId) {
+            setLocal(STORAGE_KEYS.CHILDREN, mergedData, false);
+          }
           
           // Auto-update ORCA_MY_KIDS cache for parents so navigation is instantly fast
           if (typeof window !== 'undefined') {
@@ -388,16 +421,16 @@ export const store = {
             if (currentUser && currentUser.role !== 'admin') {
               const resolvedUserId = (currentUser.id || currentUser.user_id)?.trim();
               if (resolvedUserId) {
-                const myKids = freshData.filter(c => c.parent_id?.trim() === resolvedUserId);
+                const myKids = mergedData.filter(c => c.parent_id?.trim() === resolvedUserId);
                 setLocal('ORCA_MY_KIDS', myKids, false);
               }
             }
           }
           
-          return parentId ? freshData.filter(c => c.parent_id?.trim() === parentId?.trim()) : freshData;
+          return parentId ? mergedData.filter(c => c.parent_id?.trim() === parentId?.trim()) : mergedData;
         }
       } catch (e) {
-        if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEYS.CHILDREN);
+        if (typeof window !== 'undefined' && !parentId) localStorage.removeItem(STORAGE_KEYS.CHILDREN);
         return [];
       }
     }
@@ -407,6 +440,24 @@ export const store = {
       children = children.filter(c => c.parent_id?.trim() === parentId?.trim());
     }
     return children;
+  },
+
+  async getChildPhoto(id: string): Promise<string | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('children').select('photo_url').eq('id', id).single();
+        if (!error && data?.photo_url) {
+          const children = getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []);
+          const idx = children.findIndex(c => c.id === id);
+          if (idx !== -1) {
+            children[idx].photo_url = data.photo_url;
+            setLocal(STORAGE_KEYS.CHILDREN, children, false);
+          }
+          return data.photo_url;
+        }
+      } catch (e) {}
+    }
+    return null;
   },
 
   async getChildById(id: string): Promise<Child | null> {
@@ -619,16 +670,45 @@ export const store = {
     return freshLogs;
   },
 
-  async getAuditLogs(): Promise<AuditLog[]> {
+  async getAuditLogs(options?: { withSlips?: boolean }): Promise<AuditLog[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('audit_logs').select('*').order('id').order('created_at', { ascending: false });
-      if (data) {
-        setLocal(STORAGE_KEYS.AUDIT_LOGS, data, false);
-        return data;
-      }
+      try {
+        const selectFields = options?.withSlips
+          ? '*'
+          : 'id,action_type,admin_name,parent_name,child_id,child_name,hours_added,course_name,amount,slip_ref,bank_name,payer_name,note,created_at';
+        const { data } = await supabase.from('audit_logs').select(selectFields).order('id').order('created_at', { ascending: false });
+        if (data) {
+          const existing = getLocal<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
+          const slipMap = new Map(existing.map(a => [a.id, a.slip_url]));
+          const mapped = data.map((a: any) => ({
+            ...a,
+            slip_url: a.slip_url || slipMap.get(a.id) || undefined
+          }));
+          setLocal(STORAGE_KEYS.AUDIT_LOGS, mapped, false);
+          return mapped;
+        }
+      } catch (e) {}
     }
     initLocalSeed();
     return getLocal<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
+  },
+
+  async getAuditLogSlip(id: string): Promise<string | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('audit_logs').select('slip_url').eq('id', id).single();
+        if (!error && data?.slip_url) {
+          const logs = getLocal<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
+          const idx = logs.findIndex(l => l.id === id);
+          if (idx !== -1) {
+            logs[idx].slip_url = data.slip_url;
+            setLocal(STORAGE_KEYS.AUDIT_LOGS, logs, false);
+          }
+          return data.slip_url;
+        }
+      } catch (e) {}
+    }
+    return null;
   },
 
   async saveAuditLog(log: AuditLog): Promise<void> {
@@ -896,7 +976,11 @@ export function setupRealtimeSubscriptions(onUpdate: () => void) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'course_configs' }, onUpdate)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gym_holidays' }, onUpdate)
-    .subscribe();
+    .subscribe((status: string, err?: any) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.warn('Realtime subscription paused due to channel error:', err);
+      }
+    });
   return () => {
     if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }
   };
