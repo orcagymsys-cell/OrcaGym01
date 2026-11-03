@@ -5,12 +5,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { store } from '@/lib/supabase';
 import { showToast } from './Toast';
 import { UserProfile } from '@/lib/types';
+import { isSuperAdmin } from '@/lib/auth';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => typeof window !== 'undefined' ? store.getCurrentUser() : null);
   
   const currentTab = searchParams ? searchParams.get('tab') : null;
 
@@ -61,11 +62,11 @@ export default function Sidebar() {
   `.trim();
 
   const isAdmin = user?.role === 'admin' || pathname.startsWith('/admin') || pathname === '/audit';
+  const isSuper = isSuperAdmin(user);
 
   return (
     <aside className="hidden lg:flex flex-col w-[260px] xl:w-[280px] bg-white border-r border-slate-200 p-6 shrink-0 font-['Anuphan',sans-serif] min-h-[100dvh] shadow-xs relative z-10">
 
-      
       {/* Top Brand & User Info */}
       <div className="flex items-center gap-3 pb-5 mb-5 border-b border-slate-200/80">
         <img
@@ -115,17 +116,17 @@ export default function Sidebar() {
               <span>SCHEDULE</span>
             </Link>
 
-
-
             <Link href="/gallery" className={navItemClass('/gallery')}>
               <span className="text-xl">📸</span>
               <span>Gallery</span>
             </Link>
 
-            <Link href="/audit" className={navItemClass('/audit')}>
-              <span className="text-xl">🛡️</span>
-              <span>AUDIT</span>
-            </Link>
+            {isSuper && (
+              <Link href="/audit" className={navItemClass('/audit')}>
+                <span className="text-xl">🛡️</span>
+                <span>AUDIT</span>
+              </Link>
+            )}
 
             <Link href="/coaches" className={navItemClass('/coaches')}>
               <span className="text-xl">🏃</span>
@@ -208,5 +209,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
-

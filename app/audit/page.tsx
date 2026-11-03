@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { store } from '@/lib/supabase';
 import { showToast } from '@/components/Toast';
 import { AuditLog } from '@/lib/types';
+import { isSuperAdmin } from '@/lib/auth';
 
 export default function AuditPage() {
   const router = useRouter();
@@ -52,6 +53,12 @@ export default function AuditPage() {
       if (!user || user.role !== 'admin') {
         showToast('กรุณาเข้าสู่ระบบแอดมินก่อนใช้งานหน้า Audit');
         router.push('/');
+        return;
+      }
+
+      if (!isSuperAdmin(user)) {
+        showToast('คุณไม่มีสิทธิ์เข้าถึงหน้า Audit (เฉพาะแอดมินหลักเท่านั้น)');
+        router.push('/admin/dashboard');
         return;
       }
 
@@ -126,7 +133,20 @@ export default function AuditPage() {
   const bonusGrantedCount = filteredLogs.reduce((sum, l) => sum + (l.bonus_hours || 0), 0);
   const totalVerifiedMoney = filteredLogs.reduce((sum, l) => sum + (l.amount || 0), 0);
 
-  
+  const currentUser = typeof window !== 'undefined' ? store.getCurrentUser() : null;
+  if (typeof window !== 'undefined' && currentUser && !isSuperAdmin(currentUser)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 font-['Anuphan',sans-serif]">
+        <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-3xl mb-4 shadow-sm">
+          🔒
+        </div>
+        <h2 className="text-xl font-bold text-[#001a3a] mb-2">จำกัดสิทธิ์การเข้าถึง (Access Restricted)</h2>
+        <p className="text-sm text-slate-500 max-w-md mb-6">
+          หน้านี้สงวนไว้สำหรับแอดมินหลัก (Super Admin) เท่านั้น กำลังนำท่านกลับไปยังหน้าหลัก...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="font-['Anuphan',sans-serif] space-y-6">

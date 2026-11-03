@@ -10,6 +10,7 @@ import AdminBirthdayView, { parseChildDob } from '@/app/components/AdminBirthday
 import { showToast } from '@/components/Toast';
 import { compressImage } from '@/lib/imageUtils';
 import { Child, AuditLog, Booking, UserProfile, PaymentProofRecord, GymHoliday } from '@/lib/types';
+import { isSuperAdmin } from '@/lib/auth';
 
 function calculateAge(dob: string): string {
   if (!dob) return '-';
@@ -106,6 +107,18 @@ function AdminDashboardContent() {
       setActiveTab('overview');
     }
   }, [tabParam]);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => typeof window !== 'undefined' ? store.getCurrentUser() : null);
+  useEffect(() => {
+    setCurrentUser(store.getCurrentUser());
+  }, []);
+  const isSuper = isSuperAdmin(currentUser);
+
+  useEffect(() => {
+    if (currentUser && !isSuperAdmin(currentUser) && activeTab === 'audit') {
+      setActiveTab('overview');
+    }
+  }, [activeTab, currentUser]);
+
   const [isAuthorized, setIsAuthorized] = useState(() => typeof window !== 'undefined' ? store.getCurrentUser()?.role === 'admin' : false);
   const [children, setChildren] = useState<Child[]>([]);
   const [parents, setParents] = useState<any[]>([]);
@@ -1733,85 +1746,87 @@ function AdminDashboardContent() {
           )}
           
           {/* SECTION 1: สรุปยอดรายได้ (Revenue Summary) */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg sm:text-xl font-extrabold text-[#001a3a] flex items-center gap-2">
-                <span>💰</span>
-                <span>สรุปยอดรายได้ (Revenue Summary)</span>
-              </h2>
-              <span className="text-xs text-slate-500 font-normal">อัปเดตเรียลไทม์</span>
+          {isSuper && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#001a3a] flex items-center gap-2">
+                  <span>💰</span>
+                  <span>สรุปยอดรายได้ (Revenue Summary)</span>
+                </h2>
+                <span className="text-xs text-slate-500 font-normal">อัปเดตเรียลไทม์</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Today's Revenue */}
+                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">รายรับรวมในวันนี้</span>
+                      <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full">วันนี้</span>
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">
+                      ฿{displayRevenueToday.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-slate-500 font-normal">
+                      ยอดรวมชำระจากผู้ปกครองและรายการเติมชั่วโมงประจำวัน
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-normal">
+                    📅 {selectedDate}
+                  </div>
+                </div>
+
+                {/* Month's Revenue */}
+                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full pointer-events-none" />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">รายรับรวมในเดือนนี้</span>
+                      <span className="text-xs font-extrabold text-blue-800 bg-blue-100 px-2.5 py-1 rounded-full">เดือนนี้</span>
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-black text-[#001a3a] mb-1">
+                      ฿{displayRevenueMonth.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-slate-500 font-normal">
+                      ยอดรับชำระทั้งหมดในรอบเดือนปัจจุบัน
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-normal">
+                    📆 เดือนปัจจุบัน ({currentMonthStr})
+                  </div>
+                </div>
+
+                {/* Pending / Outstanding Payments */}
+                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full pointer-events-none" />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">ยอดค้างชำระ / ต้องติดตาม</span>
+                      <span className="text-xs font-extrabold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full ">
+                        {pendingPaymentsCount} รายการ
+                      </span>
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-black text-amber-700 mb-1">
+                      ฿{pendingPaymentsAmount.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-slate-500 font-normal">
+                      ยอดรวมคอร์สที่รอการตรวจสอบสลิปและอนุมัติชำระ
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-amber-800 font-bold">รอการติดต่อกลับ</span>
+                    <button
+                      onClick={() => setActiveTab('parents')}
+                      className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer border-none bg-transparent"
+                    >
+                      ตรวจสอบผู้ปกครอง →
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Today's Revenue */}
-              <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">รายรับรวมในวันนี้</span>
-                    <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full">วันนี้</span>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">
-                    ฿{displayRevenueToday.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-slate-500 font-normal">
-                    ยอดรวมชำระจากผู้ปกครองและรายการเติมชั่วโมงประจำวัน
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-normal">
-                  📅 {selectedDate}
-                </div>
-              </div>
-
-              {/* Month's Revenue */}
-              <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full pointer-events-none" />
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">รายรับรวมในเดือนนี้</span>
-                    <span className="text-xs font-extrabold text-blue-800 bg-blue-100 px-2.5 py-1 rounded-full">เดือนนี้</span>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-[#001a3a] mb-1">
-                    ฿{displayRevenueMonth.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-slate-500 font-normal">
-                    ยอดรับชำระทั้งหมดในรอบเดือนปัจจุบัน
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-normal">
-                  📆 เดือนปัจจุบัน ({currentMonthStr})
-                </div>
-              </div>
-
-              {/* Pending / Outstanding Payments */}
-              <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full pointer-events-none" />
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">ยอดค้างชำระ / ต้องติดตาม</span>
-                    <span className="text-xs font-extrabold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full ">
-                      {pendingPaymentsCount} รายการ
-                    </span>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-amber-700 mb-1">
-                    ฿{pendingPaymentsAmount.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-slate-500 font-normal">
-                    ยอดรวมคอร์สที่รอการตรวจสอบสลิปและอนุมัติชำระ
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-amber-800 font-bold">รอการติดต่อกลับ</span>
-                  <button
-                    onClick={() => setActiveTab('parents')}
-                    className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer border-none bg-transparent"
-                  >
-                    ตรวจสอบผู้ปกครอง →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* SECTION 2: สถิติจำนวนนักเรียน (Student Statistics) */}
           <div>
@@ -3081,7 +3096,7 @@ function AdminDashboardContent() {
         )}
         
         {/* TAB 4: AUDIT LOG */}
-      {activeTab === 'audit' && (
+      {isSuper && activeTab === 'audit' && (
         <div className="space-y-4">
           <div className="bg-white border border-slate-200 rounded-3xl p-5 text-center shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>

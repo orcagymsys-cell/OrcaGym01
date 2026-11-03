@@ -33,7 +33,12 @@ export async function POST(req: Request) {
     const foundUser = users?.[0];
 
     if (foundUser && foundUser.password === password.trim()) {
-      const sessionData = { id: foundUser.id, role: foundUser.role, user_id: foundUser.user_id };
+      const sessionData = { 
+        id: foundUser.id, 
+        role: foundUser.role, 
+        user_id: foundUser.user_id,
+        payment_ref_no: foundUser.payment_ref_no 
+      };
       const token = await encrypt(sessionData);
       
       cookies().set('orca_session', token, {

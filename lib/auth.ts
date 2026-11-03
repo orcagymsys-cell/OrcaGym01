@@ -22,3 +22,10 @@ export async function decrypt(input: string): Promise<any> {
     return null;
   }
 }
+
+export function isSuperAdmin(user?: { role?: string; user_id?: string; payment_ref_no?: string; [key: string]: any } | null): boolean {
+  if (!user) return false;
+  if (user.role !== 'admin') return false;
+  if (user.payment_ref_no === 'subadmin' || user.payment_ref_no === 'staff') return false;
+  return user.user_id === 'admin';
+}

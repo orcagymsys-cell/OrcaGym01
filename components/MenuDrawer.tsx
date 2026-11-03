@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { store } from '@/lib/supabase';
 import { showToast } from './Toast';
+import { isSuperAdmin } from '@/lib/auth';
 
 export default function MenuDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
   const user = store.getCurrentUser();
+  const isSuper = isSuperAdmin(user);
 
   const handleLogout = () => {
     store.setCurrentUser(null);
@@ -75,12 +77,12 @@ export default function MenuDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 <span>SCHEDULE</span>
               </Link>
 
-
-
-              <Link href="/audit" onClick={onClose} className={itemClass}>
-                <span className="text-xl">🛡️</span>
-                <span>AUDIT</span>
-              </Link>
+              {isSuper && (
+                <Link href="/audit" onClick={onClose} className={itemClass}>
+                  <span className="text-xl">🛡️</span>
+                  <span>AUDIT</span>
+                </Link>
+              )}
 
               <Link href="/coaches" onClick={onClose} className={itemClass}>
                 <span className="text-xl">🏃</span>
