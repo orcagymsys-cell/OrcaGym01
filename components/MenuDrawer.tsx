@@ -10,13 +10,11 @@ export default function MenuDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   const user = store.getCurrentUser();
   const isSuper = isSuperAdmin(user);
 
-  const handleLogout = () => {
-    store.setCurrentUser(null);
-    localStorage.removeItem('ORCA_MY_KIDS');
-    localStorage.removeItem('ORCA_MY_BOOKINGS');
+  const handleLogout = async () => {
+    await store.logout();
     showToast('ลงชื่อออกจากระบบเรียบร้อย');
     onClose();
-    router.push('/');
+    window.location.href = '/';
   };
 
   if (!isOpen) return null;

@@ -459,12 +459,13 @@ function AdminDashboardContent() {
   useEffect(() => {
     async function loadData() {
       const reqId = ++requestRef.current;
-      const user = store.getCurrentUser();
+      let user = store.getCurrentUser();
+      if (!user) {
+        user = await store.fetchCurrentUser();
+      }
       if (!user || user.role !== 'admin') {
         showToast('กรุณาเข้าสู่ระบบแอดมินก่อนใช้งาน');
-        localStorage.removeItem('ORCA_MY_KIDS');
-        localStorage.removeItem('ORCA_MY_BOOKINGS');
-        fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+        await store.logout();
         window.location.replace('/');
         return;
       }

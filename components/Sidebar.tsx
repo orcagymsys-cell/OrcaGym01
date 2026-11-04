@@ -19,13 +19,10 @@ export default function Sidebar() {
     setUser(store.getCurrentUser());
   }, [pathname, searchParams]);
 
-  const handleLogout = () => {
-    store.setCurrentUser(null);
-    localStorage.removeItem('ORCA_MY_KIDS');
-    localStorage.removeItem('ORCA_MY_BOOKINGS');
+  const handleLogout = async () => {
+    await store.logout();
     showToast('ลงชื่อออกจากระบบเรียบร้อย');
-    fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
-    window.location.replace('/');
+    window.location.href = '/';
   };
 
   // Hide sidebar on auth pages

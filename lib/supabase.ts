@@ -299,6 +299,21 @@ export const store = {
     return null;
   },
 
+  async logout(): Promise<void> {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (_) {}
+    this.setCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('ORCA_MY_KIDS');
+        localStorage.removeItem('ORCA_MY_BOOKINGS');
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      } catch (_) {}
+    }
+  },
+
   async getUserById(id: string): Promise<UserProfile | null> {
     if (isSupabaseConfigured && supabase) {
       try {
