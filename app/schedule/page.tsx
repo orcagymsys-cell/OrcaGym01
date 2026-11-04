@@ -331,6 +331,13 @@ export default function SchedulePage() {
                             ❌ ปิดทำการ (CLOSED)
                           </div>
                         </td>
+                      ) : allDayHoliday ? (
+                        <td colSpan={COLUMNS.length} className="p-0 relative">
+                          <div className="w-full h-full flex flex-col items-center justify-center min-h-[120px] bg-rose-50 text-rose-600 font-black text-base p-4">
+                            <span className="text-xl">🛑 ปิดทำการ (CLOSED)</span>
+                            <span className="text-xs font-bold text-rose-700 mt-1">{allDayHoliday.reason || 'วันหยุดทำการ'}</span>
+                          </div>
+                        </td>
                       ) : (
                         COLUMNS.map(col => {
                         let staticCourses: {course: string, time: string}[] = [];

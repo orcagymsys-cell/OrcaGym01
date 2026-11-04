@@ -136,15 +136,7 @@ export default function BookingCalendarPage() {
 
   
   const getHolidayForDate = (dateStr: string) => {
-    return holidays.find(h => {
-      if (h.date !== dateStr) return false;
-      if (!h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)') {
-        return true;
-      }
-      const childCourse = (child?.course_name || '').toLowerCase();
-      const hCourse = h.course_name.toLowerCase();
-      return childCourse.includes(hCourse) || hCourse.includes(childCourse);
-    });
+    return store.isDateHoliday(dateStr, child?.course_name, holidays).holiday;
   };
   const selectedHoliday = getHolidayForDate(selectedDate);
 
@@ -154,10 +146,13 @@ export default function BookingCalendarPage() {
       return;
     }
 
-    const activeHoliday = getHolidayForDate(selectedDate);
-    if (activeHoliday) {
+    // Refresh holidays directly from store to guarantee real-time validation
+    const freshHolidays = await store.getHolidays();
+    setHolidays(freshHolidays);
+    const holidayCheck = store.isDateHoliday(selectedDate, child.course_name, freshHolidays);
+    if (holidayCheck.isHoliday) {
       setAlertModalText(
-        '🛑 วันที่ ' + selectedDate + ' เป็นวันหยุดทำการ (' + (activeHoliday.reason || 'ยิมปิดทำการ') + ')\n\nไม่สามารถทำการจองคลาสเรียนได้ ขออภัยในความไม่สะดวกค่ะ'
+        '🛑 วันที่ ' + selectedDate + ' เป็นวันหยุดทำการ (' + (holidayCheck.holiday?.reason || 'ยิมปิดทำการ') + ')\n\nไม่สามารถทำการจองคลาสเรียนได้ ขออภัยในความไม่สะดวกค่ะ'
       );
       return;
     }
@@ -411,6 +406,8 @@ export default function BookingCalendarPage() {
             const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
             const isSelected = dStr === selectedDate;
             const isTooEarly = !isAdmin && dStr < minParentDate;
+            const dayHoliday = getHolidayForDate(dStr);
+            const isHolidayDate = Boolean(dayHoliday);
 
             return (
               <button
@@ -427,18 +424,30 @@ export default function BookingCalendarPage() {
                   if (clickDay === 1) {
                     setAlertModalText(`❌ คลาส ${child.course_name} ไม่เปิดสอนในวันจันทร์ (Monday) - กรุณาเลือกวันอื่น`);
                   }
+                  if (dayHoliday) {
+                    setAlertModalText(`🛑 วันที่ ${dStr} เป็นวันหยุดทำการ (${dayHoliday.reason || 'ยิมปิดทำการ'})\n\nไม่สามารถทำการจองคลาสเรียนได้ ขออภัยในความไม่สะดวกค่ะ`);
+                  }
                   setSelectedDate(dStr);
                   setSelectedSlot(null);
                 }}
-                className={`py-2 rounded-full text-sm font-bold transition-all cursor-pointer ${
+                className={`py-2 px-1 rounded-2xl text-sm font-bold transition-all cursor-pointer relative flex flex-col items-center justify-center min-h-[46px] ${
                   isTooEarly
                     ? 'opacity-30 bg-slate-100 text-slate-400'
+                    : isHolidayDate
+                    ? isSelected
+                      ? 'bg-rose-600 text-white font-extrabold ring-2 ring-rose-400 shadow-md'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200 font-extrabold hover:bg-rose-100'
                     : isSelected
                     ? 'bg-[#001a3a] text-white font-extrabold shadow-md'
                     : 'text-slate-700 hover:bg-sky-50'
                 }`}
               >
-                {dayNum}
+                <span>{dayNum}</span>
+                {isHolidayDate && (
+                  <span className={`text-[9px] leading-none font-black mt-0.5 ${isSelected ? 'text-rose-100' : 'text-rose-600'}`}>
+                    หยุด
+                  </span>
+                )}
               </button>
             );
           })}
@@ -450,6 +459,21 @@ export default function BookingCalendarPage() {
         <div className="mb-4 bg-rose-50 border-2 border-rose-300 p-4 rounded-2xl text-rose-700 text-xs font-bold flex items-center gap-2">
           <span>❌</span>
           <span>คลาส {child.course_name} ไม่เปิดสอนในวันจันทร์ (Monday) - กรุณาเลือกวันอื่น</span>
+        </div>
+      )}
+
+      {/* Gym Holiday Alert Banner */}
+      {selectedHoliday && (
+        <div className="mb-4 bg-rose-50 border-2 border-rose-300 p-4 rounded-2xl text-rose-800 text-xs sm:text-sm font-bold flex items-start gap-3 shadow-xs animate-fade-in">
+          <span className="text-2xl leading-none">🛑</span>
+          <div>
+            <div className="text-rose-900 font-black text-sm sm:text-base">
+              วันหยุดทำการ (Gym Closed)
+            </div>
+            <div className="text-rose-700 font-medium mt-0.5">
+              วันที่ {selectedDate} ยิมปิดทำการ ({selectedHoliday.reason || 'วันหยุดทำการ'}) {selectedHoliday.course_name && selectedHoliday.course_name !== 'All Courses' ? `สำหรับคลาส ${selectedHoliday.course_name}` : 'ทุกคลาส'} — ระบบปิดรับการจองคลาสเรียนในวันนี้ค่ะ
+            </div>
+          </div>
         </div>
       )}
 
@@ -467,6 +491,15 @@ export default function BookingCalendarPage() {
         {isMonday ? (
           <div className="text-center py-8 text-slate-400 font-bold bg-slate-50 border border-slate-200 rounded-2xl text-xs">
             -- คลาสนี้ไม่เปิดสอนในวันจันทร์ (Monday) --
+          </div>
+        ) : selectedHoliday ? (
+          <div className="text-center py-8 text-rose-600 font-bold bg-rose-50/70 border border-rose-200 rounded-2xl text-xs sm:text-sm flex flex-col items-center justify-center gap-1.5 p-4">
+            <span className="text-3xl">🏖️</span>
+            <span className="font-black text-rose-900 text-base">ยิมปิดทำการในวันที่เลือก</span>
+            <span className="text-rose-700 text-xs font-semibold">
+              เหตุผล: {selectedHoliday.reason || 'วันหยุดทำการ'} (ไม่มีรอบเรียนเปิดสอน)
+            </span>
+            <span className="text-slate-500 text-[11px] font-normal mt-1">กรุณาเลือกวันที่อื่นในปฏิทินเพื่อจองคลาสเรียน</span>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -534,16 +567,20 @@ export default function BookingCalendarPage() {
       <button
         type="button"
         onClick={handleConfirmBooking}
-        disabled={Boolean(selectedHoliday) || Boolean(selectedHoliday) || isMonday || !selectedSlot || isSubmitting}
+        disabled={Boolean(selectedHoliday) || isMonday || !selectedSlot || isSubmitting}
         className={`w-full py-3.5 sm:py-4 rounded-full transition-all duration-300 shadow-xl border-none cursor-pointer mb-8 ${
-          isMonday || !selectedSlot || isSubmitting
+          selectedHoliday || isMonday || !selectedSlot || isSubmitting
             ? 'bg-slate-300 text-slate-500 cursor-not-allowed scale-[0.98]'
             : 'bg-[#001a3a] hover:bg-[#002244] text-white hover:scale-[1.02]'
         }`}
       >
         <div className="flex flex-col items-center justify-center leading-tight">
-          <span className="text-base sm:text-lg font-bold">{selectedHoliday ? 'วันหยุดทำการ (Gym Closed)' : isSubmitting ? 'กำลังจอง...' : 'Book Class'}</span>
-          <span className="text-xs sm:text-sm font-semibold opacity-90">(ยืนยันการจองคลาส)</span>
+          <span className="text-base sm:text-lg font-bold">
+            {selectedHoliday ? `วันหยุดทำการ (${selectedHoliday.reason || 'Gym Closed'})` : isSubmitting ? 'กำลังจอง...' : 'Book Class'}
+          </span>
+          <span className="text-xs sm:text-sm font-semibold opacity-90">
+            {selectedHoliday ? '(ไม่สามารถจองคลาสได้)' : '(ยืนยันการจองคลาส)'}
+          </span>
         </div>
       </button>
 

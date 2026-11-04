@@ -258,7 +258,7 @@ export const store = {
     return getLocal<Child[]>(STORAGE_KEYS.CHILDREN, []); 
   },
   getCoursesSync(): CourseConfig[] {
-    return getLocal<CourseConfig[]>(STORAGE_KEYS.COURSES, []);
+    return getLocal<CourseConfig[]>(STORAGE_KEYS.COURSES, []).filter(c => c && !c.id.startsWith('config_'));
   },
   getBookingsSync(): Booking[] { 
     const myBookings = getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
@@ -777,8 +777,9 @@ export const store = {
       try {
         const { data, error } = await supabase.from('course_configs').select('*');
         if (!error && data && data.length > 0) {
-          setLocal(STORAGE_KEYS.COURSES, data, false);
-          return data as CourseConfig[];
+          const actualCourses = (data as CourseConfig[]).filter(c => c && !c.id.startsWith('config_'));
+          setLocal(STORAGE_KEYS.COURSES, actualCourses, false);
+          return actualCourses;
         } else if (!error && data && data.length === 0) {
           if (courses && courses.length > 0) {
             await supabase.from('course_configs').upsert(courses);
@@ -904,16 +905,95 @@ export const store = {
     let holidays = getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
     if (isSupabaseConfigured && supabase) {
       try {
+        // 1. Try dedicated gym_holidays table first (if created in Supabase)
         const { data, error } = await supabase
           .from('gym_holidays')
           .select('*')
           .order('date', { ascending: true });
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           holidays = data as GymHoliday[];
           setLocal(STORAGE_KEYS.HOLIDAYS, holidays, false);
+          // Keep course_configs mirror synced in background
+          (async () => {
+            try {
+              await supabase.from('course_configs').upsert([{
+                id: 'config_gym_holidays',
+                internal_name: 'CONFIG_HOLIDAYS',
+                display_title: 'Gym Holidays Config',
+                description: JSON.stringify(holidays)
+              }]);
+            } catch (err) {}
+          })();
           return holidays;
         }
-      } catch (e) {}
+
+        // 2. If gym_holidays is unavailable (e.g. table not created) or empty, check course_configs mirror
+        const { data: cfgData, error: cfgError } = await supabase
+          .from('course_configs')
+          .select('description')
+          .eq('id', 'config_gym_holidays')
+          .maybeSingle();
+
+        if (!cfgError && cfgData && cfgData.description) {
+          try {
+            const parsed = JSON.parse(cfgData.description);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              holidays = parsed;
+              setLocal(STORAGE_KEYS.HOLIDAYS, holidays, false);
+              return holidays;
+            }
+          } catch (pe) {}
+        }
+
+        // 3. If still empty, reconstruct from audit_logs so previously set holidays are restored automatically
+        const { data: auditData } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .in('action_type', ['set_holiday', 'delete_holiday'])
+          .order('created_at', { ascending: true });
+        
+        if (auditData && auditData.length > 0) {
+          const recoveredMap = new Map<string, GymHoliday>();
+          auditData.forEach(log => {
+            const dateMatch = log.note?.match(/วันที่\s+([0-9]{4}-[0-9]{2}-[0-9]{2})/);
+            if (dateMatch) {
+              const date = dateMatch[1];
+              const courseMatch = log.note?.match(/\(([^)]+)\)/);
+              const rawCourse = courseMatch ? courseMatch[1] : 'All Courses';
+              const course_name = rawCourse === 'ทุกคลาส' ? 'All Courses' : rawCourse;
+              const reasonMatch = log.note?.match(/เหตุผล:\s*(.+)$/);
+              const reason = reasonMatch ? reasonMatch[1].trim() : 'วันหยุดทำการ';
+              const key = `${date}_${course_name}`;
+              if (log.action_type === 'set_holiday') {
+                recoveredMap.set(key, {
+                  id: log.id.replace('audit_', 'hol_'),
+                  date,
+                  course_name,
+                  reason,
+                  created_at: log.created_at
+                });
+              } else if (log.action_type === 'delete_holiday') {
+                recoveredMap.delete(key);
+              }
+            }
+          });
+          const recovered = Array.from(recoveredMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+          if (recovered.length > 0) {
+            holidays = recovered;
+            setLocal(STORAGE_KEYS.HOLIDAYS, holidays, false);
+            // Save to course_configs mirror so all devices sync instantly
+            await supabase.from('course_configs').upsert([{
+              id: 'config_gym_holidays',
+              internal_name: 'CONFIG_HOLIDAYS',
+              display_title: 'Gym Holidays Config',
+              description: JSON.stringify(holidays)
+            }]);
+            return holidays;
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching holidays from cloud store:', e);
+      }
     }
     return holidays;
   },
@@ -928,10 +1008,27 @@ export const store = {
     }
     holidays.sort((a, b) => a.date.localeCompare(b.date));
     setLocal(STORAGE_KEYS.HOLIDAYS, holidays);
+
     if (isSupabaseConfigured && supabase) {
+      // 1. Try upserting to dedicated gym_holidays table
       try {
         await supabase.from('gym_holidays').upsert([holiday]);
       } catch (e) {}
+
+      // 2. Always persist to course_configs cloud storage (guaranteed sync across all parent/admin devices)
+      try {
+        await supabase.from('course_configs').upsert([{
+          id: 'config_gym_holidays',
+          internal_name: 'CONFIG_HOLIDAYS',
+          display_title: 'Gym Holidays Config',
+          description: JSON.stringify(holidays)
+        }]);
+      } catch (e) {
+        console.error('Failed to sync holidays to cloud config:', e);
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('orca_store_updated'));
     }
   },
 
@@ -939,25 +1036,47 @@ export const store = {
     let holidays = getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
     holidays = holidays.filter(h => h.id !== id);
     setLocal(STORAGE_KEYS.HOLIDAYS, holidays);
+
     if (isSupabaseConfigured && supabase) {
+      // 1. Try deleting from gym_holidays table
       try {
         await supabase.from('gym_holidays').delete().eq('id', id);
       } catch (e) {}
+
+      // 2. Always update course_configs cloud storage
+      try {
+        await supabase.from('course_configs').upsert([{
+          id: 'config_gym_holidays',
+          internal_name: 'CONFIG_HOLIDAYS',
+          display_title: 'Gym Holidays Config',
+          description: JSON.stringify(holidays)
+        }]);
+      } catch (e) {
+        console.error('Failed to sync holidays to cloud config:', e);
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('orca_store_updated'));
     }
   },
 
   isDateHoliday(date: string, courseName?: string, holidayList?: GymHoliday[]): { isHoliday: boolean; holiday?: GymHoliday } {
     const list = holidayList || getLocal<GymHoliday[]>(STORAGE_KEYS.HOLIDAYS, []);
+    const cleanDate = (date || '').trim().split('T')[0];
+    const normCourse = (courseName || '').toLowerCase().replace(/[\s()\-]/g, '');
+
     const found = list.find(h => {
-      if (h.date !== date) return false;
-      if (!h.course_name || h.course_name === 'All Courses' || h.course_name === 'ทุกคลาส' || h.course_name === 'ทุกคลาส (All Courses)') {
+      const hDate = (h.date || '').trim().split('T')[0];
+      if (hDate !== cleanDate) return false;
+
+      const rawH = (h.course_name || '').toLowerCase().replace(/[\s()\-]/g, '');
+      if (!rawH || rawH === 'allcourses' || rawH === 'ทุกคลาส' || rawH.includes('allcourses') || rawH.includes('ทุกคลาส')) {
         return true;
       }
-      if (!courseName) return true;
-      const c1 = courseName.toLowerCase();
-      const c2 = h.course_name.toLowerCase();
-      return c1.includes(c2) || c2.includes(c1);
+      if (!normCourse) return true;
+      return normCourse.includes(rawH) || rawH.includes(normCourse);
     });
+
     return {
       isHoliday: Boolean(found),
       holiday: found
