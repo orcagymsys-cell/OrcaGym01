@@ -44,9 +44,14 @@ export default function SignInPage() {
       
       if (data.success && data.user) {
         store.setCurrentUser(data.user);
+        try {
+          sessionStorage.setItem('orca_current_user_v3', JSON.stringify(data.user));
+        } catch (_) {}
         showToast(`ยินดีต้อนรับ ${data.user.name}`);
-        // Force a hard navigation to bypass Next.js RSC caching and cookie stripping issues on some browsers
-        window.location.href = data.user.role === 'admin' ? '/admin/dashboard' : '/home';
+        // Small delay to ensure WebKit / iOS Safari commits localStorage before unload
+        setTimeout(() => {
+          window.location.href = data.user.role === 'admin' ? '/admin/dashboard' : '/home';
+        }, 120);
       } else {
         showToast('❌ รหัสผ่านไม่ถูกต้อง หรือไม่พบข้อมูลผู้ใช้งาน');
         setIsSubmitting(false);
@@ -123,6 +128,10 @@ export default function SignInPage() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
               className="w-full h-11 px-3 text-[#1e293b] font-['Anuphan',sans-serif] font-bold text-base outline-none bg-transparent placeholder:text-[#94a3b8]"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
+              autoComplete="username"
               required
             />
           </div>
@@ -140,6 +149,10 @@ export default function SignInPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full h-11 pl-3 pr-10 text-[#1e293b] font-['Anuphan',sans-serif] font-bold text-base outline-none bg-transparent placeholder:text-[#94a3b8]"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
+              autoComplete="current-password"
               required
             />
             <button

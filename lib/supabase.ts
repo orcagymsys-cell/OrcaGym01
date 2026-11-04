@@ -212,6 +212,8 @@ export function initLocalSeed() {
   setLocal(STORAGE_KEYS.SEED_INITIALIZED, true);
 }
 
+let memoryCurrentUser: UserProfile | null = null;
+
 // Data Store Helpers (Works with Supabase or Local Fallback)
 export const store = {
   listeners: new Set<() => void>(),
@@ -234,21 +236,82 @@ export const store = {
   },
 
   getCurrentUser(): UserProfile | null {
-    return getLocal<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null);
+    if (memoryCurrentUser) return memoryCurrentUser;
+    let u = getLocal<UserProfile | null>(STORAGE_KEYS.CURRENT_USER, null);
+    if (u) {
+      memoryCurrentUser = u;
+      return u;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionItem = sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+        if (sessionItem) {
+          u = JSON.parse(sessionItem);
+          if (u) {
+            memoryCurrentUser = u;
+            return u;
+          }
+        }
+      } catch (e) {}
+    }
+    return null;
   },
 
   setCurrentUser(user: UserProfile | null) {
+    memoryCurrentUser = user;
     setLocal(STORAGE_KEYS.CURRENT_USER, user);
+    if (typeof window !== 'undefined') {
+      try {
+        if (user) {
+          sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        } else {
+          sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        }
+      } catch (e) {}
+    }
     if (user) {
       const users = getLocal<UserProfile[]>(STORAGE_KEYS.USERS, []);
-      const idx = users.findIndex(u => u.id === user.id || u.user_id === user.user_id);
-      if (idx !== -1) {
-        users[idx] = { ...users[idx], ...user };
-      } else {
-        users.push(user);
+      if (users.length > 0) {
+        const idx = users.findIndex(u => u.id === user.id || u.user_id === user.user_id);
+        if (idx !== -1) {
+          users[idx] = { ...users[idx], ...user };
+        } else {
+          users.push(user);
+        }
+        setLocal(STORAGE_KEYS.USERS, users, false);
       }
-      setLocal(STORAGE_KEYS.USERS, users);
     }
+  },
+
+  async fetchCurrentUser(): Promise<UserProfile | null> {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          this.setCurrentUser(data.user);
+          return data.user as UserProfile;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch /api/auth/me:', e);
+    }
+    return null;
+  },
+
+  async getUserById(id: string): Promise<UserProfile | null> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id,user_id,name,phone,email,password,role,payment_amount,payment_ref_no,payment_payer_name,payment_bank,payment_datetime,payment_history,purchased_hours,created_at,pdpa_accepted,media_consent,pdpa_accepted_at')
+          .or(`id.eq.${id},user_id.eq.${id}`)
+          .maybeSingle();
+        if (!error && data) return data as UserProfile;
+      } catch (e) {}
+    }
+    const users = this.getUsersSync();
+    return users.find(u => u.id === id || u.user_id === id) || null;
   },
 
   getUsersSync(): UserProfile[] { return getLocal(STORAGE_KEYS.USERS, []); },
@@ -393,7 +456,14 @@ export const store = {
           
         let query = supabase.from('children').select(selectFields).order('id');
         if (parentId) {
-          query = query.eq('parent_id', parentId.trim());
+          const p = parentId.trim();
+          const curr = this.getCurrentUser();
+          const alt = (curr?.id === p ? curr?.user_id : curr?.id)?.trim();
+          if (alt && alt !== p) {
+            query = query.or(`parent_id.eq.${p},parent_id.eq.${alt}`);
+          } else {
+            query = query.or(`parent_id.eq.${p},parent_id.ilike.${p}`);
+          }
         }
         const { data, error } = await query;
         if (!error) {

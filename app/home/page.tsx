@@ -57,23 +57,30 @@ export default function HomePage() {
   const [coursesFromDB, setCoursesFromDB] = useState<any[]>([]);
 
   useEffect(() => {
-    const user = store.getCurrentUser();
-    if (!user) {
-      setMounted(true);
+    async function initUser() {
+      let user = store.getCurrentUser();
+      if (!user) {
+        // Try recovering user profile from server session cookie on iPhone / Safari
+        user = await store.fetchCurrentUser();
+      }
+      if (!user) {
+        setMounted(true);
+        setLoading(false);
+        return;
+      }
+      if (user.role === 'admin') {
+        window.location.replace('/admin/dashboard');
+        return;
+      }
+      // Load from cache instantly — always show content, never block on spinner
+      const myKids = store.getLocal<Child[]>('ORCA_MY_KIDS', []);
+      const myBookings = store.getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
+      setChildren(myKids);
+      setBookings(myBookings);
       setLoading(false);
-      return;
+      setMounted(true);
     }
-    if (user.role === 'admin') {
-      window.location.replace('/admin/dashboard');
-      return;
-    }
-    // Load from cache instantly — always show content, never block on spinner
-    const myKids = store.getLocal<Child[]>('ORCA_MY_KIDS', []);
-    const myBookings = store.getLocal<Booking[]>('ORCA_MY_BOOKINGS', []);
-    setChildren(myKids);
-    setBookings(myBookings);
-    setLoading(false);   // ← Always false after mount, regardless of cache
-    setMounted(true);
+    initUser();
   }, []);
 
   useEffect(() => {
@@ -81,6 +88,9 @@ export default function HomePage() {
       const reqId = ++requestRef.current;
       try {
         let currentUser = store.getCurrentUser();
+        if (!currentUser) {
+          currentUser = await store.fetchCurrentUser();
+        }
         if (!currentUser) {
           localStorage.removeItem('ORCA_MY_KIDS');
           localStorage.removeItem('ORCA_MY_BOOKINGS');
@@ -96,32 +106,36 @@ export default function HomePage() {
 
         const parentUserId = currentUser.id || currentUser.user_id;
         
-        const [allUsers, allKids, allBookingsSys, allCourses] = await Promise.all([
-          store.getUsers(),
-          store.getChildren(),   // fetch ALL, filter locally to avoid id-field mismatch
+        // Fast, targeted fetch specifically for this parent
+        const [myKidsFresh, allBookingsSys, allCourses, freshProfile] = await Promise.all([
+          store.getChildren(parentUserId),
           store.getBookings(),
-          store.getCourses()
+          store.getCourses(),
+          store.getUserById(parentUserId)
         ]);
         
         setCoursesFromDB(allCourses || []);
         
         if (reqId !== requestRef.current) return;
         
-        const freshUser = allUsers.find(u => u.phone === currentUser?.phone) 
-          || allUsers.find(u => u.id === parentUserId || u.user_id === currentUser?.user_id);
-        if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
-          currentUser = freshUser;
-          store.setCurrentUser(freshUser);
+        if (freshProfile && JSON.stringify(freshProfile) !== JSON.stringify(currentUser)) {
+          currentUser = freshProfile;
+          store.setCurrentUser(freshProfile);
         }
 
-        const resolvedUserId = ((freshUser || currentUser)?.id || (freshUser || currentUser)?.user_id || parentUserId)?.trim();
-        const kidsToSave = allKids.filter(k => k.parent_id?.trim() === resolvedUserId);
+        const uId = (currentUser.id || '').trim();
+        const uUser = (currentUser.user_id || '').trim();
+        const kidsToSave = myKidsFresh.filter(k => {
+          const pid = (k.parent_id || '').trim();
+          return (uId && pid === uId) || (uUser && pid === uUser);
+        });
+
         setChildren(kidsToSave);
         store.setLocal('ORCA_MY_KIDS', kidsToSave);
         
         if (kidsToSave.length > 0) {
-          const myKidIds = kidsToSave.map(k => k.id);
-          const allB = allBookingsSys.filter(b => myKidIds.includes(b.child_id));
+          const myKidIds = new Set(kidsToSave.map(k => k.id));
+          const allB = allBookingsSys.filter(b => myKidIds.has(b.child_id));
           const bookingsToSave = allB.filter(b => b.status !== 'Cancelled');
           setBookings(bookingsToSave);
           store.setLocal('ORCA_MY_BOOKINGS', bookingsToSave);

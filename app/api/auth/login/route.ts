@@ -9,30 +9,40 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
-    const { username, password } = await req.json();
-    
-    const lowerInput = username.toLowerCase();
-    const digitsInput = lowerInput.replace(/[^0-9]/g, '');
+    const body = await req.json();
+    const rawUsername = body.username ?? '';
+    const rawPassword = body.password ?? '';
 
-    // Check if input is likely an email, phone, or username
+    // Strip zero-width characters and whitespace
+    const cleanUsername = String(rawUsername).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    const cleanPassword = String(rawPassword).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
+    if (!cleanUsername || !cleanPassword) {
+      return NextResponse.json({ success: false, error: 'กรุณากรอก Username และ Password' }, { status: 400 });
+    }
+
+    const lowerInput = cleanUsername.toLowerCase();
+    const digitsInput = cleanUsername.replace(/[^0-9]/g, '');
+
     const isEmail = lowerInput.includes('@');
-    const isPhone = digitsInput.length >= 9;
+    const isPhone = digitsInput.length >= 9 && !/[a-zA-Z]/.test(cleanUsername);
 
     let query = supabase.from('profiles').select('*');
     if (isEmail) {
-      query = query.eq('email', lowerInput);
+      query = query.or(`email.eq.${lowerInput},email.ilike.${lowerInput}`);
     } else if (isPhone) {
-      query = query.ilike('phone', `%${digitsInput}%`);
+      query = query.or(`phone.eq.${cleanUsername},phone.ilike.%${digitsInput}%,user_id.ilike.${lowerInput}`);
     } else {
-      query = query.eq('user_id', lowerInput);
+      query = query.or(`user_id.eq.${cleanUsername},user_id.ilike.${cleanUsername},user_id.ilike.${lowerInput},email.ilike.${lowerInput}`);
     }
 
     const { data: users, error } = await query;
     if (error) throw error;
 
-    const foundUser = users?.[0];
+    // Find the user whose password matches (handle exact and trimmed match)
+    const foundUser = users?.find(u => (u.password || '').trim() === cleanPassword) || users?.[0];
 
-    if (foundUser && foundUser.password === password.trim()) {
+    if (foundUser && (foundUser.password || '').trim() === cleanPassword) {
       const sessionData = { 
         id: foundUser.id, 
         role: foundUser.role, 
@@ -53,7 +63,8 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
-  } catch (err) { console.error('LOGIN ERROR:', err); 
+  } catch (err) {
+    console.error('LOGIN ERROR:', err); 
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
