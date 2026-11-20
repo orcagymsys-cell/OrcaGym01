@@ -1243,7 +1243,9 @@ export interface FamilyBasket {
   course_name: string;
   original_hours: number;
   remaining_hours: number;
+  allocated_hours: number;
   used_hours: number;
+  attended_hours?: number;
   created_at: string;
   duration_months: number;
   duration_text: string;
@@ -1256,8 +1258,10 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
   // 1. Calculate allocated and used hours per course from children
   const allocated: Record<string, number> = {};
   const used: Record<string, number> = {};
+  const childMap: Record<string, any> = {};
   
   children.forEach(c => {
+    if (c.id) childMap[c.id] = c;
     const cName = c.course_name || 'Orca Cubs';
     allocated[cName] = (allocated[cName] || 0) + (c.total_hours || 0);
   });
@@ -1265,7 +1269,7 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
   if (familyBookings !== undefined) {
     (familyBookings || []).forEach(b => {
       if (b.status !== 'cancelled' && b.status !== 'Cancelled') {
-        const cName = b.course_name || 'Orca Cubs';
+        const cName = b.course_name || childMap[b.child_id]?.course_name || 'Orca Cubs';
         used[cName] = (used[cName] || 0) + 1;
       }
     });
@@ -1296,7 +1300,7 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
     .filter(b => b.status !== 'cancelled' && b.status !== 'Cancelled')
     .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || ''))
     .forEach(b => {
-      const cName = b.course_name || 'Orca Cubs';
+      const cName = b.course_name || childMap[b.child_id]?.course_name || 'Orca Cubs';
       if (!courseBookings[cName]) courseBookings[cName] = [];
       courseBookings[cName].push(b);
     });
@@ -1311,9 +1315,10 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
     const cName = record.course_name || 'Orca Cubs';
     let remaining = hours;
     let basketUsed = 0;
+    let deductAlloc = 0;
 
     if (allocated[cName] > 0) {
-      const deductAlloc = Math.min(remaining, allocated[cName]);
+      deductAlloc = Math.min(remaining, allocated[cName]);
       remaining -= deductAlloc;
       allocated[cName] -= deductAlloc;
       
@@ -1346,7 +1351,9 @@ export function getFamilyBaskets(parentUser: any, children: any[], coursesListGl
       course_name: cName,
       original_hours: hours,
       remaining_hours: remaining,
-      used_hours: basketUsed,
+      allocated_hours: deductAlloc,
+      used_hours: deductAlloc, // Keep for backward compatibility so any component gets allocated hours
+      attended_hours: basketUsed,
       created_at: record.created_at || new Date().toISOString(),
       duration_months: expiryInfo.months,
       duration_text: expiryInfo.text,

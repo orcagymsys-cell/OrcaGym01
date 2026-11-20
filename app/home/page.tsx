@@ -417,7 +417,7 @@ export default function HomePage() {
                       <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                     </svg>
                     <span className="absolute -top-1.5 -right-3.5 bg-[#ff3b69] text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white leading-none tracking-tight">
-                      {basket.used_hours || 0}/{basket.original_hours}
+                      {basket.allocated_hours ?? basket.used_hours ?? 0}/{basket.original_hours}
                     </span>
                   </div>
                   <div className="flex flex-col pl-2">
@@ -430,7 +430,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <span className="text-blue-900 bg-sky-100 px-3 py-1.5 rounded-full text-[11px] font-extrabold border border-sky-300 shrink-0">
-                  คงเหลือ: <strong className="text-blue-700 text-sm">{basket.original_hours - (basket.used_hours || 0)}</strong> ครั้ง
+                  คงเหลือ: <strong className="text-blue-700 text-sm">{basket.remaining_hours}</strong> ครั้ง
                 </span>
               </div>
               <div className="grid grid-cols-3 text-center gap-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 font-bold shadow-2xs">
@@ -440,11 +440,11 @@ export default function HomePage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-normal">จัดสรรแล้ว</div>
-                  <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{basket.used_hours || 0} ครั้ง</div>
+                  <div className="text-rose-600 text-xs sm:text-sm font-extrabold">{basket.allocated_hours ?? basket.used_hours ?? 0} ครั้ง</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-normal">คงเหลือในตะกร้า</div>
-                  <div className="text-blue-700 text-xs sm:text-sm font-black">{basket.original_hours - (basket.used_hours || 0)} ครั้ง</div>
+                  <div className="text-blue-700 text-xs sm:text-sm font-black">{basket.remaining_hours} ครั้ง</div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50/70 p-2.5 rounded-2xl border border-sky-100 text-[11px] font-semibold text-slate-700">
