@@ -225,6 +225,10 @@ function AdminDashboardContent() {
   // Top Up / Approve Modal State
   const [topUpChild, setTopUpChild] = useState<Child | null>(null);
   const [topUpParent, setTopUpParent] = useState<UserProfile | null>(null);
+  const [topUpModalMode, setTopUpModalMode] = useState<'allocate' | 'purchase'>('allocate');
+  const [allocateBasketId, setAllocateBasketId] = useState<string>('');
+  const [allocateAddedHours, setAllocateAddedHours] = useState<number | string>('');
+  const [allocateSelectedChildId, setAllocateSelectedChildId] = useState<string>('');
   const [courseName, setCourseName] = useState('');
   const [hoursToAdd, setHoursToAdd] = useState<number | string>('');
   const [topUpNote, setTopUpNote] = useState('');
@@ -235,6 +239,26 @@ function AdminDashboardContent() {
   const [topUpPaymentBankOther, setTopUpPaymentBankOther] = useState('');
   const [topUpPaymentDateTime, setTopUpPaymentDateTime] = useState('');
   const [topUpPaymentSlipFile, setTopUpPaymentSlipFile] = useState<string | null>(null);
+
+  const handleOpenChildClassManagement = (child: Child) => {
+    setTopUpChild(child);
+    setTopUpParent(null);
+    setTopUpModalMode('allocate');
+    setAllocateAddedHours('');
+    setAllocateSelectedChildId(child.id);
+
+    const p = (parents || []).find(parent => isChildOfParent(child, parent) || parent.id === child.parent_id);
+    if (p) {
+      const fKids = (children || []).filter(c => isChildOfParent(c, p) || c.parent_id === p.id);
+      const fBaskets = getFamilyBaskets(p, fKids, coursesListGlobal, allBookings);
+      const matched = fBaskets.find(b => b.course_name === child.course_name && b.remaining_hours > 0)
+        || fBaskets.find(b => b.remaining_hours > 0)
+        || fBaskets[0];
+      if (matched) {
+        setAllocateBasketId(matched.id);
+      }
+    }
+  };
 
   // Quota Config State
   const [quotaCourse, setQuotaCourse] = useState('Orca Cubs');
@@ -1154,6 +1178,104 @@ function AdminDashboardContent() {
     setChildren(cList);
   };
 
+  const handleAllocateQuotaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const activeChild = topUpChild || (children || []).find(c => c.id === allocateSelectedChildId);
+    if (!activeChild) {
+      showToast('⚠️ กรุณาเลือกนักเรียนที่ต้องการจัดสรรโควต้า');
+      return;
+    }
+
+    const parentUser = topUpParent
+      ? topUpParent
+      : (parents || []).find(p => isChildOfParent(activeChild, p) || p.id === activeChild.parent_id);
+
+    if (!parentUser) {
+      showToast('⚠️ ไม่พบข้อมูลบัญชีผู้ปกครอง');
+      return;
+    }
+
+    const familyKids = (children || []).filter(c => isChildOfParent(c, parentUser) || c.parent_id === parentUser.id);
+    const familyBookings = (allBookings || []).filter(b => 
+      b.status !== 'cancelled' && b.status !== 'Cancelled' && familyKids.some(k => k.id === b.child_id)
+    );
+    const familyBaskets = getFamilyBaskets(parentUser, familyKids, coursesListGlobal, familyBookings);
+
+    const targetBasket = familyBaskets.find(b => b.id === allocateBasketId) 
+      || familyBaskets.find(b => b.course_name === activeChild.course_name && b.remaining_hours > 0)
+      || familyBaskets.find(b => b.remaining_hours > 0) 
+      || familyBaskets[0];
+
+    if (!targetBasket) {
+      showToast('⚠️ ไม่พบข้อมูลตะกร้าคอร์สเรียนในครอบครัวนี้');
+      return;
+    }
+
+    const added = Number(allocateAddedHours);
+    if (isNaN(added) || added <= 0) {
+      showToast('⚠️ กรุณาระบุจำนวนครั้งที่ต้องการจัดสรรให้น้อง (มากกว่า 0)');
+      return;
+    }
+
+    if (added > targetBasket.remaining_hours) {
+      showToast(`⚠️ โควต้าในตะกร้านี้คงเหลือเพียง ${targetBasket.remaining_hours} ครั้ง ไม่สามารถจัดสรรเกินได้`);
+      return;
+    }
+
+    const newTotalHours = (activeChild.total_hours || 0) + added;
+    const targetCourseName = targetBasket.course_name || activeChild.course_name;
+
+    const confirmMsg = `โปรดยืนยันการจัดสรรโควต้าให้น้อง:
+• นักเรียน: ${activeChild.full_name} (${activeChild.nickname})
+• ดึงจากตะกร้า: ${targetCourseName}
+• จำนวนครั้งที่เพิ่มให้: +${added} ครั้ง
+• โควต้ารวมสะสมของน้องจะเป็น: ${newTotalHours} ครั้ง
+(โควต้าในตะกร้าครอบครัวนี้จะเหลืออีก ${targetBasket.remaining_hours - added} ครั้ง)
+
+ยืนยันการจัดสรรโควต้าหรือไม่?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    await store.updateChild(activeChild.id, {
+      total_hours: newTotalHours,
+      course_name: targetCourseName,
+      status: 'approved'
+    });
+
+    const adminUser = store.getCurrentUser();
+    const parentName = parentUser?.name || 'ไม่ระบุ';
+    const newLog: AuditLog = {
+      id: 'audit_' + Date.now(),
+      admin_name: adminUser?.name || 'แอดมิน Orca',
+      action_type: 'topup_hours',
+      parent_name: parentName,
+      child_id: activeChild.id,
+      child_name: `${activeChild.full_name} (${activeChild.nickname})`,
+      course_name: targetCourseName,
+      total_hours: newTotalHours,
+      hours_added: added,
+      note: `จัดสรรโควต้าเพิ่มให้น้อง ${activeChild.nickname} (+${added} ครั้ง) จากตะกร้า ${targetCourseName} (โควต้ารวมสะสมเป็น ${newTotalHours} ครั้ง)`,
+      created_at: new Date().toISOString()
+    };
+    await store.saveAuditLog(newLog);
+
+    showToast(`✅ จัดสรรโควต้าให้น้อง ${activeChild.nickname} เพิ่ม +${added} ครั้ง (รวมเป็น ${newTotalHours} ครั้ง) เรียบร้อยแล้ว`);
+
+    // Reset modal
+    setTopUpChild(null);
+    setTopUpParent(null);
+    setAllocateAddedHours('');
+    setAllocateBasketId('');
+
+    // Refresh state
+    const cList = await store.getChildren();
+    setChildren(cList);
+    const uList = await store.getUsers();
+    setParents(uList.filter(u => u.role !== 'admin'));
+    const logs = await store.getAuditLogs();
+    setAuditLogs(logs);
+  };
+
   const handleApproveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Must have either a parent (new flow) or a child (legacy flow)
@@ -1291,6 +1413,8 @@ function AdminDashboardContent() {
     // Reset modal
     setTopUpChild(null);
     setTopUpParent(null);
+    setAllocateAddedHours('');
+    setAllocateBasketId('');
     setTopUpNote('');
     setTopUpPaymentAmount('');
     setTopUpPaymentRefNo('');
@@ -2627,6 +2751,13 @@ function AdminDashboardContent() {
                                      onClick={() => {
                                        setTopUpParent(p);
                                        setTopUpChild(null);
+                                       setTopUpModalMode('purchase');
+                                       setAllocateAddedHours('');
+                                       const pKids = (children || []).filter(c => isChildOfParent(c, p) || c.parent_id === p.id);
+                                       if (pKids.length > 0) {
+                                         setAllocateSelectedChildId(pKids[0].id);
+                                         setTopUpChild(pKids[0]);
+                                       }
                                        setHoursToAdd('');
                                        setTopUpNote('');
                                        setTopUpPaymentAmount('');
@@ -2818,10 +2949,10 @@ function AdminDashboardContent() {
                                                     </button>
                                                     <button
                                                       type="button"
-                                                      onClick={() => setTopUpChild(child)}
+                                                      onClick={() => handleOpenChildClassManagement(child)}
                                                       className="bg-[#001a3a] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#002244] shadow-2xs cursor-pointer"
                                                     >
-                                                      Approve / เติมชั่วโมง
+                                                      ⚙️ จัดการคลาส / โควต้า
                                                     </button>
                                                   </div>
                                                 </div>
@@ -3049,8 +3180,8 @@ function AdminDashboardContent() {
                               {/* 3. จัดการคลาสเรียน */}
                               <button
                                 type="button"
-                                onClick={() => setTopUpChild(c)}
-                                title="จัดการคลาสเรียน & เติมชั่วโมง"
+                                onClick={() => handleOpenChildClassManagement(c)}
+                                title="จัดการคลาสเรียน & จัดสรรโควต้า"
                                 className="h-8 px-2.5 bg-[#001a3a] hover:bg-[#002244] text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 shrink-0 cursor-pointer"
                               >
                                 <span>⚙️</span>
@@ -3609,228 +3740,538 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {/* Top Up / Approve Hours Modal (Class Management) */}
-      {(topUpParent || topUpChild) && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto font-['Anuphan',sans-serif]">
-            <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-lg font-bold text-[#001a3a] flex items-center gap-2">
-                  <span>🛒</span>
-                  <span>ซื้อคอร์สเพิ่ม / เติมตะกร้าครอบครัว</span>
-                </h3>
-                <div className="text-xs font-bold text-indigo-700 mt-0.5">
-                  {topUpParent
-                    ? `👨‍👩‍👧 ผู้ปกครอง: ${topUpParent.name} (ตะกร้าปัจจุบัน: ${topUpParent.purchased_hours || 0} ครั้ง)`
-                    : `น้อง ${topUpChild!.full_name} (${topUpChild!.nickname})`
-                  }
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setTopUpChild(null); setTopUpParent(null); }}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold border-none bg-transparent cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
+      {/* Top Up / Approve Hours Modal (Class Management & Quota Allocation) */}
+      {(topUpParent || topUpChild) && (() => {
+        const activeChild = topUpChild || (children || []).find(c => c.id === allocateSelectedChildId) || (topUpParent ? (children || []).find(c => isChildOfParent(c, topUpParent) || c.parent_id === topUpParent.id) : null);
+        const parentUser = topUpParent
+          ? topUpParent
+          : (activeChild ? (parents || []).find(p => isChildOfParent(activeChild, p) || p.id === activeChild.parent_id) : null);
+        const familyKids = parentUser
+          ? (children || []).filter(c => isChildOfParent(c, parentUser) || c.parent_id === parentUser.id)
+          : (activeChild ? [activeChild] : []);
+        const familyBookings = (allBookings || []).filter(b =>
+          b.status !== 'cancelled' && b.status !== 'Cancelled' && familyKids.some(k => k.id === b.child_id)
+        );
+        const familyBaskets = parentUser
+          ? getFamilyBaskets(parentUser, familyKids, coursesListGlobal, familyBookings)
+          : [];
+        const activeBasket = familyBaskets.find(b => b.id === allocateBasketId)
+          || familyBaskets.find(b => b.course_name === activeChild?.course_name && b.remaining_hours > 0)
+          || familyBaskets.find(b => b.remaining_hours > 0)
+          || familyBaskets[0];
+        const childUsedCount = activeChild
+          ? (allBookings || []).filter(b => b.child_id === activeChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled').length
+          : 0;
+        const currentRemainingForChild = activeChild ? Math.max(0, (activeChild.total_hours || 0) - childUsedCount) : 0;
+        const totalFamilyRemaining = familyBaskets.reduce((acc, b) => acc + (b.remaining_hours || 0), 0);
 
-            <form onSubmit={handleApproveSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white w-full max-w-xl rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto font-['Anuphan',sans-serif]">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-100">
                 <div>
-                  <label className="block text-xs font-bold text-[#001a3a] mb-1.5">Class (คลาสเรียน):</label>
-                  <select
-                    value={courseName}
-                    onChange={(e) => setCourseName(e.target.value)}
-                    className="w-full h-11 px-3 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
-                  >
-                    <option value="" disabled>- เลือกคลาส -</option>
-                    {coursesListGlobal.map(c => (
-                      <option key={c.id} value={c.display_title}>
-                        {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <h3 className="text-lg font-bold text-[#001a3a] flex items-center gap-2">
+                    <span>{topUpModalMode === 'allocate' ? '🔄' : '🛒'}</span>
+                    <span>{topUpModalMode === 'allocate' ? 'จัดสรรโควต้าจากตะกร้าครอบครัว' : 'ซื้อคอร์สเพิ่ม / เติมตะกร้าครอบครัว'}</span>
+                  </h3>
+                  <div className="text-xs font-bold text-indigo-700 mt-0.5">
+                    {activeChild
+                      ? `น้อง ${activeChild.full_name} (${activeChild.nickname}) | ผู้ปกครอง: ${parentUser?.name || 'ไม่ระบุ'}`
+                      : `👨‍👩‍👧 ผู้ปกครอง: ${parentUser?.name || 'ไม่ระบุ'}`
+                    }
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#001a3a] mb-1.5">Course / จำนวนครั้งที่ซื้อเพิ่ม:</label>
-                  <select
-                    value={hoursToAdd}
-                    onChange={(e) => setHoursToAdd(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full h-11 px-3 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
-                  >
-                    <option value="">-- เลือกจำนวนครั้ง --</option>
-                    {coursesListGlobal
-                      .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
-                      ?.pricing_options?.map((opt: any, idx: number) => {
-                        const isFree = opt.tag?.toLowerCase().includes('free');
-                        const label = isFree 
-                          ? `${opt.times} ครั้ง (ทดลองเรียนฟรี)` 
-                          : `${opt.times} ครั้ง ${opt.duration && opt.duration !== '-' ? `(แพ็ก ${opt.duration})` : ''} ${opt.tag ? ` / ${opt.tag}` : ''}`;
-                        return (
-                          <option key={idx} value={opt.times}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { setTopUpChild(null); setTopUpParent(null); }}
+                  className="text-slate-400 hover:text-slate-600 text-lg font-bold border-none bg-transparent cursor-pointer"
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* 💳 Payment Proof Section for Class Management */}
-              <div className="pt-3 border-t border-slate-200 mt-2">
-                <h4 className="text-xs font-bold text-[#001a3a] mb-3 flex items-center gap-1.5 text-blue-900">
-                  <span className="text-base">💳</span>
-                  <span>กรอกข้อมูลหลักฐานการชำระเงิน & แนบสลิปโอนเงิน (Payment Proof)</span>
-                </h4>
+              {/* Mode Switcher Tabs */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTopUpModalMode('allocate');
+                    if (activeBasket && !allocateBasketId) setAllocateBasketId(activeBasket.id);
+                  }}
+                  className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    topUpModalMode === 'allocate'
+                      ? 'bg-white text-blue-900 shadow-sm border border-blue-200'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🔄</span>
+                  <span>1. จัดสรรโควต้าเดิม</span>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-extrabold hidden sm:inline">
+                    (ไม่ต้องแนบสลิป)
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTopUpModalMode('purchase')}
+                  className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    topUpModalMode === 'purchase'
+                      ? 'bg-[#001a3a] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>💳</span>
+                  <span>2. ซื้อคอร์สเพิ่มใหม่</span>
+                  <span className="text-[10px] bg-indigo-900 text-white px-2 py-0.5 rounded-full font-extrabold hidden sm:inline">
+                    (Top-Up)
+                  </span>
+                </button>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* จำนวนเงินที่โอน */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">จำนวนเงินที่โอน (บาท):</label>
-                    <input
-                      type="number"
-                      value={topUpPaymentAmount}
-                      onChange={(e) => setTopUpPaymentAmount(e.target.value)}
-                      placeholder="เช่น 4100"
-                      className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* เลขที่อ้างอิงสลิป */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">เลขที่อ้างอิงสลิป (Slip Ref No.):</label>
-                    <input
-                      type="text"
-                      value={topUpPaymentRefNo}
-                      onChange={(e) => setTopUpPaymentRefNo(e.target.value)}
-                      placeholder="เช่น 202609121234"
-                      className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* ชื่อบัญชีผู้โอน */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">ชื่อบัญชีผู้โอน:</label>
-                    <input
-                      type="text"
-                      value={topUpPaymentPayerName}
-                      onChange={(e) => setTopUpPaymentPayerName(e.target.value)}
-                      placeholder="ชื่อผู้โอนในสลิป"
-                      className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* ธนาคารต้นทาง */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">ธนาคารต้นทางที่โอน:</label>
-                    <select
-                      value={topUpPaymentBank}
-                      onChange={(e) => setTopUpPaymentBank(e.target.value)}
-                      className="w-full h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none focus:border-blue-500"
-                    >
-                      <option value="กสิกรไทย (KBank)">กสิกรไทย (KBank)</option>
-                      <option value="ไทยพาณิชย์ (SCB)">ไทยพาณิชย์ (SCB)</option>
-                      <option value="กรุงเทพ (BBL)">กรุงเทพ (BBL)</option>
-                      <option value="กรุงไทย (KTB)">กรุงไทย (KTB)</option>
-                      <option value="กรุงศรีอยุธยา (BAY)">กรุงศรีอยุธยา (BAY)</option>
-                      <option value="ออมสิน (GSB)">ออมสิน (GSB)</option>
-                      <option value="ทหารไทยธนชาต (ttb)">ทหารไทยธนชาต (ttb)</option>
-                      <option value="ยูโอบี (UOB)">ยูโอบี (UOB)</option>
-                      <option value="เกียรตินาคินภัทร (KKP)">เกียรตินาคินภัทร (KKP)</option>
-                      <option value="ไทยเครดิต (Thai Credit)">ไทยเครดิต (Thai Credit)</option>
-                      <option value="อื่นๆ (ระบุ)">อื่นๆ (ระบุ)</option>
-                    </select>
-                    {topUpPaymentBank === 'อื่นๆ (ระบุ)' && (
-                      <input
-                        type="text"
-                        value={topUpPaymentBankOther}
-                        onChange={(e) => setTopUpPaymentBankOther(e.target.value)}
-                        placeholder="ระบุชื่อธนาคาร"
-                        className="w-full h-10 px-3 border border-slate-300 rounded-xl text-xs mt-2 outline-none focus:border-blue-500"
-                      />
-                    )}
-                  </div>
-
-                  {/* วัน-เวลาที่โอน (รูปแบบปฏิทิน) */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">วัน-เวลาที่โอน (รูปแบบปฏิทิน):</label>
-                    <input
-                      type="datetime-local"
-                      value={topUpPaymentDateTime}
-                      onChange={(e) => setTopUpPaymentDateTime(e.target.value)}
-                      className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* แนบไฟล์สลิปการโอนเงิน */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">แนบไฟล์สลิปโอนเงิน (ถ้ามี):</label>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const compressed = await compressImage(file, 600);
-                            setTopUpPaymentSlipFile(compressed);
-                          } catch (err) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => setTopUpPaymentSlipFile(reader.result as string);
-                            reader.readAsDataURL(file);
+              {/* MODE 1: ALLOCATE EXISTING BASKET QUOTA */}
+              {topUpModalMode === 'allocate' ? (
+                <form onSubmit={handleAllocateQuotaSubmit} className="space-y-4">
+                  {/* Select Child if family has multiple children */}
+                  {familyKids.length > 1 && (
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl">
+                      <label className="block text-xs font-bold text-[#001a3a] mb-1">
+                        เลือกเด็กที่ต้องการจัดสรรโควต้า:
+                      </label>
+                      <select
+                        value={activeChild?.id || ''}
+                        onChange={(e) => {
+                          const found = familyKids.find(k => k.id === e.target.value);
+                          if (found) {
+                            setTopUpChild(found);
+                            setAllocateSelectedChildId(found.id);
+                            setAllocateAddedHours('');
                           }
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                    />
-                    {topUpPaymentSlipFile && (
-                      <div className="mt-2 flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                        <img src={topUpPaymentSlipFile} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300" />
-                        <div className="flex-1 text-xs text-emerald-700 font-bold">✅ แนบสลิปโอนเงินเรียบร้อยแล้ว</div>
-                        <button
-                          type="button"
-                          onClick={() => setTopUpPaymentSlipFile(null)}
-                          className="text-xs text-rose-600 hover:underline font-bold border-none bg-transparent cursor-pointer"
-                        >
-                          ลบรูป
-                        </button>
+                        }}
+                        className="w-full h-10 px-3 border border-blue-300 rounded-xl text-xs font-bold text-blue-950 bg-white outline-none focus:border-blue-500 cursor-pointer"
+                      >
+                        {familyKids.map(k => (
+                          <option key={k.id} value={k.id}>
+                            {k.gender === 'Girl' ? '👧' : '👦'} น้อง {k.full_name} ({k.nickname}) — ปัจจุบันมี {k.total_hours} ครั้ง
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Child Current Quota Summary Card */}
+                  {activeChild ? (
+                    <div className="bg-sky-50 border border-sky-200 rounded-2xl p-3 text-xs space-y-2">
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="text-sky-950 text-sm font-extrabold flex items-center gap-1.5">
+                          <span>👶</span>
+                          <span>โควต้าปัจจุบันของน้อง {activeChild.nickname}</span>
+                        </span>
+                        <span className="bg-white border border-sky-300 px-2.5 py-0.5 rounded-full text-blue-900 font-extrabold text-[11px]">
+                          คลาส: {activeChild.course_name || 'ORCA CUBS'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center font-bold">
+                        <div className="bg-white p-2 rounded-xl border border-sky-100">
+                          <div className="text-[10px] text-slate-500 font-normal">โควต้าสะสมเดิม</div>
+                          <div className="text-slate-800 text-sm">{activeChild.total_hours || 0} ครั้ง</div>
+                        </div>
+                        <div className="bg-white p-2 rounded-xl border border-sky-100">
+                          <div className="text-[10px] text-slate-500 font-normal">ใช้ไปแล้ว</div>
+                          <div className="text-rose-600 text-sm">{childUsedCount} ครั้ง</div>
+                        </div>
+                        <div className="bg-white p-2 rounded-xl border border-sky-100">
+                          <div className="text-[10px] text-slate-500 font-normal">คงเหลือเรียนได้</div>
+                          <div className="text-blue-700 text-sm font-extrabold">{currentRemainingForChild} ครั้ง</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200 font-bold">
+                      ⚠️ ยังไม่มีข้อมูลเด็กในครอบครัวนี้ กรุณาให้ผู้ปกครองเพิ่มสมาชิก (Add Family Member) ก่อนค่ะ
+                    </div>
+                  )}
+
+                  {/* Family Baskets Selection */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5 flex items-center justify-between">
+                      <span>🛒 เลือกตะกร้าครอบครัวที่จะดึงโควต้า:</span>
+                      <span className="text-[11px] text-blue-700 font-extrabold">
+                        คงเหลือรวมในครอบครัว: {totalFamilyRemaining} ครั้ง
+                      </span>
+                    </label>
+
+                    {familyBaskets.length === 0 ? (
+                      <div className="text-xs text-rose-700 bg-rose-50 p-3 rounded-2xl border border-rose-200 font-bold text-center">
+                        ⚠️ ครอบครัวนี้ยังไม่มีตะกร้าคอร์สเรียน กรุณาเลือกแท็บ "2. ซื้อคอร์สเพิ่มใหม่" ด้านบนค่ะ
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {familyBaskets.map((basket, bIdx) => {
+                          const isSelected = (allocateBasketId ? basket.id === allocateBasketId : (activeBasket?.id === basket.id));
+                          const isAvailable = (basket.remaining_hours || 0) > 0;
+                          return (
+                            <div
+                              key={basket.id || bIdx}
+                              onClick={() => {
+                                if (isAvailable) {
+                                  setAllocateBasketId(basket.id);
+                                  setAllocateAddedHours('');
+                                }
+                              }}
+                              className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-300'
+                                  : isAvailable
+                                  ? 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/50'
+                                  : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <input
+                                  type="radio"
+                                  name="adminAllocateBasket"
+                                  checked={isSelected}
+                                  disabled={!isAvailable}
+                                  onChange={() => {
+                                    setAllocateBasketId(basket.id);
+                                    setAllocateAddedHours('');
+                                  }}
+                                  className="w-4 h-4 text-blue-600"
+                                />
+                                <div>
+                                  <div className="text-xs font-bold text-[#001a3a] flex items-center gap-1.5">
+                                    <span>ตะกร้าที่ {bIdx + 1}: {basket.course_name}</span>
+                                    <span className="text-[10px] text-slate-500 font-normal">({basket.duration_text})</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 font-medium">
+                                    ซื้อทั้งหมด: {basket.original_hours} ครั้ง | จัดสรรแล้ว: {basket.used_hours || 0} ครั้ง
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-[10px] text-slate-500 font-normal">คงเหลือให้ดึง</div>
+                                <div className={`text-xs font-black ${isAvailable ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                  {basket.remaining_hours} ครั้ง
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#001a3a] mb-1.5">บันทึกเพิ่มเติม (สำหรับ Audit Log):</label>
-                <input
-                  type="text"
-                  value={topUpNote}
-                  onChange={(e) => setTopUpNote(e.target.value)}
-                  placeholder="เช่น ซื้อคอร์สเพิ่มแพ็ก 6 ครั้ง โอนเงินวันที่ 12/09"
-                  className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm text-[#001a3a] outline-none focus:border-blue-500"
-                />
-              </div>
+                  {/* Quantity to Allocate */}
+                  {activeBasket && activeBasket.remaining_hours > 0 ? (
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5 flex items-center justify-between">
+                          <span>จำนวนครั้งที่ต้องการดึงจากตะกร้ามาเพิ่มให้น้อง (+ ครั้ง):</span>
+                          <span className="text-[11px] text-emerald-700 font-bold">
+                            (ดึงได้สูงสุด {activeBasket.remaining_hours} ครั้ง)
+                          </span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max={activeBasket.remaining_hours}
+                            value={allocateAddedHours}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setAllocateAddedHours('');
+                              } else {
+                                const n = Number(val);
+                                if (n > activeBasket.remaining_hours) {
+                                  showToast(`⚠️ ดึงได้สูงสุด ${activeBasket.remaining_hours} ครั้ง`);
+                                  setAllocateAddedHours(activeBasket.remaining_hours);
+                                } else {
+                                  setAllocateAddedHours(Math.max(1, n));
+                                }
+                              }
+                            }}
+                            placeholder={`ระบุจำนวนครั้ง เช่น ${activeBasket.remaining_hours}`}
+                            className="flex-1 h-11 px-4 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600"
+                            required
+                          />
+                          <span className="text-xs font-bold text-slate-700">ครั้ง</span>
+                        </div>
+                      </div>
 
-              <div className="flex gap-3 pt-3 border-t border-slate-100 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setTopUpChild(null)}
-                  className="flex-1 py-3 bg-slate-200 text-slate-700 rounded-full font-bold text-sm cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button type="submit" className="flex-1 h-11 bg-[#001a3a] hover:bg-[#002244] text-white font-bold text-sm rounded-full shadow-md cursor-pointer">
-                  Approve & เติมชั่วโมง (บันทึกสลิปเพิ่ม)
-                </button>
-              </div>
-            </form>
+                      {/* Quick Select Buttons */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[11px] text-slate-500 font-semibold mr-1">ปุ่มเลือกด่วน:</span>
+                        {[6, 12, 24, 26, activeBasket.remaining_hours]
+                          .filter((h, idx, self) => h <= activeBasket.remaining_hours && self.indexOf(h) === idx)
+                          .map(h => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setAllocateAddedHours(h)}
+                              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                Number(allocateAddedHours) === h
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                                  : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-50'
+                              }`}
+                            >
+                              +{h} ครั้ง {h === activeBasket.remaining_hours ? '(หมดตะกร้า)' : ''}
+                            </button>
+                          ))}
+                      </div>
+
+                      {/* Calculation Preview */}
+                      {allocateAddedHours && Number(allocateAddedHours) > 0 && activeChild && (
+                        <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-950 font-medium space-y-1 mt-2">
+                          <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                            <span>✨</span>
+                            <span>สรุปผลหลังจัดสรรโควต้า:</span>
+                          </div>
+                          <div>
+                            • โควต้ารวมสะสมของน้อง: จากเดิม <strong>{activeChild.total_hours || 0}</strong> เพิ่มเป็น{' '}
+                            <strong className="text-blue-700 text-sm">{(activeChild.total_hours || 0) + Number(allocateAddedHours)} ครั้ง</strong>
+                          </div>
+                          <div>
+                            • น้องจะจองเรียนต่อได้อีก:{' '}
+                            <strong className="text-emerald-700 text-sm">
+                              {currentRemainingForChild + Number(allocateAddedHours)} ครั้ง
+                            </strong>
+                          </div>
+                          <div>
+                            • โควต้าในตะกร้านี้จะเหลือ:{' '}
+                            <strong>{activeBasket.remaining_hours - Number(allocateAddedHours)} ครั้ง</strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-xs text-amber-900 font-medium">
+                      ⚠️ ตะกร้าที่เลือกไม่มีโควต้าคงเหลือแล้ว หากผู้ปกครองต้องการเรียนเพิ่ม กรุณาเลือกแท็บ <strong>"2. ซื้อคอร์สเพิ่มใหม่"</strong> ด้านบนค่ะ
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => { setTopUpChild(null); setTopUpParent(null); }}
+                      className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-full font-bold text-sm cursor-pointer transition-all"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!allocateAddedHours || Number(allocateAddedHours) <= 0 || !activeBasket || activeBasket.remaining_hours <= 0}
+                      className={`flex-1 h-11 text-white font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 ${
+                        !allocateAddedHours || Number(allocateAddedHours) <= 0 || !activeBasket || activeBasket.remaining_hours <= 0
+                          ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                          : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer shadow-emerald-200'
+                      }`}
+                    >
+                      <span>✅</span>
+                      <span>ยืนยันจัดสรรโควต้า (+{allocateAddedHours || 0} ครั้ง)</span>
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* MODE 2: PURCHASE NEW COURSE / TOP UP */
+                <form onSubmit={handleApproveSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-[#001a3a] mb-1.5">Class (คลาสเรียน):</label>
+                      <select
+                        value={courseName}
+                        onChange={(e) => setCourseName(e.target.value)}
+                        className="w-full h-11 px-3 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
+                      >
+                        <option value="" disabled>- เลือกคลาส -</option>
+                        {coursesListGlobal.map(c => (
+                          <option key={c.id} value={c.display_title}>
+                            {c.display_title} {c.age_range ? `(${c.age_range})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#001a3a] mb-1.5">Course / จำนวนครั้งที่ซื้อเพิ่ม:</label>
+                      <select
+                        value={hoursToAdd}
+                        onChange={(e) => setHoursToAdd(e.target.value ? Number(e.target.value) : '')}
+                        className="w-full h-11 px-3 border-2 border-blue-400 rounded-xl text-sm font-bold text-[#001a3a] bg-white outline-none focus:border-blue-600 cursor-pointer"
+                      >
+                        <option value="">-- เลือกจำนวนครั้ง --</option>
+                        {coursesListGlobal
+                          .find(c => c.display_title.toLowerCase().includes(courseName.toLowerCase()) || c.internal_name.toLowerCase().includes(courseName.toLowerCase()))
+                          ?.pricing_options?.map((opt: any, idx: number) => {
+                            const isFree = opt.tag?.toLowerCase().includes('free');
+                            const label = isFree 
+                              ? `${opt.times} ครั้ง (ทดลองเรียนฟรี)` 
+                              : `${opt.times} ครั้ง ${opt.duration && opt.duration !== '-' ? `(แพ็ก ${opt.duration})` : ''} ${opt.tag ? ` / ${opt.tag}` : ''}`;
+                            return (
+                              <option key={idx} value={opt.times}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 💳 Payment Proof Section for Class Management */}
+                  <div className="pt-3 border-t border-slate-200 mt-2">
+                    <h4 className="text-xs font-bold text-[#001a3a] mb-3 flex items-center gap-1.5 text-blue-900">
+                      <span className="text-base">💳</span>
+                      <span>กรอกข้อมูลหลักฐานการชำระเงิน & แนบสลิปโอนเงิน (Payment Proof)</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* จำนวนเงินที่โอน */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">จำนวนเงินที่โอน (บาท):</label>
+                        <input
+                          type="number"
+                          value={topUpPaymentAmount}
+                          onChange={(e) => setTopUpPaymentAmount(e.target.value)}
+                          placeholder="เช่น 4100"
+                          className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* เลขที่อ้างอิงสลิป */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">เลขที่อ้างอิงสลิป (Slip Ref No.):</label>
+                        <input
+                          type="text"
+                          value={topUpPaymentRefNo}
+                          onChange={(e) => setTopUpPaymentRefNo(e.target.value)}
+                          placeholder="เช่น 202609121234"
+                          className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* ชื่อบัญชีผู้โอน */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">ชื่อบัญชีผู้โอน:</label>
+                        <input
+                          type="text"
+                          value={topUpPaymentPayerName}
+                          onChange={(e) => setTopUpPaymentPayerName(e.target.value)}
+                          placeholder="ชื่อผู้โอนในสลิป"
+                          className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-normal text-[#001a3a] outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* ธนาคารต้นทาง */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">ธนาคารต้นทางที่โอน:</label>
+                        <select
+                          value={topUpPaymentBank}
+                          onChange={(e) => setTopUpPaymentBank(e.target.value)}
+                          className="w-full h-11 px-3 border border-slate-300 rounded-xl text-xs font-bold text-[#001a3a] outline-none focus:border-blue-500"
+                        >
+                          <option value="กสิกรไทย (KBank)">กสิกรไทย (KBank)</option>
+                          <option value="ไทยพาณิชย์ (SCB)">ไทยพาณิชย์ (SCB)</option>
+                          <option value="กรุงเทพ (BBL)">กรุงเทพ (BBL)</option>
+                          <option value="กรุงไทย (KTB)">กรุงไทย (KTB)</option>
+                          <option value="กรุงศรีอยุธยา (BAY)">กรุงศรีอยุธยา (BAY)</option>
+                          <option value="ออมสิน (GSB)">ออมสิน (GSB)</option>
+                          <option value="ทหารไทยธนชาต (ttb)">ทหารไทยธนชาต (ttb)</option>
+                          <option value="ยูโอบี (UOB)">ยูโอบี (UOB)</option>
+                          <option value="เกียรตินาคินภัทร (KKP)">เกียรตินาคินภัทร (KKP)</option>
+                          <option value="ไทยเครดิต (Thai Credit)">ไทยเครดิต (Thai Credit)</option>
+                          <option value="อื่นๆ (ระบุ)">อื่นๆ (ระบุ)</option>
+                        </select>
+                        {topUpPaymentBank === 'อื่นๆ (ระบุ)' && (
+                          <input
+                            type="text"
+                            value={topUpPaymentBankOther}
+                            onChange={(e) => setTopUpPaymentBankOther(e.target.value)}
+                            placeholder="ระบุชื่อธนาคาร"
+                            className="w-full h-10 px-3 border border-slate-300 rounded-xl text-xs mt-2 outline-none focus:border-blue-500"
+                          />
+                        )}
+                      </div>
+
+                      {/* วัน-เวลาที่โอน (รูปแบบปฏิทิน) */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">วัน-เวลาที่โอน (รูปแบบปฏิทิน):</label>
+                        <input
+                          type="datetime-local"
+                          value={topUpPaymentDateTime}
+                          onChange={(e) => setTopUpPaymentDateTime(e.target.value)}
+                          className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-[#001a3a] outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* แนบไฟล์สลิปการโอนเงิน */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#001a3a] mb-1.5">แนบไฟล์สลิปโอนเงิน (ถ้ามี):</label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const { compressImage } = await import('@/lib/imageUtils');
+                                const compressed = await compressImage(file, 600);
+                                setTopUpPaymentSlipFile(compressed);
+                              } catch (err) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setTopUpPaymentSlipFile(reader.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }
+                          }}
+                          className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                        />
+                        {topUpPaymentSlipFile && (
+                          <div className="mt-2 flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                            <img src={topUpPaymentSlipFile} alt="Slip Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300" />
+                            <div className="flex-1 text-xs text-emerald-700 font-bold">✅ แนบสลิปโอนเงินเรียบร้อยแล้ว</div>
+                            <button
+                              type="button"
+                              onClick={() => setTopUpPaymentSlipFile(null)}
+                              className="text-xs text-rose-600 hover:underline font-bold border-none bg-transparent cursor-pointer"
+                            >
+                              ลบรูป
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#001a3a] mb-1.5">บันทึกเพิ่มเติม (สำหรับ Audit Log):</label>
+                    <input
+                      type="text"
+                      value={topUpNote}
+                      onChange={(e) => setTopUpNote(e.target.value)}
+                      placeholder="เช่น ซื้อคอร์สเพิ่มแพ็ก 6 ครั้ง โอนเงินวันที่ 12/09"
+                      className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm text-[#001a3a] outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-3 border-t border-slate-100 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setTopUpChild(null); setTopUpParent(null); }}
+                      className="flex-1 py-3 bg-slate-200 text-slate-700 rounded-full font-bold text-sm cursor-pointer"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button type="submit" className="flex-1 h-11 bg-[#001a3a] hover:bg-[#002244] text-white font-bold text-sm rounded-full shadow-md cursor-pointer">
+                      Approve & เติมชั่วโมง (บันทึกสลิปเพิ่ม)
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-
-      
+        );
+      })()}
       {/* Payment History Modal */}
       {viewPaymentHistoryParent && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
