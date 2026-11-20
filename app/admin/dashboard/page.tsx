@@ -226,6 +226,7 @@ function AdminDashboardContent() {
   const [topUpChild, setTopUpChild] = useState<Child | null>(null);
   const [topUpParent, setTopUpParent] = useState<UserProfile | null>(null);
   const [topUpModalMode, setTopUpModalMode] = useState<'allocate' | 'purchase'>('allocate');
+  const [allocationType, setAllocationType] = useState<'add' | 'deduct'>('add');
   const [allocateBasketId, setAllocateBasketId] = useState<string>('');
   const [allocateAddedHours, setAllocateAddedHours] = useState<number | string>('');
   const [allocateSelectedChildId, setAllocateSelectedChildId] = useState<string>('');
@@ -244,6 +245,7 @@ function AdminDashboardContent() {
     setTopUpChild(child);
     setTopUpParent(null);
     setTopUpModalMode('allocate');
+    setAllocationType('add');
     setAllocateAddedHours('');
     setAllocateSelectedChildId(child.id);
 
@@ -1196,14 +1198,14 @@ function AdminDashboardContent() {
     }
 
     const familyKids = (children || []).filter(c => isChildOfParent(c, parentUser) || c.parent_id === parentUser.id);
-    const familyBookings = (allBookings || []).filter(b => 
+    const familyBookings = (allBookings || []).filter(b =>
       b.status !== 'cancelled' && b.status !== 'Cancelled' && familyKids.some(k => k.id === b.child_id)
     );
     const familyBaskets = getFamilyBaskets(parentUser, familyKids, coursesListGlobal, familyBookings);
 
-    const targetBasket = familyBaskets.find(b => b.id === allocateBasketId) 
+    const targetBasket = familyBaskets.find(b => b.id === allocateBasketId)
       || familyBaskets.find(b => b.course_name === activeChild.course_name && b.remaining_hours > 0)
-      || familyBaskets.find(b => b.remaining_hours > 0) 
+      || familyBaskets.find(b => b.remaining_hours > 0)
       || familyBaskets[0];
 
     if (!targetBasket) {
@@ -1213,26 +1215,34 @@ function AdminDashboardContent() {
 
     const added = Number(allocateAddedHours);
     if (isNaN(added) || added <= 0) {
-      showToast('⚠️ กรุณาระบุจำนวนครั้งที่ต้องการจัดสรรให้น้อง (มากกว่า 0)');
+      showToast('⚠️ กรุณาระบุจำนวนครั้งที่ต้องการ (มากกว่า 0)');
       return;
     }
 
-    if (added > targetBasket.remaining_hours) {
-      showToast(`⚠️ โควต้าในตะกร้านี้คงเหลือเพียง ${targetBasket.remaining_hours} ครั้ง ไม่สามารถจัดสรรเกินได้`);
-      return;
-    }
-
-    const newTotalHours = (activeChild.total_hours || 0) + added;
+    const childUsedNow = (allBookings || []).filter(b =>
+      b.child_id === activeChild.id && b.status !== 'cancelled' && b.status !== 'Cancelled'
+    ).length;
+    const childRemainingNow = (activeChild.total_hours || 0) - childUsedNow;
     const targetCourseName = targetBasket.course_name || activeChild.course_name;
 
-    const confirmMsg = `โปรดยืนยันการจัดสรรโควต้าให้น้อง:
-• นักเรียน: ${activeChild.full_name} (${activeChild.nickname})
-• ดึงจากตะกร้า: ${targetCourseName}
-• จำนวนครั้งที่เพิ่มให้: +${added} ครั้ง
-• โควต้ารวมสะสมของน้องจะเป็น: ${newTotalHours} ครั้ง
-(โควต้าในตะกร้าครอบครัวนี้จะเหลืออีก ${targetBasket.remaining_hours - added} ครั้ง)
+    let newTotalHours: number;
+    let confirmMsg: string;
 
-ยืนยันการจัดสรรโควต้าหรือไม่?`;
+    if (allocationType === 'deduct') {
+      if (added > childRemainingNow) {
+        showToast(`⚠️ ลดได้สูงสุด ${childRemainingNow} ครั้ง (น้องใช้ไปแล้ว ${childUsedNow} ครั้ง ไม่สามารถลดโควต้าที่ใช้ไปแล้วได้)`);
+        return;
+      }
+      newTotalHours = (activeChild.total_hours || 0) - added;
+      confirmMsg = `โปรดยืนยันการลดโควต้าคืนตะกร้า:\n• นักเรียน: ${activeChild.full_name} (${activeChild.nickname})\n• ลดโควต้า: -${added} ครั้ง\n• โควต้ารวมสะสมของน้องจะเป็น: ${newTotalHours} ครั้ง\n• โควต้าคืนตะกร้า: ${targetCourseName}\n(ตะกร้าครอบครัวจะเพิ่มขึ้น +${added} ครั้ง)\n\nยืนยันการลดโควต้าคืนตะกร้าหรือไม่?`;
+    } else {
+      if (added > targetBasket.remaining_hours) {
+        showToast(`⚠️ โควต้าในตะกร้านี้คงเหลือเพียง ${targetBasket.remaining_hours} ครั้ง ไม่สามารถจัดสรรเกินได้`);
+        return;
+      }
+      newTotalHours = (activeChild.total_hours || 0) + added;
+      confirmMsg = `โปรดยืนยันการจัดสรรโควต้าให้น้อง:\n• นักเรียน: ${activeChild.full_name} (${activeChild.nickname})\n• ดึงจากตะกร้า: ${targetCourseName}\n• จำนวนครั้งที่เพิ่มให้: +${added} ครั้ง\n• โควต้ารวมสะสมของน้องจะเป็น: ${newTotalHours} ครั้ง\n(โควต้าในตะกร้าครอบครัวนี้จะเหลืออีก ${targetBasket.remaining_hours - added} ครั้ง)\n\nยืนยันการจัดสรรโควต้าหรือไม่?`;
+    }
 
     if (!window.confirm(confirmMsg)) return;
 
@@ -1253,19 +1263,26 @@ function AdminDashboardContent() {
       child_name: `${activeChild.full_name} (${activeChild.nickname})`,
       course_name: targetCourseName,
       total_hours: newTotalHours,
-      hours_added: added,
-      note: `จัดสรรโควต้าเพิ่มให้น้อง ${activeChild.nickname} (+${added} ครั้ง) จากตะกร้า ${targetCourseName} (โควต้ารวมสะสมเป็น ${newTotalHours} ครั้ง)`,
+      hours_added: allocationType === 'deduct' ? -added : added,
+      note: allocationType === 'deduct'
+        ? `ลดโควต้าคืนตะกร้า: น้อง ${activeChild.nickname} (-${added} ครั้ง) คืนไปยัง ${targetCourseName} (โควต้ารวมสะสมเป็น ${newTotalHours} ครั้ง)`
+        : `จัดสรรโควต้าเพิ่มให้น้อง ${activeChild.nickname} (+${added} ครั้ง) จากตะกร้า ${targetCourseName} (โควต้ารวมสะสมเป็น ${newTotalHours} ครั้ง)`,
       created_at: new Date().toISOString()
     };
     await store.saveAuditLog(newLog);
 
-    showToast(`✅ จัดสรรโควต้าให้น้อง ${activeChild.nickname} เพิ่ม +${added} ครั้ง (รวมเป็น ${newTotalHours} ครั้ง) เรียบร้อยแล้ว`);
+    if (allocationType === 'deduct') {
+      showToast(`↩️ ลดโควต้าน้อง ${activeChild.nickname} -${added} ครั้ง คืนตะกร้าครอบครัวแล้ว (โควต้าน้องเหลือ ${newTotalHours - childUsedNow} ครั้ง)`);
+    } else {
+      showToast(`✅ จัดสรรโควต้าให้น้อง ${activeChild.nickname} เพิ่ม +${added} ครั้ง (รวมเป็น ${newTotalHours} ครั้ง) เรียบร้อยแล้ว`);
+    }
 
     // Reset modal
     setTopUpChild(null);
     setTopUpParent(null);
     setAllocateAddedHours('');
     setAllocateBasketId('');
+    setAllocationType('add');
 
     // Refresh state
     const cList = await store.getChildren();
@@ -1431,6 +1448,7 @@ function AdminDashboardContent() {
     const logs = await store.getAuditLogs();
     setAuditLogs(logs);
   };
+
 
   const handleUpdateQuota = async () => {
     await store.saveSlotQuota('Everyday', quotaSlot, quotaNumber, quotaCourse);
@@ -3891,7 +3909,119 @@ function AdminDashboardContent() {
                     </div>
                   )}
 
+                  {/* Allocation Type Toggle */}
+                  <div className="flex gap-2 rounded-2xl bg-slate-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => { setAllocationType('add'); setAllocateAddedHours(''); }}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        allocationType === 'add'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span>➕</span>
+                      <span>เพิ่มโควต้าให้น้อง (ดึงจากตะกร้า)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAllocationType('deduct'); setAllocateAddedHours(''); }}
+                      disabled={!activeChild || currentRemainingForChild <= 0}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        allocationType === 'deduct'
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : !activeChild || currentRemainingForChild <= 0
+                          ? 'text-slate-400 cursor-not-allowed'
+                          : 'text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span>➖</span>
+                      <span>ลดโควต้าคืนตะกร้า (แก้ไขผิด)</span>
+                    </button>
+                  </div>
+
+                  {/* DEDUCT MODE UI */}
+                  {allocationType === 'deduct' && activeChild && (
+                    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 space-y-3">
+                      <div className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                        <span>↩️</span>
+                        <span>ลดโควต้าน้อง {activeChild.nickname} คืนตะกร้าครอบครัว</span>
+                      </div>
+                      <div className="bg-white border border-rose-100 rounded-xl p-3 text-xs text-rose-800 space-y-1 font-medium">
+                        <div>• โควต้ารวมสะสมปัจจุบัน: <strong>{activeChild.total_hours || 0} ครั้ง</strong></div>
+                        <div>• ใช้ไปแล้ว: <strong className="text-rose-600">{childUsedCount} ครั้ง</strong> (ลดได้เฉพาะส่วนที่ยังไม่ได้ใช้)</div>
+                        <div>• ลดได้สูงสุด: <strong className="text-rose-700">{currentRemainingForChild} ครั้ง</strong></div>
+                      </div>
+                      {currentRemainingForChild > 0 ? (
+                        <div className="space-y-2">
+                          <label className="block text-xs font-bold text-rose-900">จำนวนครั้งที่ต้องการลดคืนตะกร้า:</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              max={currentRemainingForChild}
+                              value={allocateAddedHours}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '') {
+                                  setAllocateAddedHours('');
+                                } else {
+                                  const n = Number(val);
+                                  if (n > currentRemainingForChild) {
+                                    showToast(`⚠️ ลดได้สูงสุด ${currentRemainingForChild} ครั้ง`);
+                                    setAllocateAddedHours(currentRemainingForChild);
+                                  } else {
+                                    setAllocateAddedHours(Math.max(1, n));
+                                  }
+                                }
+                              }}
+                              placeholder={`ระบุจำนวนครั้ง 1–${currentRemainingForChild}`}
+                              className="flex-1 h-11 px-4 border-2 border-rose-400 rounded-xl text-sm font-bold text-rose-900 bg-white outline-none focus:ring-2 focus:ring-rose-300"
+                              required={allocationType === 'deduct'}
+                            />
+                            <span className="text-xs font-bold text-slate-700">ครั้ง</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            <span className="text-[11px] text-slate-500 font-semibold mr-1">ปุ่มเลือกด่วน:</span>
+                            {[1, 2, 3, 6, currentRemainingForChild]
+                              .filter((h, idx, self) => h <= currentRemainingForChild && h > 0 && self.indexOf(h) === idx)
+                              .map(h => (
+                                <button
+                                  key={h}
+                                  type="button"
+                                  onClick={() => setAllocateAddedHours(h)}
+                                  className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                    Number(allocateAddedHours) === h
+                                      ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+                                      : 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50'
+                                  }`}
+                                >
+                                  {h === currentRemainingForChild ? `คืนทั้งหมด (${h} ครั้ง)` : `-${h} ครั้ง`}
+                                </button>
+                              ))}
+                          </div>
+                          {allocateAddedHours && Number(allocateAddedHours) > 0 && (
+                            <div className="bg-rose-100 border border-rose-200 p-3 rounded-xl text-xs text-rose-950 font-medium space-y-1">
+                              <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                                <span>📋</span>
+                                <span>สรุปผลหลังลดโควต้า:</span>
+                              </div>
+                              <div>• โควต้าน้อง {activeChild.nickname}: จาก <strong>{activeChild.total_hours || 0}</strong> ลดเหลือ <strong className="text-rose-700 text-sm">{(activeChild.total_hours || 0) - Number(allocateAddedHours)} ครั้ง</strong></div>
+                              <div>• น้องจะจองเรียนต่อได้อีก: <strong className="text-slate-700 text-sm">{currentRemainingForChild - Number(allocateAddedHours)} ครั้ง</strong></div>
+                              <div>• โควต้าคืนตะกร้าครอบครัว: <strong className="text-emerald-700 text-sm">+{Number(allocateAddedHours)} ครั้ง</strong></div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200 font-bold">
+                          ⚠️ น้องไม่มีโควต้าที่ยังไม่ได้ใช้ ไม่สามารถลดโควต้าได้ (ใช้ไปทั้งหมด {childUsedCount} ครั้งแล้ว)
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Family Baskets Selection */}
+                  {allocationType === 'add' && (
                   <div>
                     <label className="block text-xs font-bold text-[#001a3a] mb-1.5 flex items-center justify-between">
                       <span>🛒 เลือกตะกร้าครอบครัวที่จะดึงโควต้า:</span>
@@ -3960,9 +4090,10 @@ function AdminDashboardContent() {
                       </div>
                     )}
                   </div>
+                  )}
 
-                  {/* Quantity to Allocate */}
-                  {activeBasket && activeBasket.remaining_hours > 0 ? (
+                  {/* Quantity to Allocate - only in add mode */}
+                  {allocationType === 'add' && activeBasket && activeBasket.remaining_hours > 0 ? (
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
                       <div>
                         <label className="block text-xs font-bold text-[#001a3a] mb-1.5 flex items-center justify-between">
@@ -4061,15 +4192,25 @@ function AdminDashboardContent() {
                     </button>
                     <button
                       type="submit"
-                      disabled={!allocateAddedHours || Number(allocateAddedHours) <= 0 || !activeBasket || activeBasket.remaining_hours <= 0}
+                      disabled={
+                        !allocateAddedHours || Number(allocateAddedHours) <= 0 ||
+                        (allocationType === 'add' && (!activeBasket || (activeBasket.remaining_hours <= 0))) ||
+                        (allocationType === 'deduct' && (!activeChild || currentRemainingForChild <= 0))
+                      }
                       className={`flex-1 h-11 text-white font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 ${
-                        !allocateAddedHours || Number(allocateAddedHours) <= 0 || !activeBasket || activeBasket.remaining_hours <= 0
+                        !allocateAddedHours || Number(allocateAddedHours) <= 0
                           ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                          : allocationType === 'deduct'
+                          ? 'bg-rose-600 hover:bg-rose-700 cursor-pointer shadow-rose-200'
                           : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer shadow-emerald-200'
                       }`}
                     >
-                      <span>✅</span>
-                      <span>ยืนยันจัดสรรโควต้า (+{allocateAddedHours || 0} ครั้ง)</span>
+                      <span>{allocationType === 'deduct' ? '↩️' : '✅'}</span>
+                      <span>
+                        {allocationType === 'deduct'
+                          ? `ยืนยันลดโควต้าคืนตะกร้า (-${allocateAddedHours || 0} ครั้ง)`
+                          : `ยืนยันจัดสรรโควต้า (+${allocateAddedHours || 0} ครั้ง)`}
+                      </span>
                     </button>
                   </div>
                 </form>
